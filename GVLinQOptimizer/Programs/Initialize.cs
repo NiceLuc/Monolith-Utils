@@ -1,4 +1,5 @@
-﻿using MediatR;
+﻿using System.Text.RegularExpressions;
+using MediatR;
 
 namespace GVLinQOptimizer.Programs;
 
@@ -13,6 +14,30 @@ public sealed class Initialize
 
     public class Handler : IRequestHandler<Request>
     {
+        private static readonly Regex _classRegex = new(
+            @"public partial class (?<class_name>.+)", 
+            RegexOptions.Singleline);
+
+        private static readonly Regex _sprocRegex = new Regex(
+            @"FunctionAttribute\(Name\=""(?<sproc_name>.+)""", 
+            RegexOptions.Singleline);
+
+        private static readonly Regex _methodRegex = new Regex(
+            @"public (ISingleResult\<(?<return_type>.+?)\>|(?<return_type>.+?))\s(?<method_name>.+?)\(", 
+            RegexOptions.Singleline);
+
+        private static readonly Regex _parameterRegex = new Regex(
+            @"ParameterAttribute\(Name\=""(?<db_name>.+?)"",\sDbType\=""(?<db_type>.+?)"".+?]\s(?<ref_token>ref\s)?(?<net_type>.+?)\s(?<net_name>.+?)[,\)]",
+            RegexOptions.Singleline);
+
+        private static readonly Regex _charLengthRegex = new Regex(
+            @"nvarchar\((?<db_length>.+?)\)", 
+            RegexOptions.Singleline | RegexOptions.IgnoreCase);
+
+        private static readonly Regex _nullableRegex = new Regex(
+            @"Nullable\<(?<nullable_type>.+?)\>", 
+            RegexOptions.Singleline);
+
         public Task Handle(Request request, CancellationToken cancellationToken)
         {
             // c:\Temp\*.designer.cs
@@ -24,83 +49,132 @@ public sealed class Initialize
                 throw new InvalidOperationException(
                     $"File already exists: {request.SettingsFilePath} (use -f to overwrite)");
 
-            var fileName = CreateMetaFile(request.DesignerFilePath);
+            var fileName = CreateMetaFile(request);
 
             return Task.CompletedTask;
         }
 
-        private string CreateMetaFile(string SrcFile)
+        private string CreateMetaFile(Request request)
         {
-            var OPFile = "C:\\Temp\\" + Path.GetFileName(SrcFile).Replace(".designer.cs", "") + "_MetaFile" +
-                         ".csv"; //+ Guid.NewGuid().ToString() 
-            var sw = File.CreateText(OPFile);
-
-            var sr = File.OpenText(SrcFile);
-            string line;
-            string line1;
-            string OutPut;
-
-            var Type = "";
-            var FuncName = "";
-            var Parameters = "";
-            while ((line = sr.ReadLine()) != null)
+            var definition = new ContextDefinition
             {
-                if (line.Contains("FunctionAttribute"))
+                ContextName = Path.GetFileNameWithoutExtension(request.DesignerFilePath)
+                    .Replace(".designer", "")
+            };
+
+            var sr = File.OpenText(request.DesignerFilePath);
+
+            while (sr.ReadLine() is { } line)
+            {
+                var match = _sprocRegex.Match(line);
+                if (match.Success)
                 {
-                    FuncName = line.Substring(line.IndexOf("Name=") + 6,
-                        (line.IndexOf(")]") - line.IndexOf("Name=")) - 7);
-
-                    line1 = sr.ReadLine();
-
-                    if (line1.Contains("ISingleResult"))
+                    var method = new MethodDefinition
                     {
-                        Type = "Query";
-                    }
-                    else
-                    {
-                        if (line1.Contains("int"))
-                        {
-                            Type = "NonQuery";
-                        }
-                    }
+                        DatabaseName = match.Groups["sproc_name"].Value
+                    };
 
-                    try
-                    {
-                        if (line1.Contains("IC_GetProfilesByRoleID"))
-                        {
-                            Console.WriteLine("For Debugging Purpose");
-                        }
+                    // extract all details about the method (including parameters)
+                    FillMethodDefinition(method, sr);
 
-                        if (line1.Contains("ParameterAttribute")) Parameters = GetParams(line1);
-                        Console.WriteLine(FuncName + "," + Type + ",[" + Parameters + "]");
-                        sw.WriteLine(FuncName + "," + Type + ",[" + Parameters + "]");
-                        sw.Flush();
-                    }
-                    catch (Exception ex)
-                    {
-                        Console.WriteLine("Not able to parse the parameter" + line + "Exception : " + ex.Message);
-                        sw.WriteLine("Not able to parse the parameter" + line + "Exception : " + ex.Message);
-                        //throw;
-                    }
+                    definition.Methods.Add(method);
 
                     //Get ResultSet for "Query" Type
                     if (Type == "Query")
                     {
-                        GenerateResultSetFile(FuncName.Replace("dbo.", "") + "Result", SrcFile);
+                        GenerateResultSetFile(FuncName.Replace("dbo.", "") + "Result", request.DesignerFilePath);
                     }
 
+                    continue;
                 }
+
+                match = _classRegex.Match(line);
+                if (match.Success)
+                {
+                    if (line.Contains("Linq.DataContext"))
+                        continue; // we don't want the data context class definition
+
+                    var type = new TypeDefinition
+                    {
+                        ClassName = match.Groups["class_name"].Value,
+                    };
+
+                    definition.Types.Add(type);
+                }
+
+                // new up a method definition and get the stored procedure name
             }
 
+            var sw = File.CreateText(request.SettingsFilePath);
             sw.Close();
             sw.Dispose();
 
             sr.Close();
             sr.Dispose();
             Console.WriteLine();
-            Console.WriteLine("MetaFile Generated..." + OPFile);
-            return OPFile;
+            Console.WriteLine("MetaFile Generated..." + request.SettingsFilePath);
+            return request.SettingsFilePath;
         }
+
+        private static void FillMethodDefinition(MethodDefinition method, StreamReader sr)
+        {
+            // the details about the method are on the next line (including parameters)
+            var methodLine = sr.ReadLine();
+            if (string.IsNullOrEmpty(methodLine))
+                throw new InvalidOperationException($"Unexpected end of file after {method.DatabaseName}");
+
+            var match = _methodRegex.Match(methodLine);
+            if (!match.Success)
+                throw new InvalidOperationException($"Unable to parse method definition for '{method.DatabaseName}'");
+
+            if (methodLine.Contains("ISingleResult"))
+            {
+                method.DatabaseType = "Query";
+
+                // todo: determine T vs. IEnumerable<T> for IsList
+                method.IsList = true;
+            }
+            else
+            {
+                method.DatabaseType = "NonQuery";
+            }
+
+            // extract all parameters from the method line
+            var parameterMatches = _parameterRegex.Matches(methodLine);
+            foreach (Match parameterMatch in parameterMatches)
+            {
+                var parameterDefinition = CreateParameterDefinition(parameterMatch);
+                method.Parameters.Add(parameterDefinition);
+            }
+        }
+
+        private static ParameterDefinition CreateParameterDefinition(Match parameterMatch)
+        {
+            var parameterDefinition = new ParameterDefinition
+            {
+                DatabaseName = parameterMatch.Groups["db_name"].Value,
+                DatabaseType = parameterMatch.Groups["db_type"].Value,
+                CodeName = parameterMatch.Groups["net_name"].Value,
+                CodeType = parameterMatch.Groups["net_type"].Value,
+                IsRef = parameterMatch.Groups["ref_token"].Success
+            };
+
+            var stringMatch = _charLengthRegex.Match(parameterDefinition.DatabaseType);
+            if (stringMatch.Success)
+            {
+                parameterDefinition.DatabaseType = "nvarchar";
+                parameterDefinition.DatabaseLength = stringMatch.Groups["db_length"].Value;
+            }
+
+            var nullableMatch = _nullableRegex.Match(parameterDefinition.CodeType);
+            if (nullableMatch.Success)
+            {
+                parameterDefinition.CodeType = nullableMatch.Groups["nullable_type"].Value + "?";
+            }
+
+            return parameterDefinition;
+        }
+
 
         private void GenerateResultSetFile(string ResultsetName, string SrcFile)
         {
@@ -156,63 +230,5 @@ public sealed class Initialize
 
         }
 
-        private string GetParams(string line)
-        {
-            try
-            {
-                var Params = "";
-                if (!line.Contains("Name="))
-                {
-                    var InputParams = line.Split("System.Nullable<");
-                    var Counter = 0;
-                    foreach (var Param in InputParams)
-                    {
-                        Counter++;
-                        if (Counter > 1)
-                        {
-                            var Temp = Param.Split(",");
-                            var Temp1 = Temp[0].Split("> ");
-                            var Name = Temp1[1].Replace(")", "");
-                            var Type = Temp1[0];
-                            Params += Name + ":" + Type + "?" + "~";
-                        }
-                    }
-
-                    return Params.Substring(0, Params.Length - 1);
-                }
-                else
-                {
-                    var InputParams = line.Split("ParameterAttribute");
-                    foreach (var Param in InputParams)
-                    {
-
-                        if (Param.Contains("Name="))
-                        {
-                            var Name = Param.Substring(Param.IndexOf("Name=") + 6,
-                                Param.IndexOf("DbType") - (Param.IndexOf("Name=") + 9));
-                            var Type = Param.Substring(Param.IndexOf("DbType=") + 8,
-                                Param.IndexOf(")]") - (Param.IndexOf("DbType=") + 9));
-                            Params += Name + ":" + Type + "~";
-                            //Parameters.Add(Name, Type);
-                            //Console.WriteLine(Name + ":" + Type);
-                        }
-                        else if (Param.Contains("System.Nullable<"))
-                        {
-                            var Temp = Param.Split(",");
-                            var Temp1 = Temp[0].Split("> ");
-                            var Name = Temp1[1].Replace(")", "");
-                            var Type = Temp1[0].Split("System.Nullable<")[1];
-                            Params += Name + ":" + Type + "?" + "~";
-                        }
-                    }
-
-                    return Params.Substring(0, Params.Length - 1);
-                }
-            }
-            catch (Exception ex)
-            {
-                throw;
-            }
-        }
     }
 }
