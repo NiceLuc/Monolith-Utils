@@ -32,6 +32,7 @@
 
 public class ContextDefinition
 {
+    public string Namespace { get; set; }
     public string ContextName { get; set; }
     public List<MethodDefinition> Methods { get; set; } = new();
     public List<TypeDefinition> Types { get; set; } = new();
