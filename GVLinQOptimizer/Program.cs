@@ -8,7 +8,6 @@ using MediatR;
 var builder = Host.CreateApplicationBuilder(args);
 var services = builder.Services;
 
-// bootstrap all handlers 
 services.AddMediatR(config => config.RegisterServicesFromAssembly(typeof(Program).Assembly));
 
 using var host = builder.Build();
@@ -62,7 +61,8 @@ void GenerateUnitTestFile(CreateUnitTestsOptions options)
 }
 
 
-void SendRequest<TRequest>(TRequest request) where TRequest : IRequest
+void SendRequest<TRequest>(TRequest request) where TRequest : IRequest<string>
 {
-    mediator.Send(request).ConfigureAwait(false).GetAwaiter().GetResult();
+    var result = mediator.Send(request).ConfigureAwait(false).GetAwaiter().GetResult();
+    Console.WriteLine(result);
 }

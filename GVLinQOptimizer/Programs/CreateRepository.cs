@@ -4,15 +4,15 @@ namespace GVLinQOptimizer.Programs;
 
 public sealed class CreateRepository 
 {
-    public class Request : IRequest
+    public class Request : IRequest<string>
     {
         public string SettingsFilePath { get; set; }
         public string OutputDirectory { get; set; }
     }
 
-    public class Handler : IRequestHandler<Request>
+    public class Handler : IRequestHandler<Request, string>
     {
-        public Task Handle(Request request, CancellationToken cancellationToken)
+        public Task<string> Handle(Request request, CancellationToken cancellationToken)
         {
             throw new NotImplementedException();
         }

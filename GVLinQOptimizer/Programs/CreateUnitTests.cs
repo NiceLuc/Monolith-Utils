@@ -4,20 +4,20 @@ namespace GVLinQOptimizer.Programs;
 
 public sealed class CreateUnitTests
 {
-    public class Request : IRequest
+    public class Request : IRequest<string>
     {
         public string SettingsFilePath { get; set; }
         public string OutputDirectory { get; set; }
     }
 
-    public class Handler : IRequestHandler<Request>
+    public class Handler : IRequestHandler<Request, string>
     {
-        public Task Handle(Request request, CancellationToken cancellationToken)
+        public Task<string> Handle(Request request, CancellationToken cancellationToken)
         {
             Console.WriteLine("Extracting unit tests...");
             Console.WriteLine($"{nameof(request.SettingsFilePath)}: {request.SettingsFilePath}");
             Console.WriteLine($"{nameof(request.OutputDirectory)}: {request.OutputDirectory}");
-            return Task.CompletedTask;
+            return Task.FromResult(request.OutputDirectory);
         }
 
         private void GenerateTestClass(string MetaFile)
