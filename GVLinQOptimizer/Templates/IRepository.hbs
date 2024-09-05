@@ -1,0 +1,12 @@
+using System.Collections.Generic;{{#newline}} 
+{{#newline}}
+namespace {{Namespace}}{{#newline}}
+{ {{#newline}}
+	public interface I{{ContextName}}Repository{{#newline}}
+	{ {{#newline}} 
+		{{#each Methods}}
+		{{CodeType}} {{CodeName}}({{#each Parameters}}{{#if @index}}, {{/if}}{{CodeType}} {{CodeName}}{{/each}});{{#newline}}
+        {{/each}}
+        {{#newline}}
+	} {{#newline}}
+}

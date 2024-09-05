@@ -1,4 +1,6 @@
-﻿using MediatR;
+﻿using GVLinQOptimizer.Templates;
+using MediatR;
+using Mustache;
 
 namespace GVLinQOptimizer.Programs;
 
@@ -12,9 +14,26 @@ public sealed class CreateRepository
 
     public class Handler : IRequestHandler<Request, string>
     {
-        public Task<string> Handle(Request request, CancellationToken cancellationToken)
+        public async Task<string> Handle(Request request, CancellationToken cancellationToken)
         {
-            throw new NotImplementedException();
+            var definition = await Utils.LoadSettingsFileAsync(request.SettingsFilePath, cancellationToken);
+            var template = await ResourceUtils.GetResourceAsync("IRepository.hbs", cancellationToken);
+
+            var result = ProcessTemplate(template, definition);
+
+            var filePath = Path.Combine(request.OutputDirectory, $"I{definition.ContextName}Repository.cs");
+
+            await File.WriteAllTextAsync(filePath, result, cancellationToken);
+
+            return filePath;
+        }
+
+        private static string ProcessTemplate(string template, ContextDefinition definition)
+        {
+            var engine = new FormatCompiler();
+            var generator = engine.Compile(template);
+            var result = generator.Render(definition);
+            return result;
         }
 
         private void GenerateRepoCode(string MetaFile)
