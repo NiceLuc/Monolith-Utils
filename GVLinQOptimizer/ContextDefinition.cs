@@ -1,34 +1,4 @@
 ﻿namespace GVLinQOptimizer;
-/*
- methods = [{
-    ProcedureName: "dbo.GetProfilesByRoleID", 
-    Type: "Query", 
-    MethodName: "IC_GetProfilesByRoleID",
-    ReturnType: "IC_GetProfilesByRoleIDResult",
-    IsList: true,                               // note: developer must fix this!!
-    Parameters: [ 
-    { 
-        DatabaseName: "RoleID", 
-        DatabaseType: "int",
-        CodeType: "int",
-        CodeName: "roleID",
-        IsRef: false // translates to an out param in C#
-    },{ 
-        DatabaseName: "SearchText", 
-        DatabaseType: "NVarChar",
-        DatabaseLength: "100", // or MAX
-        CodeType: "string",
-        CodeName: "searchText",
-        IsRef: false // translates to an out param in C#
-    },{ 
-        DatabaseName: "RowCount", 
-        DatabaseType: "int",
-        CodeType: "int?",
-        CodeName: "rowCount",
-        IsRef: true // translates to an out param in C#
-    }] 
- }]
- */
 
 public class ContextDefinition
 {
