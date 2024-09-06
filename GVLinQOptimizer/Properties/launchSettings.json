@@ -2,7 +2,7 @@
   "profiles": {
     "GVLinQOptimizer": {
       "commandName": "Project",
-      "commandLineArgs": "repo c:\\temp\\cneventing\\CNEventing.metadata.settings -o c:\\temp\\cneventing"
+      "commandLineArgs": "repo c:\\temp\\cneventing\\CNEventing.metadata.settings -o c:\\temp\\cneventing\\repo"
     }
   }
 }

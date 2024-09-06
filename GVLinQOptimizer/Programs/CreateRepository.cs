@@ -1,5 +1,4 @@
 ﻿using MediatR;
-using Mustache;
 
 namespace GVLinQOptimizer.Programs;
 
@@ -13,39 +12,39 @@ public sealed class CreateRepository
 
     public class Handler : IRequestHandler<Request, string>
     {
+        private readonly IContextDefinitionSerializer _definitionSerializer;
+        private readonly ITemplateEngine _templateEngine;
+
+        public Handler(IContextDefinitionSerializer definitionSerializer, ITemplateEngine templateEngine)
+        {
+            _definitionSerializer = definitionSerializer;
+            _templateEngine = templateEngine;
+        }
+
         public async Task<string> Handle(Request request, CancellationToken cancellationToken)
         {
-            var definition = await Utils.LoadSettingsFileAsync(request.SettingsFilePath, cancellationToken);
+            var definition = await _definitionSerializer.DeserializeAsync(request.SettingsFilePath, cancellationToken);
 
-            var template = await Utils.GetResourceAsync("IRepositorySettings.hbs", cancellationToken);
-            var result = ProcessTemplate(template, definition);
+            if (!Directory.Exists(request.OutputDirectory))
+                Directory.CreateDirectory(request.OutputDirectory);
+
+            var result = await _templateEngine.ProcessAsync("IRepositorySettings.hbs", definition, cancellationToken);
             var filePath = Path.Combine(request.OutputDirectory, $"I{definition.ContextName}RepositorySettings.cs");
             await File.WriteAllTextAsync(filePath, result, cancellationToken);
 
-            template = await Utils.GetResourceAsync("ContextRepositorySettings.hbs", cancellationToken);
-            result = ProcessTemplate(template, definition);
+            result = await _templateEngine.ProcessAsync("ContextRepositorySettings.hbs", definition, cancellationToken);
             filePath = Path.Combine(request.OutputDirectory, $"{definition.ContextName}RepositorySettings.cs");
             await File.WriteAllTextAsync(filePath, result, cancellationToken);
 
-            template = await Utils.GetResourceAsync("IRepository.hbs", cancellationToken);
-            result = ProcessTemplate(template, definition);
+            result = await _templateEngine.ProcessAsync("IRepository.hbs", definition, cancellationToken);
             filePath = Path.Combine(request.OutputDirectory, $"I{definition.ContextName}Repository.cs");
             await File.WriteAllTextAsync(filePath, result, cancellationToken);
 
-            template = await Utils.GetResourceAsync("ContextRepository.hbs", cancellationToken);
-            result = ProcessTemplate(template, definition);
+            result = await _templateEngine.ProcessAsync("ContextRepository.hbs", definition, cancellationToken);
             filePath = Path.Combine(request.OutputDirectory, $"{definition.ContextName}Repository.cs");
             await File.WriteAllTextAsync(filePath, result, cancellationToken);
 
             return request.OutputDirectory;
-        }
-
-        private static string ProcessTemplate(string template, ContextDefinition definition)
-        {
-            var engine = new FormatCompiler();
-            var generator = engine.Compile(template);
-            var result = generator.Render(definition);
-            return result;
         }
 
         private void GenerateRepoCode(string MetaFile)

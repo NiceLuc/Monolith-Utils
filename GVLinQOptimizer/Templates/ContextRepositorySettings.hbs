@@ -1,12 +1,12 @@
-using System.Configuration;{{#newline}} 
+using UCN.Common.Wrappers;{{#newline}} 
 {{#newline}}
 namespace {{Namespace}}{{#newline}}
 { {{#newline}}
 	public class {{ContextName}}RepositorySettings : I{{ContextName}}RepositorySettings{{#newline}}
 	{ {{#newline}} 
-		public {{ContextName}}RepositorySettings(){{#newline}}
+		public {{ContextName}}RepositorySettings(IConnectionStrings connectionStrings){{#newline}}
         { {{#newline}}
-            ConnectionString = ConfigurationManager.ConnectionStrings["{{ContextName}}"].ConnectionString;{{#newline}}
+            ConnectionString = connectionStrings["{{ContextName}}"].ConnectionString;{{#newline}}
         } {{#newline}}
         {{#newline}}
 		string ConnectionString { get; }{{#newline}}

@@ -4,13 +4,20 @@ namespace GVLinQOptimizer.Parsers;
 
 internal class MethodParser : SettingsParser<ContextDefinition>
 {
-    private static readonly Regex _sprocRegex = new Regex(
+    private static readonly Regex _sprocRegex = new(
         @"FunctionAttribute\(Name\=""(?<sproc_name>.+)""", 
         RegexOptions.Singleline);
 
-    private static readonly Regex _methodRegex = new Regex(
+    private static readonly Regex _methodRegex = new(
         @"public (ISingleResult\<(?<return_type>.+?)\>|(?<return_type>.+?))\s(?<method_name>.+?)\(", 
         RegexOptions.Singleline);
+
+    private readonly IParser<MethodDefinition> _parameterParser;
+
+    public MethodParser(IParser<MethodDefinition> parameterParser)
+    {
+        _parameterParser = parameterParser;
+    }
 
     protected override bool CanParseImpl(string lineOfCode) => _sprocRegex.IsMatch(lineOfCode);
 
@@ -44,8 +51,8 @@ internal class MethodParser : SettingsParser<ContextDefinition>
         }
 
         // extract all parameters from the method line
-        var parameterParser = new ParametersParser(this);
-        parameterParser.Parse(method, reader);
+        if (_parameterParser.CanParse(CurrentLine))
+            _parameterParser.Parse(method, reader);
 
         // add the fully hydrated method to the definition
         definition.Methods.Add(method);

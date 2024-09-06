@@ -4,27 +4,20 @@ namespace GVLinQOptimizer.Parsers;
 
 internal class ParametersParser : SettingsParser<MethodDefinition>
 {
-    private static readonly Regex _parameterRegex = new Regex(
+    private static readonly Regex _parameterRegex = new(
         @"ParameterAttribute\(Name\=""(?<db_name>.+?)"",\sDbType\=""(?<db_type>.+?)"".+?]\s(?<ref_token>ref\s)?(?<net_type>.+?)\s(?<net_name>.+?)[,\)]",
         RegexOptions.Singleline);
 
-    private static readonly Regex _charLengthRegex = new Regex(
+    private static readonly Regex _charLengthRegex = new(
         @"nvarchar\((?<db_length>.+?)\)", 
         RegexOptions.Singleline | RegexOptions.IgnoreCase);
-
-    private readonly MethodParser _parent;
-
-    public ParametersParser(MethodParser parent)
-    {
-        _parent = parent;
-    }
 
     protected override bool CanParseImpl(string lineOfCode) => true;
 
     protected override void ParseImpl(MethodDefinition method, StreamReader reader)
     {
         // extract all parameters from the method line
-        var parameterMatches = _parameterRegex.Matches(_parent.CurrentLine);
+        var parameterMatches = _parameterRegex.Matches(CurrentLine);
         foreach (Match parameterMatch in parameterMatches)
         {
             var parameterDefinition = new ParameterDefinition
@@ -39,7 +32,7 @@ internal class ParametersParser : SettingsParser<MethodDefinition>
             var stringMatch = _charLengthRegex.Match(parameterDefinition.DatabaseType);
             if (stringMatch.Success)
             {
-                parameterDefinition.DatabaseType = "nvarchar";
+                parameterDefinition.DatabaseType = "NVarChar";
                 parameterDefinition.DatabaseLength = stringMatch.Groups["db_length"].Value;
             }
 

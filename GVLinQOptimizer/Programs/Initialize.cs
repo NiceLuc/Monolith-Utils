@@ -1,5 +1,4 @@
-﻿using System.Text.Json;
-using GVLinQOptimizer.Parsers;
+﻿using GVLinQOptimizer.Parsers;
 using MediatR;
 
 namespace GVLinQOptimizer.Programs;
@@ -16,21 +15,15 @@ public sealed class Initialize
     public class Handler : IRequestHandler<Request, string>
     {
         private readonly IEnumerable<IParser<ContextDefinition>> _parsers;
+        private readonly IContextDefinitionSerializer _serializer;
 
-        public Handler()
+        public Handler(IEnumerable<IParser<ContextDefinition>> parsers, IContextDefinitionSerializer serializer)
         {
-            var parsers = new List<IParser<ContextDefinition>>
-            {
-                new NamespaceParser(),
-                new ContextClassParser(),
-                new MethodParser(),
-                new DTOClassParser(),
-            };
-
-            _parsers = parsers.AsReadOnly();
+            _parsers = parsers;
+            _serializer = serializer;
         }
 
-        public Task<string> Handle(Request request, CancellationToken cancellationToken)
+        public async Task<string> Handle(Request request, CancellationToken cancellationToken)
         {
             ValidateRequest(request);
 
@@ -39,7 +32,7 @@ public sealed class Initialize
             // parse the designer file
             using (var sr = File.OpenText(request.DesignerFilePath))
             {
-                while (sr.ReadLine() is { } line)
+                while (await sr.ReadLineAsync(cancellationToken) is { } line)
                 {
                     var parser = _parsers.FirstOrDefault(p => p.CanParse(line));
                     parser?.Parse(definition, sr);
@@ -48,11 +41,10 @@ public sealed class Initialize
 
             // serialize the definition to a json file
             var filePath = CalculateFilePath(request, definition);
-            var prettified = new JsonSerializerOptions {WriteIndented = true};
-            var serialized = JsonSerializer.Serialize(definition, prettified);
-            File.WriteAllText(filePath, serialized);
 
-            return Task.FromResult(filePath);
+            await _serializer.SerializeAsync(filePath, definition, cancellationToken);
+
+            return filePath;
         }
 
         private static void ValidateRequest(Request request)

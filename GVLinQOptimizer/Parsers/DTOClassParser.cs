@@ -8,6 +8,15 @@ internal class DTOClassParser : SettingsParser<ContextDefinition>
         "public partial class (?<class_name>.+)", 
         RegexOptions.Singleline);
 
+    private readonly IParser<TypeDefinition> _propertyParser;
+    private readonly ScopeTracker _scopeTracker;
+
+    public DTOClassParser(IParser<TypeDefinition> propertyParser, ScopeTracker scopeTracker)
+    {
+        _propertyParser = propertyParser;
+        _scopeTracker = scopeTracker;
+    }
+
     protected override bool CanParseImpl(string lineOfCode) => _classRegex.IsMatch(lineOfCode);
 
     protected override void ParseImpl(ContextDefinition definition, StreamReader reader)
@@ -23,12 +32,10 @@ internal class DTOClassParser : SettingsParser<ContextDefinition>
 
         // here, we must capture the spacing of the '{' character
         // then we read all lines until the closing bracket is found
-        var scopeTracker = new ScopeTracker();
-        var propertyParser = new DTOPropertyParser();
-        while (scopeTracker.IsInScope(CurrentLine))
+        while (_scopeTracker.IsInScope(CurrentLine))
         {
-            if (propertyParser.CanParse(CurrentLine)) 
-                propertyParser.Parse(typeDefinition, reader);
+            if (_propertyParser.CanParse(CurrentLine)) 
+                _propertyParser.Parse(typeDefinition, reader);
 
             ReadNextLine(reader);
         }

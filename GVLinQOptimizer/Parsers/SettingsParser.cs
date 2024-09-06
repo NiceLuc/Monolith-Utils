@@ -4,11 +4,11 @@ namespace GVLinQOptimizer.Parsers;
 
 public abstract class SettingsParser<T> : IParser<T> where T : class
 {
-    protected readonly Regex _nullableRegex = new Regex(
+    protected readonly Regex _nullableRegex = new(
         @"Nullable\<(?<nullable_type>.+?)\>", 
         RegexOptions.Singleline);
 
-    protected internal string CurrentLine { get; private set; } = string.Empty;
+    protected string CurrentLine { get; private set; } = string.Empty;
 
     public bool CanParse(string lineOfCode)
     {
@@ -29,6 +29,10 @@ public abstract class SettingsParser<T> : IParser<T> where T : class
         ParseImpl(model, reader);
     }
 
+    protected abstract bool CanParseImpl(string lineOfCode);
+
+    protected abstract void ParseImpl(T model, StreamReader reader);
+
     protected void ReadNextLine(StreamReader reader)
     {
         if (reader.ReadLine() is not { } nextLine)
@@ -36,6 +40,4 @@ public abstract class SettingsParser<T> : IParser<T> where T : class
 
         CurrentLine = nextLine;
     }
-    protected abstract bool CanParseImpl(string lineOfCode);
-    protected abstract void ParseImpl(T model, StreamReader reader);
 }
