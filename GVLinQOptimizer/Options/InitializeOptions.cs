@@ -5,8 +5,8 @@ namespace GVLinQOptimizer.Options;
 [Verb("init", HelpText = "Initialize settings file from designer file.")]
 internal class InitializeOptions
 {
-    [Value(0, Required = true, HelpText = "Full path to LINQ designer file.")]
-    public string DesignerFilePath { get; set; }
+    [Value(0, Required = true, HelpText = "Full path to a legacy DBML file.")]
+    public string DbmlFilePath { get; set; }
 
     [Option('o', "output", Required = false, HelpText = "The output file name (default = '').")]
     public string SettingsFilePath { get; set; }

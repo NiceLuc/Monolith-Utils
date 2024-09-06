@@ -5,7 +5,7 @@ namespace {{Namespace}}{{#newline}}
 	public interface I{{ContextName}}Repository{{#newline}}
 	{ {{#newline}} 
 		{{#each Methods}}
-		{{CodeType}} {{CodeName}}({{#each Parameters}}{{#if @index}}, {{/if}}{{CodeType}} {{CodeName}}{{/each}});{{#newline}}
+		{{CodeType}} {{CodeName}}({{#each Parameters}}{{#if @index}}, {{/if}}{{#if IsRef}}ref {{/if}}{{CodeType}} {{CodeName}}{{/each}});{{#newline}}
 		{{/each}}
 	} {{#newline}}
 }

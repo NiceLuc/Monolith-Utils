@@ -7,9 +7,11 @@ public sealed class Initialize
 {
     public class Request : IRequest<string>
     {
-        public string DesignerFilePath { get; set; }
+        public string DbmlFilePath { get; set; }
         public string SettingsFilePath { get; set; }
         public bool ForceOverwrite { get; set; }
+
+        public string DesignerFilePath => DbmlFilePath.Replace(".dbml", ".designer.cs");
     }
 
     public class Handler : IRequestHandler<Request, string>
@@ -30,12 +32,12 @@ public sealed class Initialize
             var definition = new ContextDefinition();
 
             // parse the designer file
-            using (var sr = File.OpenText(request.DesignerFilePath))
+            using (var reader = File.OpenText(request.DesignerFilePath))
             {
-                while (await sr.ReadLineAsync(cancellationToken) is { } line)
+                while (await reader.ReadLineAsync(cancellationToken) is { } line)
                 {
                     var parser = _parsers.FirstOrDefault(p => p.CanParse(line));
-                    parser?.Parse(definition, sr);
+                    parser?.Parse(definition, reader);
                 }
             }
 
@@ -49,12 +51,18 @@ public sealed class Initialize
 
         private static void ValidateRequest(Request request)
         {
+            if (!File.Exists(request.DbmlFilePath))
+                throw new FileNotFoundException($"File not found: {request.DbmlFilePath}");
+
             if (!File.Exists(request.DesignerFilePath))
                 throw new FileNotFoundException($"File not found: {request.DesignerFilePath}");
 
+            // if user specifies settings file path, make sure we don't overwrite it unless they force it
+            if (string.IsNullOrEmpty(request.SettingsFilePath))
+                return;
+
             if (File.Exists(request.SettingsFilePath) && !request.ForceOverwrite)
-                throw new InvalidOperationException(
-                    $"File already exists: {request.SettingsFilePath} (use -f to overwrite)");
+                throw new InvalidOperationException($"File already exists: {request.SettingsFilePath} (use -f to overwrite)");
         }
 
         private static string CalculateFilePath(Request request, ContextDefinition definition)
@@ -63,9 +71,9 @@ public sealed class Initialize
                 return request.SettingsFilePath;
 
             // otherwise, build it from the definition
-            var directory = Path.GetDirectoryName(request.DesignerFilePath);
+            var directory = Path.GetDirectoryName(request.DbmlFilePath);
             if (directory is null)
-                throw new InvalidOperationException($"Unable to determine directory for: {request.DesignerFilePath}");
+                throw new InvalidOperationException($"Unable to determine directory for: {request.DbmlFilePath}");
 
             var fileName = $"{definition.ContextName}.metadata.settings";
             return Path.Combine(directory, fileName);

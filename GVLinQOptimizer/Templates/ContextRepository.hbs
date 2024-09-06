@@ -1,6 +1,7 @@
-using UCN.Common;{{#newline}}
+using System;{{#newline}}
 using System.Data;{{#newline}}
 using System.Collections.Generic;{{#newline}}
+using UCN.Common;{{#newline}}
 using UCN.Common.SQL.Interfaces;{{#newline}}
 {{#newline}}
 namespace {{Namespace}}{{#newline}}
@@ -8,7 +9,7 @@ namespace {{Namespace}}{{#newline}}
 	public class {{ContextName}}Repository : I{{ContextName}}Repository{{#newline}}
 	{ {{#newline}}
         private readonly ISQLQueryFactory _factory;{{#newline}}
-        private readonly IACEventingRepositorySettings _settings;{{#newline}}
+        private readonly I{{ContextName}}RepositorySettings _settings;{{#newline}}
         {{#newline}}
 		public {{ContextName}}Repository(I{{ContextName}}RepositorySettings settings, ISQLQueryFactory factory){{#newline}}
         { {{#newline}}
@@ -16,8 +17,10 @@ namespace {{Namespace}}{{#newline}}
             _settings = settings;{{#newline}}
         } {{#newline}}
         {{#newline}}
-        // todo: fill in methods here!! {{#newline}}
+{{#each Methods}}
+        {{this}}{{#newline}}
         {{#newline}}
+{{/each}}
         #region Primary Methods{{#newline}}
         private ISQLQueryEx CreateQuery() => _factory.CreateEx(_settings.ConnectionString);{{#newline}}
         #endregion{{#newline}}

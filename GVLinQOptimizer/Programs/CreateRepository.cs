@@ -1,4 +1,5 @@
-﻿using MediatR;
+﻿using GVLinQOptimizer.TemplateModels;
+using MediatR;
 
 namespace GVLinQOptimizer.Programs;
 
@@ -40,11 +41,50 @@ public sealed class CreateRepository
             filePath = Path.Combine(request.OutputDirectory, $"I{definition.ContextName}Repository.cs");
             await File.WriteAllTextAsync(filePath, result, cancellationToken);
 
-            result = await _templateEngine.ProcessAsync("ContextRepository.hbs", definition, cancellationToken);
+            var repository = await CreateRepositoryContextAsync(definition, cancellationToken);
+            result = await _templateEngine.ProcessAsync("ContextRepository.hbs", repository, cancellationToken);
             filePath = Path.Combine(request.OutputDirectory, $"{definition.ContextName}Repository.cs");
             await File.WriteAllTextAsync(filePath, result, cancellationToken);
 
             return request.OutputDirectory;
+        }
+
+        private async Task<RepositoryContext> CreateRepositoryContextAsync(ContextDefinition definition, CancellationToken cancellationToken)
+        {
+            var context = new RepositoryContext(definition);
+
+            foreach(var method in definition.Methods)
+            {
+                var properties = definition.Types.FirstOrDefault(t => t.ClassName == method.CodeType)?.Properties;
+                var methodContext = new MethodContext
+                {
+                    CodeName = method.CodeName,
+                    DatabaseName = method.DatabaseName,
+                    DatabaseType = method.DatabaseType,
+                    CodeType = method.CodeType,
+                    IsList = method.IsList,
+                    Parameters = method.Parameters,
+                    Properties = properties ?? new()
+                };
+
+                // generate a valid method definition (as a string) and give it to the parent context
+                var methodTemplate = GetResourceName(method);
+                var result = await _templateEngine.ProcessAsync(methodTemplate, methodContext, cancellationToken);
+                context.Methods.Add(result);
+            }
+
+            return context;
+        }
+
+        private string GetResourceName(MethodDefinition method)
+        {
+            if (method.DatabaseType == "NonQuery")
+                return "NonQueryMethod.hbs";
+
+            if (method.IsList)
+                return "EnumerableMethod.hbs";
+
+            return "DTOMethod.hbs";
         }
 
         private void GenerateRepoCode(string MetaFile)
@@ -286,5 +326,6 @@ public sealed class CreateRepository
             return ResultSet;
 
         }
+
     }
 }

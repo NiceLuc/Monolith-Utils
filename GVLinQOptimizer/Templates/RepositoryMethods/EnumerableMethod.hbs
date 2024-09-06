@@ -1,0 +1,28 @@
+public {{#if IsList}}IEnumerable<{{/if}}{{CodeType}}{{#if IsList}}>{{/if}} {{CodeName}}({{#each Parameters}}{{#if @index}}, {{/if}}{{#if IsRef}}ref {{/if}}{{CodeType}} {{CodeName}}{{/each}}){{#newline}}
+        { {{#newline}}
+            var result = new List<{{CodeType}}>();{{#newline}}
+            using (var query = CreateQuery()){{#newline}}
+            { {{#newline}}
+                query.CommandType = CommandType.StoredProcedure;{{#newline}}
+                query.SQL = "{{DatabaseName}}";{{#newline}}
+{{#each Parameters}}
+{{#if DatabaseLength}}
+                query.AddParameter("@{{DatabaseName}}", SqlDbType.{{DatabaseType}}, {{CodeName}}, ParameterDirection.Input, {{DatabaseLength}});{{#newline}}
+{{#else}}
+                query.AddParameter("@{{DatabaseName}}", SqlDbType.{{DatabaseType}}, {{CodeName}});{{#newline}}
+{{/if}}
+{{/each}}
+                while (query.Read()){{#newline}}
+                { {{#newline}}
+                    var model = new {{CodeType}}{{#newline}}
+                    { {{#newline}}
+{{#each Properties}}
+                        {{CodeName}} = query.Value("{{CodeName}}"),{{#newline}}
+{{/each}}
+                    };{{#newline}}{{#newline}}
+                    result.Add(model);{{#newline}}
+                } {{#newline}}
+            } {{#newline}}
+            {{#newline}}
+            return result.AsReadOnly();{{#newline}}
+        }

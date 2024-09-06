@@ -30,7 +30,7 @@ void InitializeSettingsFile(InitializeOptions options)
 {
     SendRequest(new Initialize.Request
     {
-        DesignerFilePath = options.DesignerFilePath,
+        DbmlFilePath = options.DbmlFilePath,
         SettingsFilePath = options.SettingsFilePath,
         ForceOverwrite = options.ForceOverwrite
     });

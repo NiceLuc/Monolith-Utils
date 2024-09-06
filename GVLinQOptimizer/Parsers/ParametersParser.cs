@@ -8,10 +8,6 @@ internal class ParametersParser : SettingsParser<MethodDefinition>
         @"ParameterAttribute\(Name\=""(?<db_name>.+?)"",\sDbType\=""(?<db_type>.+?)"".+?]\s(?<ref_token>ref\s)?(?<net_type>.+?)\s(?<net_name>.+?)[,\)]",
         RegexOptions.Singleline);
 
-    private static readonly Regex _charLengthRegex = new(
-        @"nvarchar\((?<db_length>.+?)\)", 
-        RegexOptions.Singleline | RegexOptions.IgnoreCase);
-
     protected override bool CanParseImpl(string lineOfCode) => true;
 
     protected override void ParseImpl(MethodDefinition method, StreamReader reader)
@@ -41,6 +37,9 @@ internal class ParametersParser : SettingsParser<MethodDefinition>
             {
                 parameterDefinition.CodeType = nullableMatch.Groups["nullable_type"].Value + "?";
             }
+
+            if (parameterDefinition.CodeType.StartsWith("System."))
+                parameterDefinition.CodeType = parameterDefinition.CodeType.Replace("System.", "");
 
             method.Parameters.Add(parameterDefinition);
         }

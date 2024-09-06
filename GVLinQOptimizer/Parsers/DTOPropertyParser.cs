@@ -35,6 +35,9 @@ internal class DTOPropertyParser : SettingsParser<TypeDefinition>
             propertyDefinition.CodeType = nullableMatch.Groups["nullable_type"].Value + "?";
         }
 
+        if (propertyDefinition.CodeType.StartsWith("System."))
+            propertyDefinition.CodeType = propertyDefinition.CodeType.Replace("System.", "");
+
         model.Properties.Add(propertyDefinition);
     }
 }

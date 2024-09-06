@@ -13,6 +13,9 @@
     <None Remove="Templates\ContextRepositorySettings.hbs" />
     <None Remove="Templates\IRepository.hbs" />
     <None Remove="Templates\IRepositorySettings.hbs" />
+    <None Remove="Templates\RepositoryMethods\DTOMethod.hbs" />
+    <None Remove="Templates\RepositoryMethods\EnumerableMethod.hbs" />
+    <None Remove="Templates\RepositoryMethods\NonQueryMethod.hbs" />
   </ItemGroup>
 
   <ItemGroup>
@@ -35,6 +38,15 @@
       <CopyToOutputDirectory>Never</CopyToOutputDirectory>
     </EmbeddedResource>
     <EmbeddedResource Include="Templates\IRepository.hbs">
+      <CopyToOutputDirectory>Never</CopyToOutputDirectory>
+    </EmbeddedResource>
+    <EmbeddedResource Include="Templates\RepositoryMethods\DTOMethod.hbs">
+      <CopyToOutputDirectory>Never</CopyToOutputDirectory>
+    </EmbeddedResource>
+    <EmbeddedResource Include="Templates\RepositoryMethods\NonQueryMethod.hbs">
+      <CopyToOutputDirectory>Never</CopyToOutputDirectory>
+    </EmbeddedResource>
+    <EmbeddedResource Include="Templates\RepositoryMethods\EnumerableMethod.hbs">
       <CopyToOutputDirectory>Never</CopyToOutputDirectory>
     </EmbeddedResource>
   </ItemGroup>
