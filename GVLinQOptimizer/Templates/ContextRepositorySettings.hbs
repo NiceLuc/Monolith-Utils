@@ -1,0 +1,14 @@
+using System.Configuration;{{#newline}} 
+{{#newline}}
+namespace {{Namespace}}{{#newline}}
+{ {{#newline}}
+	public class {{ContextName}}RepositorySettings : I{{ContextName}}RepositorySettings{{#newline}}
+	{ {{#newline}} 
+		public {{ContextName}}RepositorySettings(){{#newline}}
+        { {{#newline}}
+            ConnectionString = ConfigurationManager.ConnectionStrings["{{ContextName}}"].ConnectionString;{{#newline}}
+        } {{#newline}}
+        {{#newline}}
+		string ConnectionString { get; }{{#newline}}
+	} {{#newline}}
+}

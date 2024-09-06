@@ -6,7 +6,6 @@ namespace {{Namespace}}{{#newline}}
 	{ {{#newline}} 
 		{{#each Methods}}
 		{{CodeType}} {{CodeName}}({{#each Parameters}}{{#if @index}}, {{/if}}{{CodeType}} {{CodeName}}{{/each}});{{#newline}}
-        {{/each}}
-        {{#newline}}
+		{{/each}}
 	} {{#newline}}
 }
