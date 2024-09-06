@@ -1,5 +1,4 @@
-﻿using GVLinQOptimizer.Templates;
-using MediatR;
+﻿using MediatR;
 using Mustache;
 
 namespace GVLinQOptimizer.Programs;
@@ -17,15 +16,28 @@ public sealed class CreateRepository
         public async Task<string> Handle(Request request, CancellationToken cancellationToken)
         {
             var definition = await Utils.LoadSettingsFileAsync(request.SettingsFilePath, cancellationToken);
-            var template = await ResourceUtils.GetResourceAsync("IRepository.hbs", cancellationToken);
 
+            var template = await Utils.GetResourceAsync("IRepositorySettings.hbs", cancellationToken);
             var result = ProcessTemplate(template, definition);
-
-            var filePath = Path.Combine(request.OutputDirectory, $"I{definition.ContextName}Repository.cs");
-
+            var filePath = Path.Combine(request.OutputDirectory, $"I{definition.ContextName}RepositorySettings.cs");
             await File.WriteAllTextAsync(filePath, result, cancellationToken);
 
-            return filePath;
+            template = await Utils.GetResourceAsync("ContextRepositorySettings.hbs", cancellationToken);
+            result = ProcessTemplate(template, definition);
+            filePath = Path.Combine(request.OutputDirectory, $"{definition.ContextName}RepositorySettings.cs");
+            await File.WriteAllTextAsync(filePath, result, cancellationToken);
+
+            template = await Utils.GetResourceAsync("IRepository.hbs", cancellationToken);
+            result = ProcessTemplate(template, definition);
+            filePath = Path.Combine(request.OutputDirectory, $"I{definition.ContextName}Repository.cs");
+            await File.WriteAllTextAsync(filePath, result, cancellationToken);
+
+            template = await Utils.GetResourceAsync("ContextRepository.hbs", cancellationToken);
+            result = ProcessTemplate(template, definition);
+            filePath = Path.Combine(request.OutputDirectory, $"{definition.ContextName}Repository.cs");
+            await File.WriteAllTextAsync(filePath, result, cancellationToken);
+
+            return request.OutputDirectory;
         }
 
         private static string ProcessTemplate(string template, ContextDefinition definition)
@@ -38,7 +50,6 @@ public sealed class CreateRepository
 
         private void GenerateRepoCode(string MetaFile)
         {
-
             var sr = File.OpenText(MetaFile);
 
             var RepoFile = "C:\\Temp\\" + Path.GetFileName(MetaFile).Replace("_MetaFile.csv", "") + "_Repo" +
