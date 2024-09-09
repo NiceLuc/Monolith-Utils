@@ -1,5 +1,5 @@
-﻿using GVLinQOptimizer.Renders;
-using GVLinQOptimizer.Renders.TemplateModels;
+﻿using GVLinQOptimizer.Renderers.ViewModels;
+using GVLinQOptimizer.Renders;
 using MediatR;
 
 namespace GVLinQOptimizer.Programs;
@@ -57,7 +57,7 @@ public sealed class CreateRepository
             foreach(var method in definition.Methods)
             {
                 var properties = definition.Types.FirstOrDefault(t => t.ClassName == method.CodeType)?.Properties;
-                var methodContext = new MethodViewModel
+                var methodContext = new RepositoryMethodViewModel
                 {
                     CodeName = method.CodeName,
                     DatabaseName = method.DatabaseName,

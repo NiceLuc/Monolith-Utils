@@ -1,4 +1,4 @@
-﻿namespace GVLinQOptimizer.Renders.TemplateModels;
+﻿namespace GVLinQOptimizer.Renderers.ViewModels;
 
 public class ParameterViewModel
 {

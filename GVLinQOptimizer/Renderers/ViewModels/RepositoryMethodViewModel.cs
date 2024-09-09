@@ -1,6 +1,6 @@
-﻿namespace GVLinQOptimizer.Renders.TemplateModels;
+﻿namespace GVLinQOptimizer.Renderers.ViewModels;
 
-public class MethodViewModel
+public class RepositoryMethodViewModel
 {
     public string CodeName { get; set; }
     public string DatabaseName { get; set; }
@@ -10,5 +10,4 @@ public class MethodViewModel
 
     public List<ParameterDefinition> Parameters { get; set; } = new();
     public List<PropertyDefinition> Properties { get; set; } = new();
-
 }

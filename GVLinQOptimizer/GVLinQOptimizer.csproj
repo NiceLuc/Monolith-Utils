@@ -12,9 +12,6 @@
     <None Remove="Renderers\Templates\IRepository.hbs" />
     <None Remove="Renderers\Templates\IRepositorySettings.hbs" />
     <None Remove="Renderers\Templates\Repository.hbs" />
-    <None Remove="Renderers\Templates\RepositoryMethods\DTOMethod.hbs" />
-    <None Remove="Renderers\Templates\RepositoryMethods\EnumerableMethod.hbs" />
-    <None Remove="Renderers\Templates\RepositoryMethods\NonQueryMethod.hbs" />
   </ItemGroup>
 
   <ItemGroup>
@@ -36,13 +33,13 @@
     <EmbeddedResource Include="Renderers\Templates\IRepository.hbs">
       <CopyToOutputDirectory>Never</CopyToOutputDirectory>
     </EmbeddedResource>
-    <EmbeddedResource Include="Renderers\Templates\RepositoryMethods\DTOMethod.hbs">
+    <EmbeddedResource Include="Renderers\Templates\RepositoryMethodQuerySingle.hbs">
       <CopyToOutputDirectory>Never</CopyToOutputDirectory>
     </EmbeddedResource>
-    <EmbeddedResource Include="Renderers\Templates\RepositoryMethods\NonQueryMethod.hbs">
+    <EmbeddedResource Include="Renderers\Templates\RepositoryMethodNonQuery.hbs">
       <CopyToOutputDirectory>Never</CopyToOutputDirectory>
     </EmbeddedResource>
-    <EmbeddedResource Include="Renderers\Templates\RepositoryMethods\EnumerableMethod.hbs">
+    <EmbeddedResource Include="Renderers\Templates\RepositoryMethodQueryMany.hbs">
       <CopyToOutputDirectory>Never</CopyToOutputDirectory>
     </EmbeddedResource>
   </ItemGroup>
