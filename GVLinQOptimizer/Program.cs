@@ -9,9 +9,10 @@ using MediatR;
 var builder = Host.CreateApplicationBuilder(args);
 var services = builder.Services;
 
-services.AddMediatR(config => config.RegisterServicesFromAssembly(typeof(Program).Assembly));
 services.AddCustomDesignerParsers();
 services.AddHandlebarsTemplateSupport();
+
+services.AddMediatR(config => config.RegisterServicesFromAssembly(typeof(Program).Assembly));
 
 using var host = builder.Build();
 var mediator = host.Services.GetRequiredService<IMediator>();

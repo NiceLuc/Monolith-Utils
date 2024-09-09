@@ -8,10 +8,10 @@ internal class DTOClassParser : SettingsParser<ContextDefinition>
         "public partial class (?<class_name>.+)", 
         RegexOptions.Singleline);
 
-    private readonly IParser<TypeDefinition> _propertyParser;
+    private readonly IParser<DTOClassDefinition> _propertyParser;
     private readonly ScopeTracker _scopeTracker;
 
-    public DTOClassParser(IParser<TypeDefinition> propertyParser, ScopeTracker scopeTracker)
+    public DTOClassParser(IParser<DTOClassDefinition> propertyParser, ScopeTracker scopeTracker)
     {
         _propertyParser = propertyParser;
         _scopeTracker = scopeTracker;
@@ -25,7 +25,7 @@ internal class DTOClassParser : SettingsParser<ContextDefinition>
         if (!match.Success)
             throw new InvalidOperationException($"Unable to parse DTO class definition for '{CurrentLine}'");
 
-        var typeDefinition = new TypeDefinition {ClassName = match.Groups["class_name"].Value};
+        var typeDefinition = new DTOClassDefinition {ClassName = match.Groups["class_name"].Value};
 
         // extract all properties from the class
         ReadNextLine(reader);
@@ -40,7 +40,7 @@ internal class DTOClassParser : SettingsParser<ContextDefinition>
             ReadNextLine(reader);
         }
 
-        definition.Types.Add(typeDefinition);
+        definition.DTOModels.Add(typeDefinition);
     }
 
 }

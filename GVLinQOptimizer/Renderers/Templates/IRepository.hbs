@@ -4,8 +4,8 @@ namespace {{Namespace}}{{#newline}}
 { {{#newline}}
 	public interface I{{ContextName}}Repository{{#newline}}
 	{ {{#newline}} 
-		{{#each Methods}}
-		{{CodeType}} {{CodeName}}({{#each Parameters}}{{#if @index}}, {{/if}}{{#if IsRef}}ref {{/if}}{{CodeType}} {{CodeName}}{{/each}});{{#newline}}
+		{{#each RepositoryMethods}}
+		{{ReturnType}} {{MethodName}}({{#each Parameters}}{{#if @index}}, {{/if}}{{#if IsRef}}ref {{/if}}{{ParameterType}} {{ParameterName}}{{/each}});{{#newline}}
 		{{/each}}
 	} {{#newline}}
 }

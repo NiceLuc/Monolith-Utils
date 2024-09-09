@@ -16,32 +16,64 @@ internal class ParametersParser : SettingsParser<MethodDefinition>
         var parameterMatches = _parameterRegex.Matches(CurrentLine);
         foreach (Match parameterMatch in parameterMatches)
         {
-            var parameterDefinition = new ParameterDefinition
+            var parameter = new ParameterDefinition
             {
-                DatabaseName = parameterMatch.Groups["db_name"].Value,
-                DatabaseType = parameterMatch.Groups["db_type"].Value,
-                CodeName = parameterMatch.Groups["net_name"].Value,
-                CodeType = parameterMatch.Groups["net_type"].Value,
+                SprocParameterName = parameterMatch.Groups["db_name"].Value,
+                SqlDbType = parameterMatch.Groups["db_type"].Value,
+                ParameterName = parameterMatch.Groups["net_name"].Value,
+                ParameterType = parameterMatch.Groups["net_type"].Value,
                 IsRef = parameterMatch.Groups["ref_token"].Success
             };
 
-            var stringMatch = _charLengthRegex.Match(parameterDefinition.DatabaseType);
-            if (stringMatch.Success)
-            {
-                parameterDefinition.DatabaseType = "NVarChar";
-                parameterDefinition.DatabaseLength = stringMatch.Groups["db_length"].Value;
-            }
+            SetParameterDirection(parameter);
+            ExtractDatabaseStringLength(parameter);
+            CleanUpSystemTypes(parameter);
 
-            var nullableMatch = _nullableRegex.Match(parameterDefinition.CodeType);
-            if (nullableMatch.Success)
-            {
-                parameterDefinition.CodeType = nullableMatch.Groups["nullable_type"].Value + "?";
-            }
-
-            if (parameterDefinition.CodeType.StartsWith("System."))
-                parameterDefinition.CodeType = parameterDefinition.CodeType.Replace("System.", "");
-
-            method.Parameters.Add(parameterDefinition);
+            method.Parameters.Add(parameter);
         }
     }
+
+    #region Private Methods
+
+    private void CleanUpSystemTypes(ParameterDefinition parameter)
+    {
+        var nullableMatch = _nullableRegex.Match(parameter.ParameterType);
+        if (nullableMatch.Success)
+        {
+            parameter.ParameterType = nullableMatch.Groups["nullable_type"].Value + "?";
+        }
+
+        if (parameter.ParameterType.StartsWith("System."))
+            parameter.ParameterType = parameter.ParameterType.Replace("System.", "");
+    }
+
+    private static void ExtractDatabaseStringLength(ParameterDefinition parameter)
+    {
+        var stringMatch = _charLengthRegex.Match(parameter.SqlDbType);
+        if (stringMatch.Success)
+        {
+            parameter.SqlDbType = "NVarChar";
+            parameter.DatabaseLength = stringMatch.Groups["db_length"].Value;
+        }
+    }
+
+    private static void SetParameterDirection(ParameterDefinition parameter)
+    {
+        if (!parameter.IsRef)
+        {
+            parameter.ParameterDirection = "Input";
+            return;
+        }
+
+        if (parameter.ParameterName == "rowCount")
+        {
+            parameter.ParameterDirection = "ReturnValue";
+            return;
+        }
+
+        parameter.ParameterDirection = "Output";
+    }
+
+    #endregion
+
 }

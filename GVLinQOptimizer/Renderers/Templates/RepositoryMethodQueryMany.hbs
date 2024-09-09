@@ -1,26 +1,29 @@
-public {{#if IsList}}IEnumerable<{{/if}}{{CodeType}}{{#if IsList}}>{{/if}} {{CodeName}}({{#each Parameters}}{{#if @index}}, {{/if}}{{#if IsRef}}ref {{/if}}{{CodeType}} {{CodeName}}{{/each}}){{#newline}}
+public {{#if IsList}}IEnumerable<{{/if}}{{ReturnType}}{{#if IsList}}>{{/if}} {{MethodName}}({{#each Parameters}}{{#if @index}}, {{/if}}{{#if IsRef}}ref {{/if}}{{ParameterType}} {{ParameterName}}{{/each}}){{#newline}}
         { {{#newline}}
-            var result = new List<{{CodeType}}>();{{#newline}}
+            var result = new List<{{ReturnType}}>();{{#newline}}
             using (var query = CreateQuery()){{#newline}}
             { {{#newline}}
                 query.CommandType = CommandType.StoredProcedure;{{#newline}}
                 query.SQL = "{{DatabaseName}}";{{#newline}}
 {{#each Parameters}}
 {{#if DatabaseLength}}
-                query.AddParameter("@{{DatabaseName}}", SqlDbType.{{DatabaseType}}, {{CodeName}}, ParameterDirection.Input, {{DatabaseLength}});{{#newline}}
+                query.AddParameter("@{{SprocParameterName}}", SqlDbType.{{SqlDbType}}, {{ParameterName}}, ParameterDirection.{{ParameterDirection}}, {{DatabaseLength}});{{#newline}}
 {{#else}}
-                query.AddParameter("@{{DatabaseName}}", SqlDbType.{{DatabaseType}}, {{CodeName}});{{#newline}}
+                query.AddParameter("@{{SprocParameterName}}", SqlDbType.{{SqlDbType}}, {{ParameterName}});{{#newline}}
 {{/if}}
 {{/each}}
+{{#if IsList}}
                 while (query.Read()){{#newline}}
                 { {{#newline}}
-                    var model = new {{CodeType}}{{#newline}}
+                    var model = new {{ReturnType}}{{#newline}}
                     { {{#newline}}
 {{#each Properties}}
-                        {{CodeName}} = query.Value("{{CodeName}}"),{{#newline}}
+                        {{PropertyName}} = query.Value("{{PropertyName}}"),{{#newline}}
 {{/each}}
                     };{{#newline}}{{#newline}}
                     result.Add(model);{{#newline}}
+{{#else}}
+
                 } {{#newline}}
             } {{#newline}}
             {{#newline}}

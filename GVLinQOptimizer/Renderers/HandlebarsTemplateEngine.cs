@@ -1,8 +1,8 @@
 ﻿using Mustache;
 
-namespace GVLinQOptimizer.Renders;
+namespace GVLinQOptimizer.Renderers;
 
-public class HandlebarsTemplateEngine : ITemplateEngine
+internal class HandlebarsTemplateEngine : ITemplateEngine
 {
     private readonly IDictionary<string, string> _resourceMap;
     private readonly FormatCompiler _compiler;

@@ -2,7 +2,7 @@
 
 namespace GVLinQOptimizer.Parsers;
 
-internal class DTOPropertyParser : SettingsParser<TypeDefinition>
+internal class DTOPropertyParser : SettingsParser<DTOClassDefinition>
 {
     private readonly Regex _propertyHeaderRegex = new(
         @"Mapping\.ColumnAttribute\(", 
@@ -14,7 +14,7 @@ internal class DTOPropertyParser : SettingsParser<TypeDefinition>
 
     protected override bool CanParseImpl(string lineOfCode) => _propertyHeaderRegex.IsMatch(lineOfCode);
 
-    protected override void ParseImpl(TypeDefinition model, StreamReader reader)
+    protected override void ParseImpl(DTOClassDefinition model, StreamReader reader)
     {
         // we don't need any information from the first line
         ReadNextLine(reader);
@@ -25,18 +25,18 @@ internal class DTOPropertyParser : SettingsParser<TypeDefinition>
 
         var propertyDefinition = new PropertyDefinition
         {
-            CodeType = match.Groups["type"].Value,
-            CodeName = match.Groups["name"].Value
+            PropertyType = match.Groups["type"].Value,
+            PropertyName = match.Groups["name"].Value
         };
 
-        var nullableMatch = _nullableRegex.Match(propertyDefinition.CodeType);
+        var nullableMatch = _nullableRegex.Match(propertyDefinition.PropertyType);
         if (nullableMatch.Success)
         {
-            propertyDefinition.CodeType = nullableMatch.Groups["nullable_type"].Value + "?";
+            propertyDefinition.PropertyType = nullableMatch.Groups["nullable_type"].Value + "?";
         }
 
-        if (propertyDefinition.CodeType.StartsWith("System."))
-            propertyDefinition.CodeType = propertyDefinition.CodeType.Replace("System.", "");
+        if (propertyDefinition.PropertyType.StartsWith("System."))
+            propertyDefinition.PropertyType = propertyDefinition.PropertyType.Replace("System.", "");
 
         model.Properties.Add(propertyDefinition);
     }

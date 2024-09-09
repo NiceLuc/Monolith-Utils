@@ -1,6 +1,7 @@
-﻿using GVLinQOptimizer.Renderers.ViewModels;
-using GVLinQOptimizer.Renders;
+﻿using GVLinQOptimizer.Renderers;
+using GVLinQOptimizer.Renderers.ViewModels;
 using MediatR;
+using Mustache;
 
 namespace GVLinQOptimizer.Programs;
 
@@ -15,12 +16,14 @@ public sealed class CreateRepository
     public class Handler : IRequestHandler<Request, string>
     {
         private readonly IContextDefinitionSerializer _definitionSerializer;
-        private readonly ITemplateEngine _templateEngine;
+        private readonly IRepositoryRendererProvider _provider;
+        private readonly ITemplateEngine _engine;
 
-        public Handler(IContextDefinitionSerializer definitionSerializer, ITemplateEngine templateEngine)
+        public Handler(IContextDefinitionSerializer definitionSerializer, ITemplateEngine templateEngine, IRepositoryRendererProvider provider)
         {
             _definitionSerializer = definitionSerializer;
-            _templateEngine = templateEngine;
+            _engine = templateEngine;
+            _provider = provider;
         }
 
         public async Task<string> Handle(Request request, CancellationToken cancellationToken)
@@ -30,51 +33,21 @@ public sealed class CreateRepository
 
             var definition = await _definitionSerializer.DeserializeAsync(request.SettingsFilePath, cancellationToken);
 
-            var result = await _templateEngine.ProcessAsync("IRepositorySettings.hbs", definition, cancellationToken);
-            var filePath = Path.Combine(request.OutputDirectory, $"I{definition.ContextName}RepositorySettings.cs");
-            await File.WriteAllTextAsync(filePath, result, cancellationToken);
-
-            result = await _templateEngine.ProcessAsync("RepositorySettings.hbs", definition, cancellationToken);
-            filePath = Path.Combine(request.OutputDirectory, $"{definition.ContextName}RepositorySettings.cs");
-            await File.WriteAllTextAsync(filePath, result, cancellationToken);
-
-            result = await _templateEngine.ProcessAsync("IRepository.hbs", definition, cancellationToken);
-            filePath = Path.Combine(request.OutputDirectory, $"I{definition.ContextName}Repository.cs");
-            await File.WriteAllTextAsync(filePath, result, cancellationToken);
-
-            var repository = await CreateRepositoryContextAsync(definition, cancellationToken);
-            result = await _templateEngine.ProcessAsync("Repository.hbs", repository, cancellationToken);
-            filePath = Path.Combine(request.OutputDirectory, $"{definition.ContextName}Repository.cs");
-            await File.WriteAllTextAsync(filePath, result, cancellationToken);
-
-            return request.OutputDirectory;
-        }
-
-        private async Task<RepositoryViewModel> CreateRepositoryContextAsync(ContextDefinition definition, CancellationToken cancellationToken)
-        {
-            var context = new RepositoryViewModel(definition);
-
-            foreach(var method in definition.Methods)
+            async Task ProcessTemplate(IRenderer<ContextDefinition> renderer)
             {
-                var properties = definition.Types.FirstOrDefault(t => t.ClassName == method.CodeType)?.Properties;
-                var methodContext = new RepositoryMethodViewModel
-                {
-                    CodeName = method.CodeName,
-                    DatabaseName = method.DatabaseName,
-                    DatabaseType = method.DatabaseType,
-                    CodeType = method.CodeType,
-                    IsList = method.IsList,
-                    Parameters = method.Parameters,
-                    Properties = properties ?? new()
-                };
-
-                // generate a valid method definition (as a string) and give it to the parent context
-                var methodTemplate = GetResourceName(method);
-                var result = await _templateEngine.ProcessAsync(methodTemplate, methodContext, cancellationToken);
-                context.Methods.Add(result);
+                var data = await renderer.ToViewModelAsync(_engine, definition, cancellationToken);
+                var generatedCode = await _engine.ProcessAsync(renderer.ResourceFileName, data, cancellationToken);
+                var filePath = Path.Combine(request.OutputDirectory, string.Format(renderer.FileNameFormat, definition.ContextName));
+                await File.WriteAllTextAsync(filePath, generatedCode, cancellationToken);
             }
 
-            return context;
+            await ProcessTemplate(_provider.GetIRepositorySettingsRendererAsync());
+            await ProcessTemplate(_provider.GetIRepositoryRendererAsync());
+
+            await ProcessTemplate(_provider.GetRepositorySettingsRendererAsync());
+            await ProcessTemplate(_provider.GetRepositoryRendererAsync());
+
+            return request.OutputDirectory;
         }
 
         private string GetResourceName(MethodDefinition method)

@@ -4,16 +4,16 @@ public class ContextDefinition
 {
     public string Namespace { get; set; }
     public string ContextName { get; set; }
-    public List<MethodDefinition> Methods { get; set; } = new();
-    public List<TypeDefinition> Types { get; set; } = new();
+    public List<MethodDefinition> RepositoryMethods { get; set; } = new();
+    public List<DTOClassDefinition> DTOModels { get; set; } = new();
 }
 
 public class MethodDefinition
 {
     public string DatabaseName { get; set; }
     public string DatabaseType { get; set; }
-    public string CodeName { get; set; }
-    public string CodeType { get; set; }
+    public string MethodName { get; set; }
+    public string ReturnType { get; set; }
     public bool IsList { get; set; }
 
     public List<ParameterDefinition> Parameters { get; set; } = new();
@@ -21,15 +21,16 @@ public class MethodDefinition
 
 public class ParameterDefinition
 {
-    public string DatabaseName { get; set; }
-    public string DatabaseType { get; set; }
+    public string SprocParameterName { get; set; }
+    public string SqlDbType { get; set; }
     public string DatabaseLength { get; set; }
-    public string CodeType { get; set; }
-    public string CodeName { get; set; }
+    public string ParameterType { get; set; }
+    public string ParameterName { get; set; }
     public bool IsRef { get; set; }
+    public string ParameterDirection { get; set; }
 }
 
-public class TypeDefinition
+public class DTOClassDefinition
 {
     public string ClassName { get; set; }
     public List<PropertyDefinition> Properties { get; set; } = new();
@@ -37,6 +38,6 @@ public class TypeDefinition
 
 public class PropertyDefinition
 {
-    public string CodeName { get; set; }
-    public string CodeType { get; set; }
+    public string PropertyName { get; set; }
+    public string PropertyType { get; set; }
 }

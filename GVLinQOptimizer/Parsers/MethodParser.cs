@@ -35,8 +35,8 @@ internal class MethodParser : SettingsParser<ContextDefinition>
         if (!match.Success)
             throw new InvalidOperationException($"Unable to parse method definition for '{CurrentLine}'");
 
-        method.CodeType = match.Groups["return_type"].Value;
-        method.CodeName = match.Groups["method_name"].Value;
+        method.ReturnType = match.Groups["return_type"].Value;
+        method.MethodName = match.Groups["method_name"].Value;
 
         if (CurrentLine.Contains("ISingleResult"))
         {
@@ -55,6 +55,6 @@ internal class MethodParser : SettingsParser<ContextDefinition>
             _parameterParser.Parse(method, reader);
 
         // add the fully hydrated method to the definition
-        definition.Methods.Add(method);
+        definition.RepositoryMethods.Add(method);
     }
 }

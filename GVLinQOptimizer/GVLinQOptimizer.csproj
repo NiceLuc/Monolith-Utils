@@ -12,6 +12,7 @@
     <None Remove="Renderers\Templates\IRepository.hbs" />
     <None Remove="Renderers\Templates\IRepositorySettings.hbs" />
     <None Remove="Renderers\Templates\Repository.hbs" />
+    <None Remove="Renderers\Templates\RepositoryMethodNonQuery.hbs" />
   </ItemGroup>
 
   <ItemGroup>
@@ -33,10 +34,10 @@
     <EmbeddedResource Include="Renderers\Templates\IRepository.hbs">
       <CopyToOutputDirectory>Never</CopyToOutputDirectory>
     </EmbeddedResource>
-    <EmbeddedResource Include="Renderers\Templates\RepositoryMethodQuerySingle.hbs">
+    <EmbeddedResource Include="Renderers\Templates\RepositoryMethodNonQuery.hbs">
       <CopyToOutputDirectory>Never</CopyToOutputDirectory>
     </EmbeddedResource>
-    <EmbeddedResource Include="Renderers\Templates\RepositoryMethodNonQuery.hbs">
+    <EmbeddedResource Include="Renderers\Templates\RepositoryMethodQuerySingle.hbs">
       <CopyToOutputDirectory>Never</CopyToOutputDirectory>
     </EmbeddedResource>
     <EmbeddedResource Include="Renderers\Templates\RepositoryMethodQueryMany.hbs">
