@@ -1,5 +1,7 @@
 ﻿using GVLinQOptimizer.Parsers;
+using GVLinQOptimizer.Renders;
 using Microsoft.Extensions.DependencyInjection;
+using Mustache;
 
 namespace GVLinQOptimizer.DependencyInjection
 {
@@ -21,6 +23,7 @@ namespace GVLinQOptimizer.DependencyInjection
 
         public static void AddHandlebarsTemplateSupport(this IServiceCollection services)
         {
+            services.AddSingleton<FormatCompiler>();
             services.AddSingleton<IContextDefinitionSerializer, ContextDefinitionSerializer>();
             services.AddSingleton<ITemplateEngine, HandlebarsTemplateEngine>();
         }

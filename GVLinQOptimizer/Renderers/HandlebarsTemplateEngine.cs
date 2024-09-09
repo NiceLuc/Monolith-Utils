@@ -1,15 +1,16 @@
 ﻿using Mustache;
 
-namespace GVLinQOptimizer;
+namespace GVLinQOptimizer.Renders;
 
 public class HandlebarsTemplateEngine : ITemplateEngine
 {
     private readonly IDictionary<string, string> _resourceMap;
-    private readonly FormatCompiler _compiler = new();
+    private readonly FormatCompiler _compiler;
 
-    public HandlebarsTemplateEngine(IDictionary<string, string>? resourceMap = null)
+    public HandlebarsTemplateEngine(FormatCompiler compiler)
     {
-        _resourceMap = resourceMap ?? new Dictionary<string, string>();
+        _compiler = compiler;
+        _resourceMap = new Dictionary<string, string>();
     }
 
     public async Task<string> ProcessAsync(string resourceFileName, object data, CancellationToken cancellationToken)

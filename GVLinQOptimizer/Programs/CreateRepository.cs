@@ -1,4 +1,5 @@
-﻿using GVLinQOptimizer.TemplateModels;
+﻿using GVLinQOptimizer.Renders;
+using GVLinQOptimizer.Renders.TemplateModels;
 using MediatR;
 
 namespace GVLinQOptimizer.Programs;
@@ -24,16 +25,16 @@ public sealed class CreateRepository
 
         public async Task<string> Handle(Request request, CancellationToken cancellationToken)
         {
-            var definition = await _definitionSerializer.DeserializeAsync(request.SettingsFilePath, cancellationToken);
-
             if (!Directory.Exists(request.OutputDirectory))
                 Directory.CreateDirectory(request.OutputDirectory);
+
+            var definition = await _definitionSerializer.DeserializeAsync(request.SettingsFilePath, cancellationToken);
 
             var result = await _templateEngine.ProcessAsync("IRepositorySettings.hbs", definition, cancellationToken);
             var filePath = Path.Combine(request.OutputDirectory, $"I{definition.ContextName}RepositorySettings.cs");
             await File.WriteAllTextAsync(filePath, result, cancellationToken);
 
-            result = await _templateEngine.ProcessAsync("ContextRepositorySettings.hbs", definition, cancellationToken);
+            result = await _templateEngine.ProcessAsync("RepositorySettings.hbs", definition, cancellationToken);
             filePath = Path.Combine(request.OutputDirectory, $"{definition.ContextName}RepositorySettings.cs");
             await File.WriteAllTextAsync(filePath, result, cancellationToken);
 
@@ -42,21 +43,21 @@ public sealed class CreateRepository
             await File.WriteAllTextAsync(filePath, result, cancellationToken);
 
             var repository = await CreateRepositoryContextAsync(definition, cancellationToken);
-            result = await _templateEngine.ProcessAsync("ContextRepository.hbs", repository, cancellationToken);
+            result = await _templateEngine.ProcessAsync("Repository.hbs", repository, cancellationToken);
             filePath = Path.Combine(request.OutputDirectory, $"{definition.ContextName}Repository.cs");
             await File.WriteAllTextAsync(filePath, result, cancellationToken);
 
             return request.OutputDirectory;
         }
 
-        private async Task<RepositoryContext> CreateRepositoryContextAsync(ContextDefinition definition, CancellationToken cancellationToken)
+        private async Task<RepositoryViewModel> CreateRepositoryContextAsync(ContextDefinition definition, CancellationToken cancellationToken)
         {
-            var context = new RepositoryContext(definition);
+            var context = new RepositoryViewModel(definition);
 
             foreach(var method in definition.Methods)
             {
                 var properties = definition.Types.FirstOrDefault(t => t.ClassName == method.CodeType)?.Properties;
-                var methodContext = new MethodContext
+                var methodContext = new MethodViewModel
                 {
                     CodeName = method.CodeName,
                     DatabaseName = method.DatabaseName,
