@@ -60,7 +60,7 @@ void GenerateUnitTestFile(CreateUnitTestsOptions options)
 {
     SendRequest(new CreateUnitTests.Request
     {
-        SettingsFilePath = options.DesignerFilePath,
+        SettingsFilePath = options.SettingsFilePath,
         OutputDirectory = options.OutputDirectory
     });
 }
