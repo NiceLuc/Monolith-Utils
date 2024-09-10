@@ -35,17 +35,8 @@ internal class ParametersParser : SettingsParser<MethodDefinition>
 
     #region Private Methods
 
-    private void CleanUpSystemTypes(ParameterDefinition parameter)
-    {
-        var nullableMatch = _nullableRegex.Match(parameter.ParameterType);
-        if (nullableMatch.Success)
-        {
-            parameter.ParameterType = nullableMatch.Groups["nullable_type"].Value + "?";
-        }
-
-        if (parameter.ParameterType.StartsWith("System."))
-            parameter.ParameterType = parameter.ParameterType.Replace("System.", "");
-    }
+    private static void SetParameterDirection(ParameterDefinition parameter) 
+        => parameter.ParameterDirection = parameter.IsRef ? "Output" : "Input";
 
     private static void ExtractDatabaseStringLength(ParameterDefinition parameter)
     {
@@ -57,21 +48,16 @@ internal class ParametersParser : SettingsParser<MethodDefinition>
         }
     }
 
-    private static void SetParameterDirection(ParameterDefinition parameter)
+    private void CleanUpSystemTypes(ParameterDefinition parameter)
     {
-        if (!parameter.IsRef)
+        var nullableMatch = _nullableRegex.Match(parameter.ParameterType);
+        if (nullableMatch.Success)
         {
-            parameter.ParameterDirection = "Input";
-            return;
+            parameter.ParameterType = nullableMatch.Groups["nullable_type"].Value + "?";
         }
 
-        if (parameter.ParameterName == "rowCount")
-        {
-            parameter.ParameterDirection = "ReturnValue";
-            return;
-        }
-
-        parameter.ParameterDirection = "Output";
+        if (parameter.ParameterType.StartsWith("System."))
+            parameter.ParameterType = parameter.ParameterType.Replace("System.", "");
     }
 
     #endregion

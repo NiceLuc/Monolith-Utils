@@ -1,28 +1,24 @@
 public {{ReturnType}} {{MethodName}}({{#each Parameters}}{{#if @index}}, {{/if}}{{#if IsRef}}ref {{/if}}{{ParameterType}} {{ParameterName}}{{/each}}){{#newline}}
         { {{#newline}}
-            var result = default({{ReturnType}});{{#newline}}
             using (var query = CreateQuery()){{#newline}}
             { {{#newline}}
                 query.CommandType = CommandType.StoredProcedure;{{#newline}}
-                query.SQL = "{{DatabaseName}}";{{#newline}}
-{{#each Parameters}}
-{{#if DatabaseLength}}
-                query.AddParameter("@{{SprocParameterName}}", SqlDbType.{{SqlDbType}}, {{ParameterName}}, ParameterDirection.{{ParameterDirection}}, {{DatabaseLength}});{{#newline}}
+                query.SQL = "{{SprocName}}";{{#newline}}
+{{#each SprocParameters}}
+{{#if ShouldCaptureResult}}
+                var {{MethodParameterName}}Param = query.AddParameter("@{{SprocParameterName}}", SqlDbType.{{SprocParameterType}}, {{MethodParameterName}}, ParameterDirection.{{SprocParameterDirection}}{{#if HasStringLength}}, {{SprocParameterLength}}{{/if}});{{#newline}}
 {{#else}}
-                query.AddParameter("@{{SprocParameterName}}", SqlDbType.{{SqlDbType}}, {{ParameterName}});{{#newline}}
+{{#if IsInputParameter}}
+{{#if HasStringLength}}
+                query.AddParameter("@{{SprocParameterName}}", SqlDbType.{{SprocParameterType}}, {{MethodParameterName}}, ParameterDirection.Input, {{SprocParameterLength}});{{#newline}}
+{{#else}}
+                query.AddParameter("@{{SprocParameterName}}", SqlDbType.{{SprocParameterType}}, {{MethodParameterName}});{{#newline}}
+{{/if}}
+{{#else}}
+                query.AddParameter("@{{SprocParameterName}}", SqlDbType.{{SprocParameterType}}, {{MethodParameterName}}, ParameterDirection.{{SprocParameterDirection}}{{#if HasStringLength}}, {{SprocParameterLength}}{{/if}});{{#newline}}
+{{/if}}
 {{/if}}
 {{/each}}
-                if (query.Read()){{#newline}}
-                { {{#newline}}
-                    result = new {{ReturnType}}{{#newline}}
-                    { {{#newline}}
-{{#each Properties}}
-                        {{PropertyName}} = query.Value("{{PropertyName}}"),{{#newline}}
-{{/each}}
-                    };{{#newline}}
-{{#else}}
-                } {{#newline}}
-            } {{#newline}}
-            {{#newline}}
-            return result;{{#newline}}
+                return query.ExecuteNonQuery();{{#newline}}
+            }{{#newline}}
         }

@@ -34,7 +34,7 @@ public IEnumerable<{{ReturnType}}> {{MethodName}}({{#each Parameters}}{{#if @ind
                 } {{#newline}}
 {{#if HasOutputParameters}}
                 {{#newline}}
-                query.Close();
+                query.Close();{{#newline}}
 {{#each SprocParameters}}
 {{#if ShouldCaptureResult}}
                 {{MethodParameterName}} = ({{MethodParameterType}}) {{MethodParameterName}}Param.Value;{{#newline}}

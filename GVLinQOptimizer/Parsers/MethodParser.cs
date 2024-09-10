@@ -9,7 +9,7 @@ internal class MethodParser : SettingsParser<ContextDefinition>
         RegexOptions.Singleline);
 
     private static readonly Regex _methodRegex = new(
-        @"public (ISingleResult\<(?<return_type>.+?)\>|(?<return_type>.+?))\s(?<method_name>.+?)\(", 
+        @"(public|protected internal) (ISingleResult\<(?<return_type>.+?)\>|(?<return_type>.+?))\s(?<method_name>.+?)\(", 
         RegexOptions.Singleline);
 
     private readonly IParser<MethodDefinition> _parameterParser;
