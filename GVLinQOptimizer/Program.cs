@@ -42,7 +42,7 @@ void GenerateDTOTypes(ExtractDTOOptions options)
     SendRequest(new ExtractDTOs.Request
     {
         SettingsFilePath = options.SettingsFilePath,
-        OutputFileOrDirectory = options.OutputFileOrDirectory,
+        OutputDirectory = options.OutputDirectory,
     });
 }
 

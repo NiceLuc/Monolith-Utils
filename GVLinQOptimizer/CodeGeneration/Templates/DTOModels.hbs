@@ -1,0 +1,12 @@
+namespace {{Namespace}}{{#newline}}
+{ {{#newline}}
+{{#each DTOModels}}
+	public class {{ClassName}}{{#newline}}
+	{ {{#newline}} 
+{{#each Properties}}
+		public {{PropertyType}} {{PropertyName}} { get; set; }{{#newline}}
+{{/each}}
+	} {{#newline}}
+	{{#newline}}
+{{/each}}
+}

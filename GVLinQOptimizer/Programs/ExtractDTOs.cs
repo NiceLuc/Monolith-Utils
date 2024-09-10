@@ -1,4 +1,6 @@
-﻿using MediatR;
+﻿using GVLinQOptimizer.CodeGeneration;
+using GVLinQOptimizer.CodeGeneration.Engine;
+using MediatR;
 
 namespace GVLinQOptimizer.Programs;
 
@@ -7,14 +9,29 @@ public sealed class ExtractDTOs
     public class Request : IRequest<string>
     {
         public string SettingsFilePath { get; set; }
-        public string OutputFileOrDirectory { get; set; }
+        public string OutputDirectory { get; set; }
     }
 
-    public class Handler : IRequestHandler<Request, string>
+    public class Handler(
+        IContextDefinitionSerializer definitionSerializer,
+        ITemplateEngine templateEngine,
+        IRendererProvider<ContextDefinition> provider) 
+        : IRequestHandler<Request, string>
     {
-        public Task<string> Handle(Request request, CancellationToken cancellationToken)
+        public async Task<string> Handle(Request request, CancellationToken cancellationToken)
         {
-            throw new NotImplementedException();
+            if (!Directory.Exists(request.OutputDirectory))
+                Directory.CreateDirectory(request.OutputDirectory);
+
+            var definition = await definitionSerializer.DeserializeAsync(request.SettingsFilePath, cancellationToken);
+
+            var renderer = provider.GetRenderer("DTOModels");
+            var generatedCode = await renderer.RenderAsync(templateEngine, definition, cancellationToken);
+            var fileName = string.Format(renderer.FileNameFormat, definition.ContextName);
+            var filePath = Path.Combine(request.OutputDirectory, fileName);
+            await File.WriteAllTextAsync(filePath, generatedCode, cancellationToken);
+
+            return request.OutputDirectory;
         }
 
         private string GenerateDTOClass(string MetaFile)
