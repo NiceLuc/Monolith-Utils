@@ -22,7 +22,9 @@ namespace {{Namespace}}{{#newline}}
         {{#newline}}
 {{/each}}
         #region Primary Methods{{#newline}}
+        {{#newline}}
         private ISQLQueryEx CreateQuery() => _factory.CreateEx(_settings.ConnectionString);{{#newline}}
+        {{#newline}}
         #endregion{{#newline}}
 	} {{#newline}}
 }

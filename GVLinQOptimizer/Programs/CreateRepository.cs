@@ -1,53 +1,64 @@
-﻿using GVLinQOptimizer.Renderers;
-using GVLinQOptimizer.Renderers.ViewModels;
+﻿using GVLinQOptimizer.CodeGeneration;
+using GVLinQOptimizer.CodeGeneration.Engine;
+using GVLinQOptimizer.CodeGeneration.Renderers;
 using MediatR;
-using Mustache;
 
 namespace GVLinQOptimizer.Programs;
 
-public sealed class CreateRepository 
+public sealed class CreateRepository
 {
     public class Request : IRequest<string>
     {
-        public string SettingsFilePath { get; set; }
-        public string OutputDirectory { get; set; }
+        public string SettingsFilePath { get; init; }
+        public string OutputDirectory { get; init; }
+        public string MethodName { get; init; }
     }
 
-    public class Handler : IRequestHandler<Request, string>
+    public class Handler(
+        IContextDefinitionSerializer definitionSerializer,
+        ITemplateEngine templateEngine,
+        IRendererProvider<ContextDefinition> provider) 
+        : IRequestHandler<Request, string>
     {
-        private readonly IContextDefinitionSerializer _definitionSerializer;
-        private readonly IRepositoryRendererProvider _provider;
-        private readonly ITemplateEngine _engine;
-
-        public Handler(IContextDefinitionSerializer definitionSerializer, ITemplateEngine templateEngine, IRepositoryRendererProvider provider)
-        {
-            _definitionSerializer = definitionSerializer;
-            _engine = templateEngine;
-            _provider = provider;
-        }
-
         public async Task<string> Handle(Request request, CancellationToken cancellationToken)
         {
             if (!Directory.Exists(request.OutputDirectory))
                 Directory.CreateDirectory(request.OutputDirectory);
 
-            var definition = await _definitionSerializer.DeserializeAsync(request.SettingsFilePath, cancellationToken);
+            var definition = await definitionSerializer.DeserializeAsync(request.SettingsFilePath, cancellationToken);
+            if (!string.IsNullOrEmpty(request.MethodName)) 
+                FilterMethodsAndDTOModels(definition, request.MethodName);
+
+            await ProcessTemplate(provider.GetRenderer("RepositorySettingsInterface"));
+            await ProcessTemplate(provider.GetRenderer("RepositoryInterface"));
+            await ProcessTemplate(provider.GetRenderer("RepositorySettings"));
+            await ProcessTemplate(provider.GetRenderer("Repository"));
+            await ProcessTemplate(provider.GetRenderer("DataContext"));
+
+            return request.OutputDirectory;
 
             async Task ProcessTemplate(IRenderer<ContextDefinition> renderer)
             {
-                var data = await renderer.ToViewModelAsync(_engine, definition, cancellationToken);
-                var generatedCode = await _engine.ProcessAsync(renderer.ResourceFileName, data, cancellationToken);
-                var filePath = Path.Combine(request.OutputDirectory, string.Format(renderer.FileNameFormat, definition.ContextName));
+                var generatedCode = await renderer.RenderAsync(templateEngine, definition, cancellationToken);
+                var fileName = string.Format(renderer.FileNameFormat, definition.ContextName);
+                var filePath = Path.Combine(request.OutputDirectory, fileName);
                 await File.WriteAllTextAsync(filePath, generatedCode, cancellationToken);
             }
+        }
 
-            await ProcessTemplate(_provider.GetIRepositorySettingsRendererAsync());
-            await ProcessTemplate(_provider.GetIRepositoryRendererAsync());
+        private static void FilterMethodsAndDTOModels(ContextDefinition definition, string methodName)
+        {
+            var method = definition.RepositoryMethods.FirstOrDefault(m =>
+                m.MethodName.Equals(methodName, StringComparison.InvariantCultureIgnoreCase));
 
-            await ProcessTemplate(_provider.GetRepositorySettingsRendererAsync());
-            await ProcessTemplate(_provider.GetRepositoryRendererAsync());
+            if (method == null)
+                throw new InvalidOperationException($"Method '{methodName}' not found.");
 
-            return request.OutputDirectory;
+            var model = definition.DTOModels.FirstOrDefault(m =>
+                m.ClassName.Equals(method.ReturnType, StringComparison.InvariantCultureIgnoreCase));
+
+            definition.RepositoryMethods = [method];
+            definition.DTOModels = model == null ? [] : [model];
         }
 
         private string GetResourceName(MethodDefinition method)
@@ -91,7 +102,7 @@ public sealed class CreateRepository
                         FirstLine += "," + (Param[1].ToLower().Contains("varchar") ? "string" : Param[1].ToLower()) +
                                      " " + Param[0];
                         ParamList.Add("query.AddParameter(" + (Char) 34 + (char) 64 + Param[0] + (Char) 34 +
-                                      ",SqlDbType." + (Param[1].ToLower().Contains("varchar") ? "nvarchar" : Param[1]) +
+                                      ",SprocParameterType." + (Param[1].ToLower().Contains("varchar") ? "nvarchar" : Param[1]) +
                                       "," + Param[0] + ")");
 
                         //Console.WriteLine(Parameter);
@@ -300,6 +311,5 @@ public sealed class CreateRepository
             return ResultSet;
 
         }
-
     }
 }

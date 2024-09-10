@@ -1,5 +1,7 @@
-﻿using GVLinQOptimizer.Parsers;
-using GVLinQOptimizer.Renderers;
+﻿using GVLinQOptimizer.CodeGeneration;
+using GVLinQOptimizer.CodeGeneration.Engine;
+using GVLinQOptimizer.CodeGeneration.Renderers;
+using GVLinQOptimizer.Parsers;
 using Microsoft.Extensions.DependencyInjection;
 using Mustache;
 
@@ -24,15 +26,22 @@ namespace GVLinQOptimizer.DependencyInjection
         public static void AddHandlebarsTemplateSupport(this IServiceCollection services)
         {
             services.AddSingleton<FormatCompiler>();
+            services.AddSingleton<ITemplateProvider, TemplateProvider>();
+
+            services.AddSingleton<IContextDefinitionSerializer, ContextDefinitionSerializer>();
+            services.AddSingleton<ITemplateEngine, HandlebarsTemplateEngine>();
+
+            // used for resolving renderer instances
             services.AddSingleton<IRenderer<ContextDefinition>, RepositorySettingsInterfaceRenderer>();
             services.AddSingleton<IRenderer<ContextDefinition>, RepositorySettingsRenderer>();
             services.AddSingleton<IRenderer<ContextDefinition>, RepositoryInterfaceRenderer>();
             services.AddSingleton<IRenderer<ContextDefinition>, RepositoryRenderer>();
-            services.AddSingleton<IRenderer<MethodDefinition>, RepositoryMethodRenderer>();
-            services.AddSingleton<IRepositoryRendererProvider, RepositoryRendererProvider>();
+            services.AddSingleton<IRenderer<ContextDefinition>, DataContextRenderer>();
+            services.AddSingleton<IRendererProvider<ContextDefinition>, RepositoryRendererProvider>();
 
-            services.AddSingleton<IContextDefinitionSerializer, ContextDefinitionSerializer>();
-            services.AddSingleton<ITemplateEngine, HandlebarsTemplateEngine>();
+            // used for resolving method renderers
+            services.AddSingleton<IRenderer<MethodDefinition>, RepositoryMethodRenderer>();
+            services.AddSingleton<IRendererProvider<MethodDefinition>, RepositoryMethodRendererProvider>();
         }
     }
 }

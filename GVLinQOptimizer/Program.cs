@@ -51,7 +51,8 @@ void GenerateRepositoryClass(CreateRepositoryOptions options)
     SendRequest(new CreateRepository.Request
     {
         SettingsFilePath = options.SettingsFilePath,
-        OutputDirectory = options.OutputDirectory
+        OutputDirectory = options.OutputDirectory,
+        MethodName = options.MethodName
     });
 }
 

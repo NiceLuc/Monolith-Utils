@@ -1,4 +1,4 @@
-﻿<Project Sdk="Microsoft.NET.Sdk">
+<Project Sdk="Microsoft.NET.Sdk">
 
   <PropertyGroup>
     <OutputType>Exe</OutputType>
@@ -9,10 +9,12 @@
   </PropertyGroup>
 
   <ItemGroup>
-    <None Remove="Renderers\Templates\IRepository.hbs" />
-    <None Remove="Renderers\Templates\IRepositorySettings.hbs" />
-    <None Remove="Renderers\Templates\Repository.hbs" />
-    <None Remove="Renderers\Templates\RepositoryMethodNonQuery.hbs" />
+    <None Remove="CodeGeneration\Templates\DataContext.hbs" />
+    <None Remove="CodeGeneration\Templates\IRepository.hbs" />
+    <None Remove="CodeGeneration\Templates\IRepositorySettings.hbs" />
+    <None Remove="CodeGeneration\Templates\Repository.hbs" />
+    <None Remove="CodeGeneration\Templates\RepositoryMethodNonQuery.hbs" />
+    <None Remove="CodeGeneration\Templates\RepositorySettings.hbs" />
   </ItemGroup>
 
   <ItemGroup>
@@ -25,24 +27,29 @@
   </ItemGroup>
 
   <ItemGroup>
-    <EmbeddedResource Include="Renderers\Templates\Repository.hbs">
+    <EmbeddedResource Include="CodeGeneration\Templates\DataContext.hbs">
       <CopyToOutputDirectory>Never</CopyToOutputDirectory>
     </EmbeddedResource>
-    <EmbeddedResource Include="Renderers\Templates\IRepositorySettings.hbs">
+    <EmbeddedResource Include="CodeGeneration\Templates\Repository.hbs">
       <CopyToOutputDirectory>Never</CopyToOutputDirectory>
     </EmbeddedResource>
-    <EmbeddedResource Include="Renderers\Templates\IRepository.hbs">
+    <EmbeddedResource Include="CodeGeneration\Templates\IRepositorySettings.hbs">
       <CopyToOutputDirectory>Never</CopyToOutputDirectory>
     </EmbeddedResource>
-    <EmbeddedResource Include="Renderers\Templates\RepositoryMethodNonQuery.hbs">
+    <EmbeddedResource Include="CodeGeneration\Templates\IRepository.hbs">
       <CopyToOutputDirectory>Never</CopyToOutputDirectory>
     </EmbeddedResource>
-    <EmbeddedResource Include="Renderers\Templates\RepositoryMethodQuerySingle.hbs">
+    <EmbeddedResource Include="CodeGeneration\Templates\RepositoryMethodNonQuery.hbs">
       <CopyToOutputDirectory>Never</CopyToOutputDirectory>
     </EmbeddedResource>
-    <EmbeddedResource Include="Renderers\Templates\RepositoryMethodQueryMany.hbs">
+    <EmbeddedResource Include="CodeGeneration\Templates\RepositoryMethodQuerySingle.hbs">
       <CopyToOutputDirectory>Never</CopyToOutputDirectory>
     </EmbeddedResource>
+    <EmbeddedResource Include="CodeGeneration\Templates\RepositoryMethodQueryMany.hbs">
+      <CopyToOutputDirectory>Never</CopyToOutputDirectory>
+    </EmbeddedResource>
+    <EmbeddedResource Include="CodeGeneration\Templates\RepositorySettings.hbs" />
   </ItemGroup>
+
 
 </Project>

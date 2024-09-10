@@ -1,4 +1,4 @@
-﻿namespace GVLinQOptimizer.Renderers.ViewModels;
+﻿namespace GVLinQOptimizer.CodeGeneration.ViewModels;
 
 public class RepositoryViewModel
 {

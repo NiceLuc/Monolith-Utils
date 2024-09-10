@@ -10,4 +10,7 @@ internal class CreateRepositoryOptions
 
     [Option('o', "output", Required = true, HelpText = "The output directory.")]
     public string OutputDirectory { get; set; }
+
+    [Option('m', "method", HelpText = "Only generate code for a single method.")]
+    public string MethodName { get; set; }
 }

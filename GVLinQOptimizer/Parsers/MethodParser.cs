@@ -33,7 +33,7 @@ internal class MethodParser : SettingsParser<ContextDefinition>
 
         match = _methodRegex.Match(CurrentLine);
         if (!match.Success)
-            throw new InvalidOperationException($"Unable to parse method definition for '{CurrentLine}'");
+            throw new InvalidOperationException($"Unable to parse method definition for '{method.DatabaseName}'");
 
         method.ReturnType = match.Groups["return_type"].Value;
         method.MethodName = match.Groups["method_name"].Value;

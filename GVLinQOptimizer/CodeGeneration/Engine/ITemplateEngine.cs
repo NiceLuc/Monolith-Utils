@@ -1,4 +1,4 @@
-﻿namespace GVLinQOptimizer.Renderers;
+﻿namespace GVLinQOptimizer.CodeGeneration.Engine;
 
 public interface ITemplateEngine
 {
