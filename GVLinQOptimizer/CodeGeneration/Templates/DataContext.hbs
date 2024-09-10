@@ -1,29 +1,32 @@
-public class {{ContextName}}DataContext : IDisposable{{#newline}}
+namespace {{Namespace}}{{#newline}}
 { {{#newline}}
-    private static readonly Lazy<I{{ContextName}}Repository> _lazy ={{#newline}}
-        new Lazy<I{{ContextName}}Repository>( () =>{{#newline}}
-        {{{#newline}}
-            var connectionStrings = new ConnectionStrings();{{#newline}}
-            return new {{ContextName}}Repository({{#newline}}
-                new {{ContextName}}RepositorySettings(connectionStrings),{{#newline}}
-                new SQLQueryFactory());{{#newline}}
-        });{{#newline}}{{#newline}}
-    private readonly I{{ContextName}}Repository _repository;{{#newline}}{{#newline}}
-    public {{ContextName}}DataContext(I{{ContextName}}Repository repository = null){{#newline}}
+    public class {{ContextName}}DataContext : IDisposable{{#newline}}
     { {{#newline}}
-        _repository = repository;{{#newline}}
-    }{{#newline}}
-    {{#newline}}
-    internal I{{ContextName}}Repository Repository{{#newline}}
-    {{{#newline}}
-        set => _repository = value;{{#newline}}
-        get => _repository ?? (_repository = _lazy.Value);{{#newline}}
-    }{{#newline}}{{#newline}}
-    public T SafeExec<T>(Func<I{{ContextName}}Repository, T> func) => func.Invoke(Repository);{{#newline}}
-    public void SafeExec(Action<I{{ContextName}}Repository> action) => action.Invoke(Repository);{{#newline}}
-    {{#newline}}
-    public void Dispose(){{#newline}}
-    {{{#newline}}
-        // clean up{{#newline}}
+        private static readonly Lazy<I{{ContextName}}Repository> _lazy ={{#newline}}
+            new Lazy<I{{ContextName}}Repository>( () =>{{#newline}}
+            {{{#newline}}
+                var connectionStrings = new ConnectionStrings();{{#newline}}
+                return new {{ContextName}}Repository({{#newline}}
+                    new {{ContextName}}RepositorySettings(connectionStrings),{{#newline}}
+                    new SQLQueryFactory());{{#newline}}
+            });{{#newline}}{{#newline}}
+        private readonly I{{ContextName}}Repository _repository;{{#newline}}{{#newline}}
+        public {{ContextName}}DataContext(I{{ContextName}}Repository repository = null){{#newline}}
+        { {{#newline}}
+            _repository = repository;{{#newline}}
+        }{{#newline}}
+        {{#newline}}
+        internal I{{ContextName}}Repository Repository{{#newline}}
+        {{{#newline}}
+            set => _repository = value;{{#newline}}
+            get => _repository ?? (_repository = _lazy.Value);{{#newline}}
+        }{{#newline}}{{#newline}}
+        public T SafeExec<T>(Func<I{{ContextName}}Repository, T> func) => func.Invoke(Repository);{{#newline}}
+        public void SafeExec(Action<I{{ContextName}}Repository> action) => action.Invoke(Repository);{{#newline}}
+        {{#newline}}
+        public void Dispose(){{#newline}}
+        {{{#newline}}
+            // clean up{{#newline}}
+        }{{#newline}}
     }{{#newline}}
 }

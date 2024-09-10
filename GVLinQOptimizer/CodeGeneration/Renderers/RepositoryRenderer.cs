@@ -24,6 +24,8 @@ internal class RepositoryRenderer : BaseRenderer<ContextDefinition>
                 SprocParameters = GetSprocParameters(method),
             };
 
+            // todo: add support for ReturnValue parameter when NonQuery && MethodName.Contains("Insert")
+
             var resourceFileName = GetResourceFileName(methodViewModel, data);
             var code = await engine.ProcessAsync(resourceFileName, methodViewModel, cancellationToken);
 
