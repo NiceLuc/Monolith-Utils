@@ -1,6 +1,6 @@
 ﻿using Mustache;
 
-namespace GVLinQOptimizer.CodeGeneration.Engine;
+namespace Delinq.CodeGeneration.Engine;
 
 internal class HandlebarsTemplateEngine(FormatCompiler compiler, ITemplateProvider provider) : ITemplateEngine
 {

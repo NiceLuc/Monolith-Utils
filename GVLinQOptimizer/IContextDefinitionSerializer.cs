@@ -1,4 +1,4 @@
-﻿namespace GVLinQOptimizer;
+﻿namespace Delinq;
 
 public interface IContextDefinitionSerializer
 {

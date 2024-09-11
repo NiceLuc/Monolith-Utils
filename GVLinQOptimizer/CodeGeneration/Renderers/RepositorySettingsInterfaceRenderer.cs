@@ -1,6 +1,6 @@
-﻿using GVLinQOptimizer.CodeGeneration.Engine;
+﻿using Delinq.CodeGeneration.Engine;
 
-namespace GVLinQOptimizer.CodeGeneration.Renderers;
+namespace Delinq.CodeGeneration.Renderers;
 
 [HandlebarsTemplateModel("RepositorySettingsInterface", "IRepositorySettings.hbs", "I{0}RepositorySettings.cs")]
 internal class RepositorySettingsInterfaceRenderer : BaseRenderer<ContextDefinition>;

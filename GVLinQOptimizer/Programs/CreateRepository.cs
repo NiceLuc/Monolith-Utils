@@ -1,9 +1,8 @@
-﻿using GVLinQOptimizer.CodeGeneration;
-using GVLinQOptimizer.CodeGeneration.Engine;
-using GVLinQOptimizer.CodeGeneration.Renderers;
+﻿using Delinq.CodeGeneration;
+using Delinq.CodeGeneration.Engine;
 using MediatR;
 
-namespace GVLinQOptimizer.Programs;
+namespace Delinq.Programs;
 
 public sealed class CreateRepository
 {

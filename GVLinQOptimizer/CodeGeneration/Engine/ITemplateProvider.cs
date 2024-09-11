@@ -1,4 +1,4 @@
-﻿namespace GVLinQOptimizer.CodeGeneration.Engine;
+﻿namespace Delinq.CodeGeneration.Engine;
 
 public interface ITemplateProvider
 {

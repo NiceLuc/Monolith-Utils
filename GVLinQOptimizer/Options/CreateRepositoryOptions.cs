@@ -1,6 +1,6 @@
 ﻿using CommandLine;
 
-namespace GVLinQOptimizer.Options;
+namespace Delinq.Options;
 
 [Verb("repo", HelpText = "Creates various files required for a repository based approach from an existing designer file.")]
 internal class CreateRepositoryOptions

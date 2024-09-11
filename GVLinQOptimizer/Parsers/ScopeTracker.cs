@@ -1,4 +1,4 @@
-﻿namespace GVLinQOptimizer.Parsers;
+﻿namespace Delinq.Parsers;
 
 internal class ScopeTracker
 {

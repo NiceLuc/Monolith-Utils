@@ -1,4 +1,4 @@
-﻿namespace GVLinQOptimizer.CodeGeneration.Engine;
+﻿namespace Delinq.CodeGeneration.Engine;
 
 internal class HandlebarsTemplateModelAttribute(string key, 
     string? resourceFileName = null, string? fileNameFormat = null) : Attribute

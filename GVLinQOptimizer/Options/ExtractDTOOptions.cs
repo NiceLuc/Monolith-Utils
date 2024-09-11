@@ -1,6 +1,6 @@
 ﻿using CommandLine;
 
-namespace GVLinQOptimizer.Options;
+namespace Delinq.Options;
 
 [Verb("dtos", HelpText = "Extract DTOs from settings file.")]
 internal class ExtractDTOOptions

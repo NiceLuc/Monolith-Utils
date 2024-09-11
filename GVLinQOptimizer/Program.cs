@@ -1,9 +1,9 @@
 ﻿using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 using CommandLine;
-using GVLinQOptimizer.DependencyInjection;
-using GVLinQOptimizer.Options;
-using GVLinQOptimizer.Programs;
+using Delinq.DependencyInjection;
+using Delinq.Options;
+using Delinq.Programs;
 using MediatR;
 
 var builder = Host.CreateApplicationBuilder(args);

@@ -1,6 +1,6 @@
-﻿using GVLinQOptimizer.CodeGeneration.Renderers;
+﻿using Delinq.CodeGeneration.Renderers;
 
-namespace GVLinQOptimizer.CodeGeneration;
+namespace Delinq.CodeGeneration;
 
 internal class RepositoryRendererProvider(IEnumerable<IRenderer<ContextDefinition>> renders) 
     : BaseRendererProvider<ContextDefinition>(renders);

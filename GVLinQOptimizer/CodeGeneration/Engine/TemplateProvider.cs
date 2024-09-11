@@ -1,4 +1,4 @@
-﻿namespace GVLinQOptimizer.CodeGeneration.Engine;
+﻿namespace Delinq.CodeGeneration.Engine;
 
 internal class TemplateProvider(IDictionary<string, string>? resourceMap = null) : ITemplateProvider
 {

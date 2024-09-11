@@ -1,4 +1,4 @@
-﻿namespace GVLinQOptimizer.CodeGeneration.ViewModels;
+﻿namespace Delinq.CodeGeneration.ViewModels;
 
 public class RepositoryMethodViewModel
 {

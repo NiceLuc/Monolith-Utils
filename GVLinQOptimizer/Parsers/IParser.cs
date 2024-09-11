@@ -1,4 +1,4 @@
-﻿namespace GVLinQOptimizer.Parsers;
+﻿namespace Delinq.Parsers;
 
 public interface IParser<in T> where T : class
 {

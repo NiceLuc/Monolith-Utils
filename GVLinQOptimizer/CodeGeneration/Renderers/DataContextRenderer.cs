@@ -1,6 +1,6 @@
-﻿using GVLinQOptimizer.CodeGeneration.Engine;
+﻿using Delinq.CodeGeneration.Engine;
 
-namespace GVLinQOptimizer.CodeGeneration.Renderers;
+namespace Delinq.CodeGeneration.Renderers;
 
 [HandlebarsTemplateModel("DataContext", "DataContext.hbs", "{0}DataContext.cs")]
 internal class DataContextRenderer : BaseRenderer<ContextDefinition>;

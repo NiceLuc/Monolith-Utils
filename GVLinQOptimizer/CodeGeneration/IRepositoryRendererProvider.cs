@@ -1,6 +1,6 @@
-﻿using GVLinQOptimizer.CodeGeneration.Renderers;
+﻿using Delinq.CodeGeneration.Renderers;
 
-namespace GVLinQOptimizer.CodeGeneration;
+namespace Delinq.CodeGeneration;
 
 public interface IRendererProvider<T>
 {

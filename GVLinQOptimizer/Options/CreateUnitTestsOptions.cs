@@ -1,6 +1,6 @@
 ﻿using CommandLine;
 
-namespace GVLinQOptimizer.Options;
+namespace Delinq.Options;
 
 [Verb("tests", HelpText = "Create unit tests")]
 internal class CreateUnitTestsOptions

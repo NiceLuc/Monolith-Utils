@@ -1,6 +1,6 @@
 ﻿using CommandLine;
 
-namespace GVLinQOptimizer.Options;
+namespace Delinq.Options;
 
 [Verb("init", HelpText = "Initialize settings file from designer file.")]
 internal class InitializeOptions

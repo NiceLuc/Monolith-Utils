@@ -1,6 +1,6 @@
 ﻿using System.Text.RegularExpressions;
 
-namespace GVLinQOptimizer.Parsers;
+namespace Delinq.Parsers;
 
 internal class DTOClassParser : SettingsParser<ContextDefinition>
 {

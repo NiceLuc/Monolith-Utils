@@ -1,7 +1,7 @@
-﻿using GVLinQOptimizer.Parsers;
+﻿using Delinq.Parsers;
 using MediatR;
 
-namespace GVLinQOptimizer.Programs;
+namespace Delinq.Programs;
 
 public sealed class Initialize
 {

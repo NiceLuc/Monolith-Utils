@@ -1,11 +1,11 @@
-﻿using GVLinQOptimizer.CodeGeneration;
-using GVLinQOptimizer.CodeGeneration.Engine;
-using GVLinQOptimizer.CodeGeneration.Renderers;
-using GVLinQOptimizer.Parsers;
+﻿using Delinq.CodeGeneration;
+using Delinq.CodeGeneration.Engine;
+using Delinq.CodeGeneration.Renderers;
+using Delinq.Parsers;
 using Microsoft.Extensions.DependencyInjection;
 using Mustache;
 
-namespace GVLinQOptimizer.DependencyInjection
+namespace Delinq.DependencyInjection
 {
     internal static class Extensions
     {

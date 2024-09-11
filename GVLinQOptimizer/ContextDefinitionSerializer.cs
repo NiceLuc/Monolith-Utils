@@ -1,6 +1,6 @@
 ﻿using System.Text.Json;
 
-namespace GVLinQOptimizer;
+namespace Delinq;
 
 public class ContextDefinitionSerializer : IContextDefinitionSerializer
 {

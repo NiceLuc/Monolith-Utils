@@ -1,7 +1,7 @@
 ﻿using System.Reflection;
-using GVLinQOptimizer.CodeGeneration.Engine;
+using Delinq.CodeGeneration.Engine;
 
-namespace GVLinQOptimizer.CodeGeneration.Renderers;
+namespace Delinq.CodeGeneration.Renderers;
 
 internal abstract class BaseRenderer<T> : IRenderer<T>
 {

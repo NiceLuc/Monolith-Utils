@@ -1,4 +1,4 @@
-﻿namespace GVLinQOptimizer;
+﻿namespace Delinq;
 
 public class ContextDefinition
 {

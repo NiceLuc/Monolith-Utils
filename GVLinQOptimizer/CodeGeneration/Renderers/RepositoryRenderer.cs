@@ -1,7 +1,7 @@
-﻿using GVLinQOptimizer.CodeGeneration.Engine;
-using GVLinQOptimizer.CodeGeneration.ViewModels;
+﻿using Delinq.CodeGeneration.Engine;
+using Delinq.CodeGeneration.ViewModels;
 
-namespace GVLinQOptimizer.CodeGeneration.Renderers;
+namespace Delinq.CodeGeneration.Renderers;
 
 [HandlebarsTemplateModel("Repository", "Repository.hbs", "{0}Repository.cs")]
 internal class RepositoryRenderer : BaseRenderer<ContextDefinition>

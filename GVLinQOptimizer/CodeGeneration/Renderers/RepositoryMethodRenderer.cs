@@ -1,6 +1,6 @@
-﻿using GVLinQOptimizer.CodeGeneration.Engine;
+﻿using Delinq.CodeGeneration.Engine;
 
-namespace GVLinQOptimizer.CodeGeneration.Renderers;
+namespace Delinq.CodeGeneration.Renderers;
 
 [HandlebarsTemplateModel("RepositoryMethod")]
 internal class RepositoryMethodRenderer: BaseRenderer<MethodDefinition>;
