@@ -29,45 +29,57 @@ return;
 // helper methods
 void InitializeSettingsFile(InitializeOptions options)
 {
-    SendRequest(new Initialize.Request
+    var request = new Initialize.Request
     {
         DbmlFilePath = options.DbmlFilePath,
         SettingsFilePath = options.SettingsFilePath,
         ForceOverwrite = options.ForceOverwrite
-    });
+    };
+
+    SendRequest(request);
 }
 
 void GenerateDTOTypes(ExtractDTOOptions options)
 {
-    SendRequest(new ExtractDTOs.Request
+    var request = new ExtractDTOs.Request
     {
         SettingsFilePath = options.SettingsFilePath,
         OutputDirectory = options.OutputDirectory,
-    });
+    };
+
+    SendRequest(request);
 }
 
 void GenerateRepositoryClass(CreateRepositoryOptions options)
 {
-    SendRequest(new CreateRepository.Request
+    var request = new CreateRepository.Request
     {
         SettingsFilePath = options.SettingsFilePath,
         OutputDirectory = options.OutputDirectory,
         MethodName = options.MethodName
-    });
+    };
+
+    SendRequest(request);
 }
 
 void GenerateUnitTestFile(CreateUnitTestsOptions options)
 {
-    SendRequest(new CreateUnitTests.Request
+    var request = new CreateUnitTests.Request
     {
         SettingsFilePath = options.SettingsFilePath,
-        OutputDirectory = options.OutputDirectory
-    });
-}
+        OutputDirectory = options.OutputDirectory,
+        MethodName = options.MethodName
+    };
 
+    SendRequest(request);
+}
 
 void SendRequest<TRequest>(TRequest request) where TRequest : IRequest<string>
 {
-    var result = mediator.Send(request).ConfigureAwait(false).GetAwaiter().GetResult();
+    var result = mediator.Send(request)
+        .ConfigureAwait(false)
+        .GetAwaiter()
+        .GetResult();
+
     Console.WriteLine(result);
 }

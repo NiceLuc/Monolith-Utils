@@ -29,16 +29,17 @@ public sealed class CreateRepository
             if (!string.IsNullOrEmpty(request.MethodName)) 
                 FilterMethodsAndDTOModels(definition, request.MethodName);
 
-            await ProcessTemplate(provider.GetRenderer("RepositorySettingsInterface"));
-            await ProcessTemplate(provider.GetRenderer("RepositoryInterface"));
-            await ProcessTemplate(provider.GetRenderer("RepositorySettings"));
-            await ProcessTemplate(provider.GetRenderer("Repository"));
-            await ProcessTemplate(provider.GetRenderer("DataContext"));
+            await ProcessTemplate("RepositorySettingsInterface");
+            await ProcessTemplate("RepositoryInterface");
+            await ProcessTemplate("RepositorySettings");
+            await ProcessTemplate("Repository");
+            await ProcessTemplate("DataContext");
 
             return request.OutputDirectory;
 
-            async Task ProcessTemplate(IRenderer<ContextDefinition> renderer)
+            async Task ProcessTemplate(string rendererKey)
             {
+                var renderer = provider.GetRenderer(rendererKey);
                 var generatedCode = await renderer.RenderAsync(templateEngine, definition, cancellationToken);
                 var fileName = string.Format(renderer.FileNameFormat, definition.ContextName);
                 var filePath = Path.Combine(request.OutputDirectory, fileName);
