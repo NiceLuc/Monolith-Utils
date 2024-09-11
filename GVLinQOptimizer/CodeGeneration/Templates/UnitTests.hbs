@@ -1,0 +1,52 @@
+using Microsoft.VisualStudio.TestTools.UnitTesting;{{#newline}}
+using Moq;{{#newline}}
+using System;{{#newline}}
+using System.Data;{{#newline}}
+using System.Linq;{{#newline}}
+using UCN.Common;{{#newline}}
+using UCN.Common.SQL.Interfaces;{{#newline}}
+using {{Namespace}};{{#newline}}
+{{#newline}}
+namespace {{Namespace}}.Tests{{#newline}}
+{{{#newline}}
+    [TestClass]{{#newline}}
+    public class {{ContextName}}RepositoryTests{{#newline}}
+    {{{#newline}}
+        private const string _connectionString = "test_connection";{{#newline}}
+        private MockRepository _mockRepo = new MockRepository(MockBehavior.Strict);{{#newline}}
+        private Mock<I{{ContextName}}RepositorySettings> _settings;{{#newline}}
+        private Mock<ISQLQueryFactory> _factory;{{#newline}}
+        private Mock<ISQLQueryEx> _query;{{#newline}}
+        {{#newline}}
+        [TestInitialize]{{#newline}}
+        public void Initialize(){{#newline}}
+        {{{#newline}}
+            // settings will provide connection string{{#newline}}
+            _settings = _mockRepo.Create<I{{ContextName}}RepositorySettings>();{{#newline}}
+            _settings.Setup(s => s.ConnectionString).Returns(_connectionString);{{#newline}}
+            _factory = _mockRepo.Create<ISQLQueryFactory>();{{#newline}}
+            _query = _mockRepo.Create<ISQLQueryEx>();{{#newline}}
+            {{#newline}}
+            // all repository methods use this{{#newline}}
+            _factory.Setup(f => f.CreateEx(_connectionString)).Returns(_query.Object);{{#newline}}
+        }{{#newline}}
+        {{#newline}}
+        // todo: add methods!{{#newline}}
+        {{#newline}}
+        #region Private Methods{{#newline}}
+        {{#newline}}
+        private IWFIRepository CreateRepository(){{#newline}}
+        {{{#newline}}
+            return new {{ContextName}}Repository(_settings.Object, _factory.Object);{{#newline}}
+        }{{#newline}}
+        {{#newline}}
+        private void ValidateMocks(){{#newline}}
+        {{{#newline}}
+            _settings.VerifyAll();{{#newline}}
+            _factory.VerifyAll();{{#newline}}
+        }{{#newline}}
+        {{#newline}}
+        #endregion{{#newline}}
+        {{#newline}}
+    }{{#newline}}
+}{{#newline}}

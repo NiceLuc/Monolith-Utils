@@ -29,7 +29,7 @@ public sealed class CreateUnitTests
                 FilterMethods(definition, request.MethodName);
 
             await ProcessTemplate("TestUtils");
-            // await ProcessTemplate("UnitTests");
+            await ProcessTemplate("UnitTests");
 
             return request.OutputDirectory;
 
