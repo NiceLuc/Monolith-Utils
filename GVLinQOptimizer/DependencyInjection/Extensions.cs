@@ -38,6 +38,8 @@ namespace GVLinQOptimizer.DependencyInjection
             services.AddSingleton<IRenderer<ContextDefinition>, RepositoryRenderer>();
             services.AddSingleton<IRenderer<ContextDefinition>, DataContextRenderer>();
             services.AddSingleton<IRenderer<ContextDefinition>, DTOModelsRenderer>();
+
+            services.AddSingleton<IRenderer<ContextDefinition>, TestUtilsRenderer>();
             services.AddSingleton<IRendererProvider<ContextDefinition>, RepositoryRendererProvider>();
 
             // used for resolving method renderers

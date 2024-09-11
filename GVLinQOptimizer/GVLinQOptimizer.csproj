@@ -16,6 +16,7 @@
     <None Remove="CodeGeneration\Templates\Repository.hbs" />
     <None Remove="CodeGeneration\Templates\RepositoryMethodNonQuery.hbs" />
     <None Remove="CodeGeneration\Templates\RepositorySettings.hbs" />
+    <None Remove="CodeGeneration\Templates\TestUtils.hbs" />
   </ItemGroup>
 
   <ItemGroup>
@@ -53,6 +54,7 @@
       <CopyToOutputDirectory>Never</CopyToOutputDirectory>
     </EmbeddedResource>
     <EmbeddedResource Include="CodeGeneration\Templates\RepositorySettings.hbs" />
+    <EmbeddedResource Include="CodeGeneration\Templates\TestUtils.hbs" />
   </ItemGroup>
 
 

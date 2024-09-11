@@ -1,4 +1,6 @@
-﻿using MediatR;
+﻿using GVLinQOptimizer.CodeGeneration;
+using GVLinQOptimizer.CodeGeneration.Engine;
+using MediatR;
 
 namespace GVLinQOptimizer.Programs;
 
@@ -8,16 +10,48 @@ public sealed class CreateUnitTests
     {
         public string SettingsFilePath { get; set; }
         public string OutputDirectory { get; set; }
+        public string MethodName { get; init; }
     }
 
-    public class Handler : IRequestHandler<Request, string>
+    public class Handler(
+        IContextDefinitionSerializer definitionSerializer,
+        ITemplateEngine templateEngine,
+        IRendererProvider<ContextDefinition> provider)
+        : IRequestHandler<Request, string>
     {
-        public Task<string> Handle(Request request, CancellationToken cancellationToken)
+        public async Task<string> Handle(Request request, CancellationToken cancellationToken)
         {
-            Console.WriteLine("Extracting unit tests...");
-            Console.WriteLine($"{nameof(request.SettingsFilePath)}: {request.SettingsFilePath}");
-            Console.WriteLine($"{nameof(request.OutputDirectory)}: {request.OutputDirectory}");
-            return Task.FromResult(request.OutputDirectory);
+            if (!Directory.Exists(request.OutputDirectory))
+                Directory.CreateDirectory(request.OutputDirectory);
+
+            var definition = await definitionSerializer.DeserializeAsync(request.SettingsFilePath, cancellationToken);
+            if (!string.IsNullOrEmpty(request.MethodName))
+                FilterMethods(definition, request.MethodName);
+
+            await ProcessTemplate("TestUtils");
+            // await ProcessTemplate("UnitTests");
+
+            return request.OutputDirectory;
+
+            async Task ProcessTemplate(string rendererKey)
+            {
+                var renderer = provider.GetRenderer(rendererKey);
+                var generatedCode = await renderer.RenderAsync(templateEngine, definition, cancellationToken);
+                var fileName = string.Format(renderer.FileNameFormat, definition.ContextName);
+                var filePath = Path.Combine(request.OutputDirectory, fileName);
+                await File.WriteAllTextAsync(filePath, generatedCode, cancellationToken);
+            }
+        }
+
+        private void FilterMethods(ContextDefinition definition, string methodName)
+        {
+            var method = definition.RepositoryMethods.FirstOrDefault(m =>
+                m.MethodName.Equals(methodName, StringComparison.InvariantCultureIgnoreCase));
+
+            if (method == null)
+                throw new InvalidOperationException($"Method '{methodName}' not found.");
+
+            definition.RepositoryMethods = [method];
         }
 
         private void GenerateTestClass(string MetaFile)
@@ -54,8 +88,8 @@ public sealed class CreateUnitTests
 
                 Console.WriteLine();
                 sw.WriteLine();
-                Console.WriteLine((char)9 + "// Arrange");
-                sw.WriteLine((char)9 + "// Arrange");
+                Console.WriteLine((char) 9 + "// Arrange");
+                sw.WriteLine((char) 9 + "// Arrange");
 
                 List<string> ResultSet = new List<string>();
                 var FirstSet = "";
@@ -69,14 +103,14 @@ public sealed class CreateUnitTests
                     //if (ResultSet.Count > 1)
                     //{
                     //MethodType = "IEnumerable<" + spName.Replace("dbo.", "") + "Result>";
-                    Console.WriteLine((char)9 + "var expectedResults = Enumerable.Range(1, 10).Select(x =>");
-                    sw.WriteLine((char)9 + "var expectedResults = Enumerable.Range(1, 10).Select(x =>");
+                    Console.WriteLine((char) 9 + "var expectedResults = Enumerable.Range(1, 10).Select(x =>");
+                    sw.WriteLine((char) 9 + "var expectedResults = Enumerable.Range(1, 10).Select(x =>");
 
-                    Console.WriteLine((char)9 + "new " + spName.Replace("dbo.", ""));
-                    sw.WriteLine((char)9 + "new " + spName.Replace("dbo.", ""));
+                    Console.WriteLine((char) 9 + "new " + spName.Replace("dbo.", ""));
+                    sw.WriteLine((char) 9 + "new " + spName.Replace("dbo.", ""));
 
-                    Console.WriteLine((char)9 + "{");
-                    sw.WriteLine((char)9 + "{");
+                    Console.WriteLine((char) 9 + "{");
+                    sw.WriteLine((char) 9 + "{");
 
 
 
@@ -85,40 +119,40 @@ public sealed class CreateUnitTests
                     {
                         if (result.ToLower().Contains("int"))
                         {
-                            FirstSet += (char)9 + " " + (Char)9 + result.Split(":")[1] + " = x,\n";
+                            FirstSet += (char) 9 + " " + (Char) 9 + result.Split(":")[1] + " = x,\n";
                         }
                         else if (result.ToLower().Contains("long"))
                         {
-                            FirstSet += (char)9 + " " + (Char)9 + result.Split(":")[1] + " = x,\n";
+                            FirstSet += (char) 9 + " " + (Char) 9 + result.Split(":")[1] + " = x,\n";
                         }
                         else
                         {
-                            FirstSet += (char)9 + " " + (Char)9 + result.Split(":")[1] + " = $" + (char)34 +
-                                        result.Split(":")[1] + "{x}" + (Char)34 + ",\n";
+                            FirstSet += (char) 9 + " " + (Char) 9 + result.Split(":")[1] + " = $" + (char) 34 +
+                                        result.Split(":")[1] + "{x}" + (Char) 34 + ",\n";
                         }
 
-                        SecondSet += (char)9 + " " + (Char)9 + "q.SetupValue(" + (Char)34 +
-                                     result.Split(":")[1] + (char)34 + " , model." + result.Split(":")[1] + ");\n";
-                        ThirdSet += (char)9 + " " + (Char)9 + "Assert.AreEqual(expected." + result.Split(":")[1] +
+                        SecondSet += (char) 9 + " " + (Char) 9 + "q.SetupValue(" + (Char) 34 +
+                                     result.Split(":")[1] + (char) 34 + " , model." + result.Split(":")[1] + ");\n";
+                        ThirdSet += (char) 9 + " " + (Char) 9 + "Assert.AreEqual(expected." + result.Split(":")[1] +
                                     ", actual." + result.Split(":")[1] + ");\n";
                     }
 
                     Console.WriteLine(FirstSet.Substring(0, FirstSet.Length - 3));
                     sw.WriteLine(FirstSet.Substring(0, FirstSet.Length - 3));
 
-                    Console.WriteLine((char)9 + "}).ToArray();\n" + (char)9 +
-                                      "_query.ConfigureReads(expectedResults.Length, (q, x) =>\n" + (char)9 +
-                                      "{\n" + (char)9 + "" + (char)9 + "var model = expectedResults[x];");
-                    sw.WriteLine((char)9 + "}).ToArray();\n" + (char)9 +
-                                 "_query.ConfigureReads(expectedResults.Length, (q, x) =>\n" + (char)9 + "{\n" +
-                                 (char)9 + "" + (char)9 + "var model = expectedResults[x];");
+                    Console.WriteLine((char) 9 + "}).ToArray();\n" + (char) 9 +
+                                      "_query.ConfigureReads(expectedResults.Length, (q, x) =>\n" + (char) 9 +
+                                      "{\n" + (char) 9 + "" + (char) 9 + "var model = expectedResults[x];");
+                    sw.WriteLine((char) 9 + "}).ToArray();\n" + (char) 9 +
+                                 "_query.ConfigureReads(expectedResults.Length, (q, x) =>\n" + (char) 9 + "{\n" +
+                                 (char) 9 + "" + (char) 9 + "var model = expectedResults[x];");
 
 
                     Console.WriteLine(SecondSet.Substring(0, SecondSet.Length - 2));
                     sw.WriteLine(SecondSet.Substring(0, SecondSet.Length - 2));
 
-                    Console.WriteLine((char)9 + "});");
-                    sw.WriteLine((char)9 + "});");
+                    Console.WriteLine((char) 9 + "});");
+                    sw.WriteLine((char) 9 + "});");
 
                     //}
                     //else if (ResultSet.Count == 1)
@@ -147,8 +181,8 @@ public sealed class CreateUnitTests
                     }
                     else if (Param[1].ToLower().Contains("uniqueidentifier"))
                     {
-                        curLine += (Char)34 + "01/01/2024" + (Char)34;
-                        Temp1 += (Char)34 + "01/01/2024" + (Char)34;
+                        curLine += (Char) 34 + "01/01/2024" + (Char) 34;
+                        Temp1 += (Char) 34 + "01/01/2024" + (Char) 34;
                     }
                     else if (Param[1].ToLower() == "bit")
                     {
@@ -158,72 +192,72 @@ public sealed class CreateUnitTests
                     }
                     else if (Param[1].ToLower().Contains("varchar"))
                     {
-                        curLine += (Char)34 + "Dummy Text" + (Char)34 + ";";
-                        Temp1 += (Char)34 + "Dummy Text" + (Char)34 + ",";
+                        curLine += (Char) 34 + "Dummy Text" + (Char) 34 + ";";
+                        Temp1 += (Char) 34 + "Dummy Text" + (Char) 34 + ",";
 
                     }
 
-                    Console.WriteLine((char)9 + curLine);
-                    sw.WriteLine((char)9 + curLine);
+                    Console.WriteLine((char) 9 + curLine);
+                    sw.WriteLine((char) 9 + curLine);
                 }
 
 
-                Console.WriteLine((char)9 + "_query.ConfigureNonQuery();" + Environment.NewLine + (char)9 +
+                Console.WriteLine((char) 9 + "_query.ConfigureNonQuery();" + Environment.NewLine + (char) 9 +
                                   "var repository = CreateRepository();");
-                sw.WriteLine((char)9 + "_query.ConfigureNonQuery();" + Environment.NewLine + (char)9 +
+                sw.WriteLine((char) 9 + "_query.ConfigureNonQuery();" + Environment.NewLine + (char) 9 +
                              "var repository = CreateRepository();");
 
 
                 Console.WriteLine();
                 sw.WriteLine();
-                Console.WriteLine((char)9 + "// Act");
-                sw.WriteLine((char)9 + "// Act");
+                Console.WriteLine((char) 9 + "// Act");
+                sw.WriteLine((char) 9 + "// Act");
 
 
                 Console.WriteLine();
                 sw.WriteLine();
                 if (Type == "NonQuery")
                 {
-                    Console.WriteLine((char)9 + "var results = repository." + MethodName + "(" +
+                    Console.WriteLine((char) 9 + "var results = repository." + MethodName + "(" +
                                       Temp.Substring(0, Temp.Length - 1) + ").ToList();");
-                    sw.WriteLine((char)9 + "var results = repository." + MethodName + "(" +
+                    sw.WriteLine((char) 9 + "var results = repository." + MethodName + "(" +
                                  Temp.Substring(0, Temp.Length - 1) + ").ToList();");
 
-                    Console.WriteLine((char)9 + "// Assert" + Environment.NewLine + (char)9 +
+                    Console.WriteLine((char) 9 + "// Assert" + Environment.NewLine + (char) 9 +
                                       "_query.VerifySet(q => q.CommandType = CommandType.StoredProcedure);");
-                    sw.WriteLine((char)9 + "// Assert" + Environment.NewLine + (char)9 +
+                    sw.WriteLine((char) 9 + "// Assert" + Environment.NewLine + (char) 9 +
                                  "_query.VerifySet(q => q.CommandType = CommandType.StoredProcedure);");
 
-                    Console.WriteLine((char)9 + "_query.VerifySet(q => q.SQL = " + (char)34 + "dbo." +
-                                      MethodName + (char)34 + ");");
-                    sw.WriteLine((char)9 + "_query.VerifySet(q => q.SQL = " + (char)34 + "dbo." + MethodName +
-                                 (char)34 + ");");
+                    Console.WriteLine((char) 9 + "_query.VerifySet(q => q.SQL = " + (char) 34 + "dbo." +
+                                      MethodName + (char) 34 + ");");
+                    sw.WriteLine((char) 9 + "_query.VerifySet(q => q.SQL = " + (char) 34 + "dbo." + MethodName +
+                                 (char) 34 + ");");
                 }
                 else if (Type == "Query")
                 {
-                    Console.WriteLine((char)9 + "repository." + MethodName + "(" +
+                    Console.WriteLine((char) 9 + "repository." + MethodName + "(" +
                                       Temp.Substring(0, Temp.Length - 1) + ");");
-                    sw.WriteLine((char)9 + "repository." + MethodName + "(" + Temp.Substring(0, Temp.Length - 1) +
+                    sw.WriteLine((char) 9 + "repository." + MethodName + "(" + Temp.Substring(0, Temp.Length - 1) +
                                  ");");
 
-                    Console.WriteLine((char)9 + "// Assert" + Environment.NewLine + (char)9 +
-                                      "Assert.AreEqual(expectedResults.Length, results.Count);\n" + (char)9 +
-                                      "for (var x = 0; x < expectedResults.Length; x++)\n" + (char)9 + "{\n" +
-                                      (char)9 + " " + (char)9 + "var expected = expectedResults[x];\n" +
-                                      (char)9 + " " + (char)9 + "var actual = results[x];\n");
-                    sw.WriteLine((char)9 + "// Assert" + Environment.NewLine + (char)9 +
-                                 "Assert.AreEqual(expectedResults.Length, results.Count);\n" + (char)9 +
-                                 "for (var x = 0; x < expectedResults.Length; x++)\n" + (char)9 + "{\n" +
-                                 (char)9 + " " + (char)9 + "var expected = expectedResults[x];\n" + (char)9 +
-                                 " " + (char)9 + "var actual = results[x];\n");
+                    Console.WriteLine((char) 9 + "// Assert" + Environment.NewLine + (char) 9 +
+                                      "Assert.AreEqual(expectedResults.Length, results.Count);\n" + (char) 9 +
+                                      "for (var x = 0; x < expectedResults.Length; x++)\n" + (char) 9 + "{\n" +
+                                      (char) 9 + " " + (char) 9 + "var expected = expectedResults[x];\n" +
+                                      (char) 9 + " " + (char) 9 + "var actual = results[x];\n");
+                    sw.WriteLine((char) 9 + "// Assert" + Environment.NewLine + (char) 9 +
+                                 "Assert.AreEqual(expectedResults.Length, results.Count);\n" + (char) 9 +
+                                 "for (var x = 0; x < expectedResults.Length; x++)\n" + (char) 9 + "{\n" +
+                                 (char) 9 + " " + (char) 9 + "var expected = expectedResults[x];\n" + (char) 9 +
+                                 " " + (char) 9 + "var actual = results[x];\n");
 
-                    Console.WriteLine(ThirdSet + (char)9 + "}");
-                    sw.WriteLine(ThirdSet + (char)9 + "}");
+                    Console.WriteLine(ThirdSet + (char) 9 + "}");
+                    sw.WriteLine(ThirdSet + (char) 9 + "}");
                 }
 
 
-                Console.WriteLine((char)9 + "ValidateMocks();" + Environment.NewLine + "}");
-                sw.WriteLine((char)9 + "ValidateMocks();" + Environment.NewLine + "}");
+                Console.WriteLine((char) 9 + "ValidateMocks();" + Environment.NewLine + "}");
+                sw.WriteLine((char) 9 + "ValidateMocks();" + Environment.NewLine + "}");
 
 
                 //Writing Exception Cases
@@ -238,37 +272,37 @@ public sealed class CreateUnitTests
                 Console.WriteLine("{");
                 sw.WriteLine("{");
 
-                Console.WriteLine((char)9 + "// Arrange");
-                sw.WriteLine((char)9 + "// Arrange");
+                Console.WriteLine((char) 9 + "// Arrange");
+                sw.WriteLine((char) 9 + "// Arrange");
 
-                Console.WriteLine((char)9 + "var exception = new Exception(expectedExceptionMessage);");
-                sw.WriteLine((char)9 + "var exception = new Exception(expectedExceptionMessage);");
+                Console.WriteLine((char) 9 + "var exception = new Exception(expectedExceptionMessage);");
+                sw.WriteLine((char) 9 + "var exception = new Exception(expectedExceptionMessage);");
 
-                Console.WriteLine((char)9 + "_query.ConfigureNonQuery(() => throw exception); ");
-                sw.WriteLine((char)9 + "_query.ConfigureNonQuery(() => throw exception); ");
+                Console.WriteLine((char) 9 + "_query.ConfigureNonQuery(() => throw exception); ");
+                sw.WriteLine((char) 9 + "_query.ConfigureNonQuery(() => throw exception); ");
 
-                Console.WriteLine((char)9 + "var repository = CreateRepository(); ");
-                sw.WriteLine((char)9 + "var repository = CreateRepository(); ");
+                Console.WriteLine((char) 9 + "var repository = CreateRepository(); ");
+                sw.WriteLine((char) 9 + "var repository = CreateRepository(); ");
 
                 Console.WriteLine();
                 sw.WriteLine();
 
-                Console.WriteLine((char)9 + "// Act");
-                sw.WriteLine((char)9 + "// Act");
-                Console.WriteLine((char)9 +
+                Console.WriteLine((char) 9 + "// Act");
+                sw.WriteLine((char) 9 + "// Act");
+                Console.WriteLine((char) 9 +
                                   "var result = Assert.ThrowsException<Exception>(() => repository.WFI_UpdateRuleNextrun(" +
                                   MethodName + "(" + Temp1.Substring(0, Temp1.Length - 1) + ")));");
-                sw.WriteLine((char)9 +
+                sw.WriteLine((char) 9 +
                              "var result = Assert.ThrowsException<Exception>(() => repository.WFI_UpdateRuleNextrun(" +
                              MethodName + "(" + Temp1.Substring(0, Temp1.Length - 1) + ")));");
 
                 Console.WriteLine();
                 sw.WriteLine();
-                Console.WriteLine((char)9 + "// Assert" + Environment.NewLine + (char)9 +
-                                  "Assert.AreSame(exception, result);" + Environment.NewLine + (char)9 +
+                Console.WriteLine((char) 9 + "// Assert" + Environment.NewLine + (char) 9 +
+                                  "Assert.AreSame(exception, result);" + Environment.NewLine + (char) 9 +
                                   "ValidateMocks();");
-                sw.WriteLine((char)9 + "// Assert" + Environment.NewLine + (char)9 +
-                             "Assert.AreSame(exception, result);" + Environment.NewLine + (char)9 +
+                sw.WriteLine((char) 9 + "// Assert" + Environment.NewLine + (char) 9 +
+                             "Assert.AreSame(exception, result);" + Environment.NewLine + (char) 9 +
                              "ValidateMocks();");
 
 

@@ -1,0 +1,170 @@
+using Moq;{{#newline}}
+using System;{{#newline}}
+using System.Data;{{#newline}}
+using System.Data.SqlClient;{{#newline}}
+using UCN.Common;{{#newline}}
+using UCN.Common.SQL.Interfaces;{{#newline}}
+{{#newline}}
+namespace {{Namespace}}.Tests{{#newline}}
+{{{#newline}}
+    internal static class TestUtils{{#newline}}
+    {{{#newline}}
+        /// <summary>{{#newline}}
+        /// Configure query mock to read one record successfully with a callback to configure implicit values.{{#newline}}
+        /// </summary>{{#newline}}
+        /// <param name="query">Valid mock of ISQLQueryEx.</param>{{#newline}}
+        /// <param name="action">Callback to configure implicit values for a single record.</param>{{#newline}}
+        public static void ConfigureRead(this Mock<ISQLQueryEx> query, Action<SqlQueryUtil> action, bool hasParameters = true){{#newline}}
+            => ConfigureReadImpl(query, 1, (q, _) => action(q), hasParameters);{{#newline}}
+{{#newline}}
+        /// <summary>{{#newline}}
+        /// Configure query mock to read 0 or more records with a callback to configure implicit values by record index.{{#newline}}
+        /// </summary>{{#newline}}
+        /// <param name="query">Valid mock of ISQLQueryEx.</param>{{#newline}}
+        /// <param name="readCount">How many records should be returned from the call (0 or more).</param>{{#newline}}
+        /// <param name="action">Callback to configure implicit values for an indexed record.</param>{{#newline}}
+        public static void ConfigureReads(this Mock<ISQLQueryEx> query, int readCount, Action<SqlQueryUtil, int> action, bool hasParameters = true){{#newline}}
+            => ConfigureReadImpl(query, readCount, action, hasParameters);{{#newline}}
+{{#newline}}
+        /// <summary>{{#newline}}
+        /// Configure query mock to execute a stored procedure that returns no data with a callback to configure the result.{{#newline}}
+        /// </summary>{{#newline}}
+        /// <param name="query">Valid mock of ISQLQueryEx.</param>{{#newline}}
+        /// <param name="result">Expected result from the stored procedure call.</param>{{#newline}}
+        public static void ConfigureNonQuery(this Mock<ISQLQueryEx> query, int result = 0){{#newline}}
+            => ConfigureNonQuery(query, () => result);{{#newline}}
+{{#newline}}
+        /// <summary>{{#newline}}
+        /// Configure query mock to execute a stored procedure that returns no data with a callback to configure the result.{{#newline}}
+        /// </summary>{{#newline}}
+        /// <param name="query">Valid mock of ISQLQueryEx.</param>{{#newline}}
+        /// <param name="func">Callback to return a fake result from the stored procedure call.</param>{{#newline}}
+        public static void ConfigureNonQuery(this Mock<ISQLQueryEx> query, Func<int> func){{#newline}}
+        {{{#newline}}
+            if (query == null) throw new ArgumentNullException(nameof(query));{{#newline}}
+            if (func == null) throw new ArgumentNullException(nameof(func));{{#newline}}
+{{#newline}}
+            ConfigureSqlQueryMock(query, true);{{#newline}}
+{{#newline}}
+            // enable the caller to determine what gets returned{{#newline}}
+            query.Setup(q => q.ExecuteNonQuery()).Returns(func);{{#newline}}
+        }{{#newline}}
+{{#newline}}
+        /// <summary>{{#newline}}
+        /// IMPORTANT: Must be called after ConfigureRead() or ConfigureNonQuery(){{#newline}}
+        /// Configures a 'ReturnValue' parameter to return a specific value.{{#newline}}
+        /// </summary>{{#newline}}
+        /// <param name="query">Valid mock of ISQLQueryEx.</param>{{#newline}}
+        /// <param name="parameterName">The name of the ReturnValue parameter.</param>{{#newline}}
+        /// <param name="value">The value to be returned.</param>{{#newline}}
+        public static void ConfigureReturnValueParameter(this Mock<ISQLQueryEx> query, string parameterName, object value){{#newline}}
+        {{{#newline}}
+            var parameter = new Mock<IDataParameter>();{{#newline}}
+            parameter.Setup(p => p.Value).Returns(value);{{#newline}}
+{{#newline}}
+            query.Setup(q => q.AddParameter({{#newline}}
+                    parameterName,{{#newline}}
+                    It.IsAny<SqlDbType>(),{{#newline}}
+                    It.IsAny<object>(),{{#newline}}
+                    ParameterDirection.ReturnValue)){{#newline}}
+                .Returns(parameter.Object);{{#newline}}
+        }{{#newline}}
+{{#newline}}
+        /// <summary>{{#newline}}
+        /// IMPORTANT: Must be called after ConfigureRead() or ConfigureNonQuery(){{#newline}}
+        /// Configures an 'Output' parameter to return a specific value.{{#newline}}
+        /// </summary>{{#newline}}
+        /// <param name="query">Valid mock of ISQLQueryEx.</param>{{#newline}}
+        /// <param name="parameterName">The name of the output parameter.</param>{{#newline}}
+        /// <param name="value">The value to be returned.</param>{{#newline}}
+        public static void ConfigureOutputParameter(this Mock<ISQLQueryEx> query, string parameterName, object value){{#newline}}
+        {{{#newline}}
+            var parameter = new Mock<IDataParameter>();{{#newline}}
+            parameter.Setup(p => p.Value).Returns(value);{{#newline}}
+{{#newline}}
+            query.Setup(q => q.AddParameter({{#newline}}
+                    parameterName,{{#newline}}
+                    It.IsAny<SqlDbType>(),{{#newline}}
+                    It.IsAny<object>(),{{#newline}}
+                    ParameterDirection.Output)){{#newline}}
+                .Returns(parameter.Object);{{#newline}}
+{{#newline}}
+            // this is required for capturing record counts in stored procedures {{#newline}}
+            // connections must be closed before reading the output parameter value{{#newline}}
+            query.Setup(q => q.Close());{{#newline}}
+        }{{#newline}}
+{{#newline}}
+        #region Private Methods{{#newline}}
+{{#newline}}
+        private static void ConfigureReadImpl(Mock<ISQLQueryEx> query, int readCount, Action<SqlQueryUtil, int> action, bool hasParameters){{#newline}}
+        {{{#newline}}
+            if (query == null) throw new ArgumentNullException(nameof(query));{{#newline}}
+            if (readCount < 0) throw new ArgumentOutOfRangeException("Must be greater than or equal to 0");{{#newline}}
+            if (action == null) throw new ArgumentNullException(nameof(action));{{#newline}}
+{{#newline}}
+            ConfigureSqlQueryMock(query, hasParameters);{{#newline}}
+{{#newline}}
+            // this is used enable our callers to easily configure "ImplicitValue" types{{#newline}}
+            var util = new SqlQueryUtil(query);{{#newline}}
+            var readCounter = 0;{{#newline}}
+{{#newline}}
+            // configure the Read operation through a mock with a callback.{{#newline}}
+            // this allows the sql query util to be sent back to the caller{{#newline}}
+            // for each of the records they expect to configure{{#newline}}
+            query.Setup(q => q.Read()).Returns(() =>{{#newline}}
+            {{{#newline}}
+                // useful to enable the test methods to reference{{#newline}}
+                // properties from an array or list by index{{#newline}}
+                var recordIndex = readCounter;{{#newline}}
+                readCounter += 1;{{#newline}}
+{{#newline}}
+                if (readCounter > readCount){{#newline}}
+                    return false;{{#newline}}
+{{#newline}}
+                // let caller configure all implicit values after{{#newline}}
+                // each successful read operation{{#newline}}
+                action.Invoke(util, recordIndex);{{#newline}}
+                return true;{{#newline}}
+            });{{#newline}}
+        }{{#newline}}
+{{#newline}}
+        private static void ConfigureSqlQueryMock(Mock<ISQLQueryEx> query, bool hasParameters){{#newline}}
+        {{{#newline}}
+            // required setters when calling stored procedures{{#newline}}
+            query.SetupProperty(q => q.CommandType);{{#newline}}
+            query.SetupProperty(q => q.SQL);{{#newline}}
+            if (hasParameters){{#newline}}
+            {{{#newline}}
+                query.Setup(q => q.AddParameter({{#newline}}
+                        It.IsAny<string>(),{{#newline}}
+                        It.IsAny<SqlDbType>(),{{#newline}}
+                        It.IsAny<object>(),{{#newline}}
+                        It.IsAny<ParameterDirection>())){{#newline}}
+                    .Returns<string, SqlDbType, object, ParameterDirection>({{#newline}}
+                        (name, type, value, direction) => new SqlParameter(name, type){{#newline}}
+                        {{{#newline}}
+                            Value = value,{{#newline}}
+                            Direction = direction{{#newline}}
+                        });{{#newline}}
+            }{{#newline}}
+            query.Setup(q => q.Dispose());{{#newline}}
+        }{{#newline}}
+{{#newline}}
+        #endregion{{#newline}}
+{{#newline}}
+        #region Helper Classes{{#newline}}
+{{#newline}}
+        public class SqlQueryUtil{{#newline}}
+        {{{#newline}}
+            private readonly Mock<ISQLQueryEx> _query;{{#newline}}
+{{#newline}}
+            internal SqlQueryUtil(Mock<ISQLQueryEx> query) => _query = query;{{#newline}}
+{{#newline}}
+            public void SetupValue<T>(string columnName, T value){{#newline}}
+                => _query.Setup(q => q.Value(columnName)).Returns(new ImplicitValue(value));{{#newline}}
+        }{{#newline}}
+{{#newline}}
+        #endregion{{#newline}}
+    }{{#newline}}
+}{{#newline}}
+{{#newline}}

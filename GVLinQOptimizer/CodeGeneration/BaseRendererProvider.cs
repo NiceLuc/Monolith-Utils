@@ -15,7 +15,7 @@ internal class BaseRendererProvider<T> : IRendererProvider<T>
     {
         var renderer = _renderers.FirstOrDefault(r => r.Key == key);
         if (renderer is null)
-            throw new InvalidOperationException($"No renderer class found for '{key}'");
+            throw new InvalidOperationException($"No renderer class found for '{key}'. Make sure it is registered with IoC.");
 
         return renderer;
     }
