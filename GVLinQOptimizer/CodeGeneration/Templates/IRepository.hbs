@@ -1,0 +1,11 @@
+using System.Collections.Generic;{{#newline}} 
+{{#newline}}
+namespace {{Namespace}}{{#newline}}
+{ {{#newline}}
+	public interface I{{ContextName}}Repository{{#newline}}
+	{{{#newline}} 
+{{#each RepositoryMethods}}
+		{{#if IsList}}IEnumerable<{{/if}}{{ReturnType}}{{#if IsList}}>{{/if}} {{MethodName}}({{#each Parameters}}{{#if @index}}, {{/if}}{{#if IsRef}}ref {{/if}}{{ParameterType}} {{ParameterName}}{{/each}});{{#newline}}
+{{/each}}
+	}{{#newline}}
+}

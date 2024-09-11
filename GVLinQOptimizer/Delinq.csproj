@@ -1,0 +1,63 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <OutputType>Exe</OutputType>
+    <TargetFramework>net8.0</TargetFramework>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <Nullable>enable</Nullable>
+    <AssemblyName>delinq</AssemblyName>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <None Remove="CodeGeneration\Templates\DataContext.hbs" />
+    <None Remove="CodeGeneration\Templates\DTOModels.hbs" />
+    <None Remove="CodeGeneration\Templates\IRepository.hbs" />
+    <None Remove="CodeGeneration\Templates\IRepositorySettings.hbs" />
+    <None Remove="CodeGeneration\Templates\Repository.hbs" />
+    <None Remove="CodeGeneration\Templates\RepositoryMethodNonQuery.hbs" />
+    <None Remove="CodeGeneration\Templates\RepositorySettings.hbs" />
+    <None Remove="CodeGeneration\Templates\TestUtils.hbs" />
+    <None Remove="CodeGeneration\Templates\UnitTests.hbs" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <PackageReference Include="CommandLineParser" Version="2.9.1" />
+    <PackageReference Include="MediatR" Version="12.4.0" />
+    <PackageReference Include="Microsoft.Extensions.DependencyInjection" Version="8.0.0" />
+    <PackageReference Include="Microsoft.Extensions.Hosting" Version="8.0.0" />
+    <PackageReference Include="mustache-sharp" Version="1.0.0" />
+    <PackageReference Include="System.Data.SqlClient" Version="4.8.6" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <EmbeddedResource Include="CodeGeneration\Templates\DTOModels.hbs">
+      <CopyToOutputDirectory>Never</CopyToOutputDirectory>
+    </EmbeddedResource>
+    <EmbeddedResource Include="CodeGeneration\Templates\DataContext.hbs">
+      <CopyToOutputDirectory>Never</CopyToOutputDirectory>
+    </EmbeddedResource>
+    <EmbeddedResource Include="CodeGeneration\Templates\Repository.hbs">
+      <CopyToOutputDirectory>Never</CopyToOutputDirectory>
+    </EmbeddedResource>
+    <EmbeddedResource Include="CodeGeneration\Templates\IRepositorySettings.hbs">
+      <CopyToOutputDirectory>Never</CopyToOutputDirectory>
+    </EmbeddedResource>
+    <EmbeddedResource Include="CodeGeneration\Templates\IRepository.hbs">
+      <CopyToOutputDirectory>Never</CopyToOutputDirectory>
+    </EmbeddedResource>
+    <EmbeddedResource Include="CodeGeneration\Templates\RepositoryMethodNonQuery.hbs">
+      <CopyToOutputDirectory>Never</CopyToOutputDirectory>
+    </EmbeddedResource>
+    <EmbeddedResource Include="CodeGeneration\Templates\RepositoryMethodQuerySingle.hbs">
+      <CopyToOutputDirectory>Never</CopyToOutputDirectory>
+    </EmbeddedResource>
+    <EmbeddedResource Include="CodeGeneration\Templates\RepositoryMethodQueryMany.hbs">
+      <CopyToOutputDirectory>Never</CopyToOutputDirectory>
+    </EmbeddedResource>
+    <EmbeddedResource Include="CodeGeneration\Templates\RepositorySettings.hbs" />
+    <EmbeddedResource Include="CodeGeneration\Templates\UnitTests.hbs" />
+    <EmbeddedResource Include="CodeGeneration\Templates\TestUtils.hbs" />
+  </ItemGroup>
+
+
+</Project>

@@ -1,0 +1,24 @@
+public {{ReturnType}} {{MethodName}}({{#each Parameters}}{{#if @index}}, {{/if}}{{#if IsRef}}ref {{/if}}{{ParameterType}} {{ParameterName}}{{/each}}){{#newline}}
+        { {{#newline}}
+            using (var query = CreateQuery()){{#newline}}
+            { {{#newline}}
+                query.CommandType = CommandType.StoredProcedure;{{#newline}}
+                query.SQL = "{{SprocName}}";{{#newline}}
+{{#each SprocParameters}}
+{{#if ShouldCaptureResult}}
+                var {{MethodParameterName}}Param = query.AddParameter("@{{SprocParameterName}}", SqlDbType.{{SprocParameterType}}, {{MethodParameterName}}, ParameterDirection.{{SprocParameterDirection}}{{#if HasStringLength}}, {{SprocParameterLength}}{{/if}});{{#newline}}
+{{#else}}
+{{#if IsInputParameter}}
+{{#if HasStringLength}}
+                query.AddParameter("@{{SprocParameterName}}", SqlDbType.{{SprocParameterType}}, {{MethodParameterName}}, ParameterDirection.Input, {{SprocParameterLength}});{{#newline}}
+{{#else}}
+                query.AddParameter("@{{SprocParameterName}}", SqlDbType.{{SprocParameterType}}, {{MethodParameterName}});{{#newline}}
+{{/if}}
+{{#else}}
+                query.AddParameter("@{{SprocParameterName}}", SqlDbType.{{SprocParameterType}}, {{MethodParameterName}}, ParameterDirection.{{SprocParameterDirection}}{{#if HasStringLength}}, {{SprocParameterLength}}{{/if}});{{#newline}}
+{{/if}}
+{{/if}}
+{{/each}}
+                return query.ExecuteNonQuery();{{#newline}}
+            }{{#newline}}
+        }

@@ -1,0 +1,46 @@
+public IEnumerable<{{ReturnType}}> {{MethodName}}({{#each Parameters}}{{#if @index}}, {{/if}}{{#if IsRef}}ref {{/if}}{{ParameterType}} {{ParameterName}}{{/each}}){{#newline}}
+        { {{#newline}}
+            var result = new List<{{ReturnType}}>();{{#newline}}
+            using (var query = CreateQuery()){{#newline}}
+            { {{#newline}}
+                query.CommandType = CommandType.StoredProcedure;{{#newline}}
+                query.SQL = "{{SprocName}}";{{#newline}}
+{{#each SprocParameters}}
+{{#if ShouldCaptureResult}}
+                var {{MethodParameterName}}Param = query.AddParameter("@{{SprocParameterName}}", SqlDbType.{{SprocParameterType}}, {{MethodParameterName}}, ParameterDirection.{{SprocParameterDirection}}{{#if HasStringLength}}, {{SprocParameterLength}}{{/if}});{{#newline}}
+{{#else}}
+{{#if IsInputParameter}}
+{{#if HasStringLength}}
+                query.AddParameter("@{{SprocParameterName}}", SqlDbType.{{SprocParameterType}}, {{MethodParameterName}}, ParameterDirection.Input, {{SprocParameterLength}});{{#newline}}
+{{#else}}
+                query.AddParameter("@{{SprocParameterName}}", SqlDbType.{{SprocParameterType}}, {{MethodParameterName}});{{#newline}}
+{{/if}}
+{{#else}}
+                query.AddParameter("@{{SprocParameterName}}", SqlDbType.{{SprocParameterType}}, {{MethodParameterName}}, ParameterDirection.{{SprocParameterDirection}}{{#if HasStringLength}}, {{SprocParameterLength}}{{/if}});{{#newline}}
+{{/if}}
+{{/if}}
+{{/each}}
+                {{#newline}}
+                while (query.Read()){{#newline}}
+                { {{#newline}}
+                    var model = new {{ReturnType}}{{#newline}}
+                    { {{#newline}}
+{{#each Properties}}
+                        {{PropertyName}} = query.Value("{{PropertyName}}"),{{#newline}}
+{{/each}}
+                    };{{#newline}}
+                    {{#newline}}
+                    result.Add(model);{{#newline}}
+                } {{#newline}}
+{{#if HasOutputParameters}}
+                {{#newline}}
+                query.Close();{{#newline}}
+{{#each SprocParameters}}
+{{#if ShouldCaptureResult}}
+                {{MethodParameterName}} = ({{MethodParameterType}}) {{MethodParameterName}}Param.Value;{{#newline}}
+{{/if}}
+{{/each}}
+{{/if}}
+            } {{#newline}}
+            return result.AsReadOnly();{{#newline}}
+        }

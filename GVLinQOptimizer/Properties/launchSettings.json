@@ -1,0 +1,13 @@
+{
+  "profiles": {
+    "GVLinQOptimizer": {
+      "commandName": "Project",
+      /*
+      "commandLineArgs": "init c:\\temp\\HoursOfOperation\\HoursOfOperationManager.dbml"
+      "commandLineArgs": "repo c:\\temp\\HoursOfOperation\\HoursOfOperation.metadata.settings -o c:\\temp\\HoursOfOperation\\repo"
+      "commandLineArgs": "dtos c:\\temp\\HoursOfOperation\\HoursOfOperation.metadata.settings -o c:\\temp\\HoursOfOperation\\repo"
+      */
+      "commandLineArgs": "tests c:\\temp\\HoursOfOperation\\HoursOfOperation.metadata.settings -o c:\\temp\\HoursOfOperation\\tests"
+    }
+  }
+}

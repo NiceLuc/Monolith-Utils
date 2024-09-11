@@ -1,0 +1,14 @@
+using UCN.Common.Wrappers;{{#newline}} 
+{{#newline}}
+namespace {{Namespace}}{{#newline}}
+{ {{#newline}}
+	public class {{ContextName}}RepositorySettings : I{{ContextName}}RepositorySettings{{#newline}}
+	{ {{#newline}} 
+		public {{ContextName}}RepositorySettings(IConnectionStrings connectionStrings){{#newline}}
+        { {{#newline}}
+            ConnectionString = connectionStrings["{{ContextName}}"].ConnectionString;{{#newline}}
+        } {{#newline}}
+        {{#newline}}
+		public string ConnectionString { get; }{{#newline}}
+	} {{#newline}}
+}
