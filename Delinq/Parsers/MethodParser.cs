@@ -2,7 +2,7 @@
 
 namespace Delinq.Parsers;
 
-internal class MethodParser : SettingsParser<ContextDefinition>
+internal class MethodParser(IParser<MethodDefinition> parameterParser) : SettingsParser<ContextDefinition>
 {
     private static readonly Regex _sprocRegex = new(
         @"FunctionAttribute\(Name\=""(?<sproc_name>.+)""", 
@@ -11,13 +11,6 @@ internal class MethodParser : SettingsParser<ContextDefinition>
     private static readonly Regex _methodRegex = new(
         @"(public|protected internal) (ISingleResult\<(?<return_type>.+?)\>|(?<return_type>.+?))\s(?<method_name>.+?)\(", 
         RegexOptions.Singleline);
-
-    private readonly IParser<MethodDefinition> _parameterParser;
-
-    public MethodParser(IParser<MethodDefinition> parameterParser)
-    {
-        _parameterParser = parameterParser;
-    }
 
     protected override bool CanParseImpl(string lineOfCode) => _sprocRegex.IsMatch(lineOfCode);
 
@@ -51,8 +44,8 @@ internal class MethodParser : SettingsParser<ContextDefinition>
         }
 
         // extract all parameters from the method line
-        if (_parameterParser.CanParse(CurrentLine))
-            _parameterParser.Parse(method, reader);
+        if (parameterParser.CanParse(CurrentLine))
+            parameterParser.Parse(method, reader);
 
         // add the fully hydrated method to the definition
         definition.RepositoryMethods.Add(method);

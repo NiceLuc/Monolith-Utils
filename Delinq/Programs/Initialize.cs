@@ -14,17 +14,11 @@ public sealed class Initialize
         public string DesignerFilePath => DbmlFilePath.Replace(".dbml", ".designer.cs");
     }
 
-    public class Handler : IRequestHandler<Request, string>
+    public class Handler(
+        IEnumerable<IParser<ContextDefinition>> parsers,
+        IContextDefinitionSerializer serializer)
+        : IRequestHandler<Request, string>
     {
-        private readonly IEnumerable<IParser<ContextDefinition>> _parsers;
-        private readonly IContextDefinitionSerializer _serializer;
-
-        public Handler(IEnumerable<IParser<ContextDefinition>> parsers, IContextDefinitionSerializer serializer)
-        {
-            _parsers = parsers;
-            _serializer = serializer;
-        }
-
         public async Task<string> Handle(Request request, CancellationToken cancellationToken)
         {
             ValidateRequest(request);
@@ -36,7 +30,7 @@ public sealed class Initialize
             {
                 while (await reader.ReadLineAsync(cancellationToken) is { } line)
                 {
-                    var parser = _parsers.FirstOrDefault(p => p.CanParse(line));
+                    var parser = parsers.FirstOrDefault(p => p.CanParse(line));
                     parser?.Parse(definition, reader);
                 }
             }
@@ -44,7 +38,7 @@ public sealed class Initialize
             // serialize the definition to a json file
             var filePath = CalculateFilePath(request, definition);
 
-            await _serializer.SerializeAsync(filePath, definition, cancellationToken);
+            await serializer.SerializeAsync(filePath, definition, cancellationToken);
 
             return filePath;
         }
