@@ -17,6 +17,9 @@
     <None Remove="CodeGeneration\Templates\RepositoryMethodNonQuery.hbs" />
     <None Remove="CodeGeneration\Templates\RepositorySettings.hbs" />
     <None Remove="CodeGeneration\Templates\TestUtils.hbs" />
+    <None Remove="CodeGeneration\Templates\UnitTestMethodNonQuery.hbs" />
+    <None Remove="CodeGeneration\Templates\UnitTestMethodQueryMany.hbs" />
+    <None Remove="CodeGeneration\Templates\UnitTestMethodQuerySingle.hbs" />
     <None Remove="CodeGeneration\Templates\UnitTests.hbs" />
   </ItemGroup>
 
@@ -45,7 +48,16 @@
     <EmbeddedResource Include="CodeGeneration\Templates\IRepository.hbs">
       <CopyToOutputDirectory>Never</CopyToOutputDirectory>
     </EmbeddedResource>
+    <EmbeddedResource Include="CodeGeneration\Templates\UnitTestMethodNonQuery.hbs">
+      <CopyToOutputDirectory>Never</CopyToOutputDirectory>
+    </EmbeddedResource>
     <EmbeddedResource Include="CodeGeneration\Templates\RepositoryMethodNonQuery.hbs">
+      <CopyToOutputDirectory>Never</CopyToOutputDirectory>
+    </EmbeddedResource>
+    <EmbeddedResource Include="CodeGeneration\Templates\UnitTestMethodQueryMany.hbs">
+      <CopyToOutputDirectory>Never</CopyToOutputDirectory>
+    </EmbeddedResource>
+    <EmbeddedResource Include="CodeGeneration\Templates\UnitTestMethodQuerySingle.hbs">
       <CopyToOutputDirectory>Never</CopyToOutputDirectory>
     </EmbeddedResource>
     <EmbeddedResource Include="CodeGeneration\Templates\RepositoryMethodQuerySingle.hbs">
