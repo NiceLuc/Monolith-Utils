@@ -35,7 +35,7 @@ internal class RepositoryRenderer : BaseRenderer<ContextDefinition>
         return viewModel;
     }
 
-    private List<ParameterViewModel> GetSprocParameters(MethodDefinition method)
+    private static List<ParameterViewModel> GetSprocParameters(MethodDefinition method)
     {
         return method.Parameters.Select(parameter => new ParameterViewModel
         {

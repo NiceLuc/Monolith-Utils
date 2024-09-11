@@ -41,11 +41,12 @@ namespace Delinq.DependencyInjection
 
             services.AddSingleton<IRenderer<ContextDefinition>, TestUtilsRenderer>();
             services.AddSingleton<IRenderer<ContextDefinition>, UnitTestsRenderer>();
-            services.AddSingleton<IRendererProvider<ContextDefinition>, RepositoryRendererProvider>();
 
             // used for resolving method renderers
             services.AddSingleton<IRenderer<MethodDefinition>, RepositoryMethodRenderer>();
-            services.AddSingleton<IRendererProvider<MethodDefinition>, RepositoryMethodRendererProvider>();
+
+            services.AddSingleton<IRendererProvider<ContextDefinition>, RendererProvider<ContextDefinition>>();
+            services.AddSingleton<IRendererProvider<MethodDefinition>, RendererProvider<MethodDefinition>>();
         }
     }
 }
