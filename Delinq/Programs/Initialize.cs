@@ -19,6 +19,8 @@ public sealed class Initialize
         IContextDefinitionSerializer serializer)
         : IRequestHandler<Request, string>
     {
+        private static string[] TokensForReturnValueParameter = {"Add", "Create", "Insert"};
+
         public async Task<string> Handle(Request request, CancellationToken cancellationToken)
         {
             ValidateRequest(request);
@@ -35,6 +37,10 @@ public sealed class Initialize
                 }
             }
 
+            // loop through all methods on the definition and determine if they require return value parameters
+            foreach (var method in definition.RepositoryMethods) 
+                method.HasReturnParameter = DoesMethodRequireReturnParameter(method);
+
             // serialize the definition to a json file
             var filePath = CalculateFilePath(request, definition);
 
@@ -42,6 +48,8 @@ public sealed class Initialize
 
             return filePath;
         }
+
+        #region Private Methods
 
         private static void ValidateRequest(Request request)
         {
@@ -59,6 +67,14 @@ public sealed class Initialize
                 throw new InvalidOperationException($"File already exists: {request.SettingsFilePath} (use -f to overwrite)");
         }
 
+        private static bool DoesMethodRequireReturnParameter(MethodDefinition method)
+        {
+            if (method.DatabaseType != "NonQuery") 
+                return false;
+
+            return TokensForReturnValueParameter.Any(token => method.MethodName.Contains(token));
+        }
+
         private static string CalculateFilePath(Request request, ContextDefinition definition)
         {
             if (!string.IsNullOrEmpty(request.SettingsFilePath))
@@ -72,5 +88,7 @@ public sealed class Initialize
             var fileName = $"{definition.ContextName}.metadata.settings";
             return Path.Combine(directory, fileName);
         }
+
+        #endregion
     }
 }
