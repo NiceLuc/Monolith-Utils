@@ -9,25 +9,35 @@ public {{ReturnType}} {{MethodName}}({{#each Parameters}}{{#if @index}}, {{/if}}
                 var {{MethodParameterName}}Param = query.AddParameter("@{{SprocParameterName}}", SqlDbType.{{SprocParameterType}}, {{MethodParameterName}}, ParameterDirection.{{SprocParameterDirection}}{{#if HasStringLength}}, {{SprocParameterLength}}{{/if}});{{#newline}}
 {{#else}}
 {{#if IsInputParameter}}
-{{#if HasStringLength}}
-                query.AddParameter("@{{SprocParameterName}}", SqlDbType.{{SprocParameterType}}, {{MethodParameterName}}, ParameterDirection.Input, {{SprocParameterLength}});{{#newline}}
-{{#else}}
                 query.AddParameter("@{{SprocParameterName}}", SqlDbType.{{SprocParameterType}}, {{MethodParameterName}});{{#newline}}
-{{/if}}
 {{#else}}
-                query.AddParameter("@{{SprocParameterName}}", SqlDbType.{{SprocParameterType}}, {{MethodParameterName}}, ParameterDirection.{{SprocParameterDirection}}{{#if HasStringLength}}, {{SprocParameterLength}}{{/if}});{{#newline}}
+                query.AddParameter("@{{SprocParameterName}}", SqlDbType.{{SprocParameterType}}, {{MethodParameterName}}, ParameterDirection.{{SprocParameterDirection}});{{#newline}}
 {{/if}}
 {{/if}}
 {{/each}}
 {{#if HasReturnValue}}
 {{#with ReturnValueParameter}}
                 var {{MethodParameterName}}Param = query.AddParameter("@{{SprocParameterName}}", SqlDbType.{{SprocParameterType}}, null, ParameterDirection.ReturnValue);{{#newline}}
+{{/with}}
                 {{#newline}}
                 query.ExecuteNonQuery();{{#newline}}
-                return ({{ReturnType}}) {{MethodParameterName}}Param.Value;
+{{#each OutputParameters}}
+                {{MethodParameterName}} = ({{MethodParameterType}}) {{MethodParameterName}}Param.Value;{{#newline}}
+{{/each}}
+{{#with ReturnValueParameter}}
+                return ({{ReturnType}}) {{MethodParameterName}}Param.Value;{{#newline}}
 {{/with}}
 {{#else}}
+{{#if HasOutputParameters}}
+                {{#newline}}
+                var result = query.ExecuteNonQuery();{{#newline}}
+{{#each OutputParameters}}
+                {{MethodParameterName}} = ({{MethodParameterType}}) {{MethodParameterName}}Param.Value;{{#newline}}
+{{/each}}
+                return result;{{#newline}}
+{{#else}}
                 return query.ExecuteNonQuery();{{#newline}}
+{{/if}}
 {{/if}}
             }{{#newline}}
         }

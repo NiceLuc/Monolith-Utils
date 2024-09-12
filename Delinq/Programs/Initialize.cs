@@ -72,7 +72,12 @@ public sealed class Initialize
             if (method.DatabaseType != "NonQuery") 
                 return false;
 
-            return TokensForReturnValueParameter.Any(token => method.MethodName.Contains(token));
+            if (!TokensForReturnValueParameter.Any(token => method.MethodName.Contains(token))) 
+                return false;
+
+            // if the method name contains one of the tokens, we need to check if there are out parameters
+            return method.Parameters.All(p => p.ParameterDirection != "Output");
+
         }
 
         private static string CalculateFilePath(Request request, ContextDefinition definition)
