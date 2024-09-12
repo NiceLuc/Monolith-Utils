@@ -33,7 +33,9 @@ namespace {{Namespace}}.Tests{{#newline}}
             _factory.Setup(f => f.CreateEx(_connectionString)).Returns(_query.Object);{{#newline}}
         }{{#newline}}
         {{#newline}}
-        // todo: add methods!{{#newline}}
+{{#each Methods}}
+        {{this}}{{#newline}}
+{{/each}}
         {{#newline}}
         #region Private Methods{{#newline}}
         {{#newline}}

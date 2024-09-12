@@ -13,5 +13,10 @@ public class UnitTestMethodViewModel
 
     public List<UnitTestParameterViewModel> SprocParameters { get; set; } = new();
 
-    public IList<UnitTestParameterViewModel> OutputParameters => SprocParameters.Where(p => p.ShouldCaptureResult).ToList();
+    public bool HasOutputParameters => SprocParameters.Any(p => p.ShouldCaptureResult);
+    public IList<UnitTestParameterViewModel> OutputParameters 
+        => SprocParameters.Where(p => p.ShouldCaptureResult).ToList();
+
+    public bool HasReturnValue => ReturnValueParameter != null;
+    public UnitTestParameterViewModel? ReturnValueParameter { get; set; }
 }
