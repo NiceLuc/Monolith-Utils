@@ -12,6 +12,8 @@ public class RepositoryMethodViewModel
     public List<PropertyDefinition> Properties { get; set; }
 
     public List<RepositoryParameterViewModel> SprocParameters { get; set; } = new();
-
     public bool HasOutputParameters => SprocParameters.Any(p => p.ShouldCaptureResult);
+
+    public bool HasReturnValue => ReturnValueParameter != null;
+    public RepositoryParameterViewModel? ReturnValueParameter { get; set; }
 }

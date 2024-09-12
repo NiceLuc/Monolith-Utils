@@ -19,6 +19,15 @@ public {{ReturnType}} {{MethodName}}({{#each Parameters}}{{#if @index}}, {{/if}}
 {{/if}}
 {{/if}}
 {{/each}}
+{{#if HasReturnValue}}
+{{#with ReturnValueParameter}}
+                var {{MethodParameterName}}Param = query.AddParameter("@{{SprocParameterName}}", SqlDbType.{{SprocParameterType}}, null, ParameterDirection.ReturnValue);{{#newline}}
+                {{#newline}}
+                query.ExecuteNonQuery();{{#newline}}
+                return ({{ReturnType}}) {{MethodParameterName}}Param.Value;
+{{/with}}
+{{#else}}
                 return query.ExecuteNonQuery();{{#newline}}
+{{/if}}
             }{{#newline}}
         }

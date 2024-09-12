@@ -12,19 +12,7 @@ internal class RepositoryRenderer : BaseRenderer<ContextDefinition>
         foreach (var method in data.RepositoryMethods)
         {
             var model = data.DTOModels.FirstOrDefault(m => m.ClassName == method.ReturnType);
-            var methodViewModel = new RepositoryMethodViewModel
-            {
-                IsList = method.IsList,
-                MethodName = method.MethodName,
-                ReturnType = method.ReturnType,
-                SprocName = method.DatabaseName,
-                DatabaseType = method.DatabaseType,
-                Parameters = method.Parameters,
-                Properties = model?.Properties ?? new(),
-                SprocParameters = GetSprocParameters(method),
-            };
-
-            // todo: add support for ReturnValue parameter when NonQuery && MethodName.Contains("Insert")
+            var methodViewModel = CreateMethodViewModel(method, model);
 
             var resourceFileName = GetResourceFileName(methodViewModel, data);
             var code = await engine.ProcessAsync(resourceFileName, methodViewModel, cancellationToken);
@@ -36,6 +24,23 @@ internal class RepositoryRenderer : BaseRenderer<ContextDefinition>
     }
 
     #region Private Methods
+
+    private static RepositoryMethodViewModel CreateMethodViewModel(MethodDefinition method, DTOClassDefinition? model)
+    {
+        return new RepositoryMethodViewModel
+        {
+            IsList = method.IsList,
+            MethodName = method.MethodName,
+            ReturnType = method.ReturnType,
+            SprocName = method.DatabaseName,
+            DatabaseType = method.DatabaseType,
+            Parameters = method.Parameters,
+            Properties = model?.Properties ?? new(),
+            SprocParameters = GetSprocParameters(method),
+            ReturnValueParameter = method.HasReturnParameter
+                ? CreateReturnParameter(method) : null
+        };
+    }
 
     private static List<RepositoryParameterViewModel> GetSprocParameters(MethodDefinition method)
     {
@@ -65,6 +70,20 @@ internal class RepositoryRenderer : BaseRenderer<ContextDefinition>
             !parameter.DatabaseLength.Equals("max",
                 StringComparison.InvariantCultureIgnoreCase);
 
+    }
+
+    private static RepositoryParameterViewModel CreateReturnParameter(MethodDefinition method)
+    {
+        return new RepositoryParameterViewModel
+        {
+            MethodParameterName = "returnValue",
+            MethodParameterType = "int",
+            SprocParameterName = "ReturnValue",
+            SprocParameterType = "Int",
+            SprocParameterDirection = "ReturnValue",
+            ShouldCaptureResult = true,
+            IsInputParameter = false
+        };
     }
 
     private static string GetResourceFileName(RepositoryMethodViewModel method, ContextDefinition data)
