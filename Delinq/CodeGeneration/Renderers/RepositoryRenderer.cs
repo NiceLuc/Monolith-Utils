@@ -37,9 +37,9 @@ internal class RepositoryRenderer : BaseRenderer<ContextDefinition>
 
     #region Private Methods
 
-    private static List<ParameterViewModel> GetSprocParameters(MethodDefinition method)
+    private static List<RepositoryParameterViewModel> GetSprocParameters(MethodDefinition method)
     {
-        return method.Parameters.Select(parameter => new ParameterViewModel
+        return method.Parameters.Select(parameter => new RepositoryParameterViewModel
         {
             // method parameter details
             MethodParameterName = parameter.ParameterName,

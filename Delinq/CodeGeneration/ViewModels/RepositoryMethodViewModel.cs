@@ -11,7 +11,7 @@ public class RepositoryMethodViewModel
     public List<ParameterDefinition> Parameters { get; set; } = new();
     public List<PropertyDefinition> Properties { get; set; }
 
-    public List<ParameterViewModel> SprocParameters { get; set; } = new();
+    public List<RepositoryParameterViewModel> SprocParameters { get; set; } = new();
 
     public bool HasOutputParameters => SprocParameters.Any(p => p.ShouldCaptureResult);
 }
