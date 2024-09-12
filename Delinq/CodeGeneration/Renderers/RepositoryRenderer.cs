@@ -6,7 +6,7 @@ namespace Delinq.CodeGeneration.Renderers;
 [HandlebarsTemplateModel("Repository", "Repository.hbs", "{0}Repository.cs")]
 internal class RepositoryRenderer : BaseRenderer<ContextDefinition>
 {
-    protected override async Task<object> ConvertToViewModelAsync(ITemplateEngine engine, ContextDefinition data, CancellationToken cancellationToken)
+    protected override async Task<object> CreateViewModelAsync(ITemplateEngine engine, ContextDefinition data, CancellationToken cancellationToken)
     {
         var viewModel = new RepositoryViewModel(data);
         foreach (var method in data.RepositoryMethods)
@@ -34,6 +34,8 @@ internal class RepositoryRenderer : BaseRenderer<ContextDefinition>
 
         return viewModel;
     }
+
+    #region Private Methods
 
     private static List<ParameterViewModel> GetSprocParameters(MethodDefinition method)
     {
@@ -74,4 +76,6 @@ internal class RepositoryRenderer : BaseRenderer<ContextDefinition>
             ? "RepositoryMethodQuerySingle.hbs" 
             : "RepositoryMethodNonQuery.hbs"; // example: int or bool or etc...
     }
+
+    #endregion
 }

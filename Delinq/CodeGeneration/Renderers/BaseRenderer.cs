@@ -23,10 +23,10 @@ internal abstract class BaseRenderer<T> : IRenderer<T>
 
     public async Task<string> RenderAsync(ITemplateEngine engine, T data, CancellationToken cancellationToken)
     {
-        var viewModel = await ConvertToViewModelAsync(engine, data, cancellationToken);
+        var viewModel = await CreateViewModelAsync(engine, data, cancellationToken);
         return await engine.ProcessAsync(ResourceFileName, viewModel, cancellationToken);
     }
 
-    protected virtual Task<object> ConvertToViewModelAsync(ITemplateEngine engine, T definition,
+    protected virtual Task<object> CreateViewModelAsync(ITemplateEngine engine, T definition,
         CancellationToken cancellationToken) => Task.FromResult<object>(definition);
 }

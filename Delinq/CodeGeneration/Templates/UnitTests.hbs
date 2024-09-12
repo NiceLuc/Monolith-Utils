@@ -12,7 +12,9 @@ namespace {{Namespace}}.Tests{{#newline}}
     [TestClass]{{#newline}}
     public class {{ContextName}}RepositoryTests{{#newline}}
     {{{#newline}}
+        private static readonly Exception TestException = new Exception("Test Exception");{{#newline}}
         private const string _connectionString = "test_connection";{{#newline}}
+        {{#newline}}
         private MockRepository _mockRepo = new MockRepository(MockBehavior.Strict);{{#newline}}
         private Mock<I{{ContextName}}RepositorySettings> _settings;{{#newline}}
         private Mock<ISQLQueryFactory> _factory;{{#newline}}
@@ -35,7 +37,7 @@ namespace {{Namespace}}.Tests{{#newline}}
         {{#newline}}
         #region Private Methods{{#newline}}
         {{#newline}}
-        private IWFIRepository CreateRepository(){{#newline}}
+        private I{{ContextName}}Repository CreateRepository(){{#newline}}
         {{{#newline}}
             return new {{ContextName}}Repository(_settings.Object, _factory.Object);{{#newline}}
         }{{#newline}}
@@ -47,6 +49,5 @@ namespace {{Namespace}}.Tests{{#newline}}
         }{{#newline}}
         {{#newline}}
         #endregion{{#newline}}
-        {{#newline}}
     }{{#newline}}
-}{{#newline}}
+}
