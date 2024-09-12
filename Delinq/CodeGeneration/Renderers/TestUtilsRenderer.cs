@@ -37,9 +37,9 @@ internal class TestUtilsRenderer : BaseRenderer<ContextDefinition>
 
     #region Private Methods
 
-    private static List<ParameterViewModel> GetSprocParameters(MethodDefinition method)
+    private static List<UnitTestParameterViewModel> GetSprocParameters(MethodDefinition method)
     {
-        return method.Parameters.Select(parameter => new ParameterViewModel
+        return method.Parameters.Select(parameter => new UnitTestParameterViewModel
         {
             // method parameter details
             MethodParameterName = parameter.ParameterName,
@@ -67,7 +67,7 @@ internal class TestUtilsRenderer : BaseRenderer<ContextDefinition>
 
     }
 
-    private static string GetResourceFileName(RepositoryMethodViewModel method, ContextDefinition data)
+    private static string GetResourceFileName(UnitTestMethodViewModel method, ContextDefinition data)
     {
         if (method.IsList)
             return "UnitTestMethodQueryMany.hbs";
