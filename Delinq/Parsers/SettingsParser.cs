@@ -19,13 +19,11 @@ public abstract class SettingsParser<T> : IParser<T> where T : class
         if (string.IsNullOrEmpty(lineOfCode.Trim()))
             return false;
 
-        if (CanParseImpl(lineOfCode))
-        {
-            CurrentLine = lineOfCode;
-            return true;
-        }
+        if (!CanParseImpl(lineOfCode)) 
+            return false;
 
-        return false;
+        CurrentLine = lineOfCode;
+        return true;
     }
 
     public void Parse(T model, StreamReader reader)

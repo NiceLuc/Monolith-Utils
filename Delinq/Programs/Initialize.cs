@@ -14,16 +14,12 @@ public sealed class Initialize
         public string DesignerFilePath => DbmlFilePath.Replace(".dbml", ".designer.cs");
     }
 
-    public class Handler : IRequestHandler<Request, string>
+    public class Handler(
+        IEnumerable<IParser<ContextDefinition>> parsers,
+        IContextDefinitionSerializer serializer)
+        : IRequestHandler<Request, string>
     {
-        private readonly IEnumerable<IParser<ContextDefinition>> _parsers;
-        private readonly IContextDefinitionSerializer _serializer;
-
-        public Handler(IEnumerable<IParser<ContextDefinition>> parsers, IContextDefinitionSerializer serializer)
-        {
-            _parsers = parsers;
-            _serializer = serializer;
-        }
+        private static readonly string[] TokensForReturnValueParameter = ["Add", "Create", "Insert"];
 
         public async Task<string> Handle(Request request, CancellationToken cancellationToken)
         {
@@ -31,23 +27,29 @@ public sealed class Initialize
 
             var definition = new ContextDefinition();
 
-            // parse the designer file
+            // parse the designer file using the parser implementations created for ContextDefinition
             using (var reader = File.OpenText(request.DesignerFilePath))
             {
                 while (await reader.ReadLineAsync(cancellationToken) is { } line)
                 {
-                    var parser = _parsers.FirstOrDefault(p => p.CanParse(line));
+                    var parser = parsers.FirstOrDefault(p => p.CanParse(line));
                     parser?.Parse(definition, reader);
                 }
             }
 
+            // loop through all methods on the definition and determine if they require return value parameters
+            foreach (var method in definition.RepositoryMethods) 
+                method.HasReturnParameter = DoesMethodRequireReturnParameter(method);
+
             // serialize the definition to a json file
             var filePath = CalculateFilePath(request, definition);
 
-            await _serializer.SerializeAsync(filePath, definition, cancellationToken);
+            await serializer.SerializeAsync(filePath, definition, cancellationToken);
 
             return filePath;
         }
+
+        #region Private Methods
 
         private static void ValidateRequest(Request request)
         {
@@ -65,6 +67,20 @@ public sealed class Initialize
                 throw new InvalidOperationException($"File already exists: {request.SettingsFilePath} (use -f to overwrite)");
         }
 
+        private static bool DoesMethodRequireReturnParameter(MethodDefinition method)
+        {
+            if (method.DatabaseType != "NonQuery") 
+                return false;
+
+            if (!TokensForReturnValueParameter.Any(token => method.MethodName.Contains(token))) 
+                return false;
+
+            // if the method name contains one of the tokens, we need to check if there are out parameters
+            // if there are, we don't need to add a return parameter, as it's handled by a 'ref' parameter
+            return method.Parameters.All(p => p.ParameterDirection != "Output");
+
+        }
+
         private static string CalculateFilePath(Request request, ContextDefinition definition)
         {
             if (!string.IsNullOrEmpty(request.SettingsFilePath))
@@ -78,5 +94,7 @@ public sealed class Initialize
             var fileName = $"{definition.ContextName}.metadata.settings";
             return Path.Combine(directory, fileName);
         }
+
+        #endregion
     }
 }

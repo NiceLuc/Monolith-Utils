@@ -1,6 +1,6 @@
 ﻿namespace Delinq.CodeGeneration.ViewModels;
 
-public class ParameterViewModel
+public class RepositoryParameterViewModel
 {
     public string MethodParameterType { get; set; }
     public string MethodParameterName { get; set; }

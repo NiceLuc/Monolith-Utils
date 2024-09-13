@@ -15,6 +15,7 @@ public class MethodDefinition
     public string MethodName { get; set; }
     public string ReturnType { get; set; }
     public bool IsList { get; set; }
+    public bool HasReturnParameter { get; set; }
 
     public List<ParameterDefinition> Parameters { get; set; } = new();
 }

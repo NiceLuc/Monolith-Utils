@@ -7,7 +7,7 @@ public {{ReturnType}} {{MethodName}}({{#each Parameters}}{{#if @index}}, {{/if}}
                 query.SQL = "{{SprocName}}";{{#newline}}
 {{#each SprocParameters}}
 {{#if ShouldCaptureResult}}
-                var {{MethodParameterName}}Param = query.AddParameter("@{{SprocParameterName}}", SqlDbType.{{SprocParameterType}}, {{MethodParameterName}}, ParameterDirection.{{SprocParameterDirection}}{{#if HasStringLength}}, {{SprocParameterLength}}{{/if}});{{#newline}}
+                var {{MethodParameterName}}Param = query.AddParameter("@{{SprocParameterName}}", SqlDbType.{{SprocParameterType}}, {{MethodParameterName}}, ParameterDirection.{{SprocParameterDirection}});{{#newline}}
 {{#else}}
 {{#if IsInputParameter}}
 {{#if HasStringLength}}
@@ -16,7 +16,7 @@ public {{ReturnType}} {{MethodName}}({{#each Parameters}}{{#if @index}}, {{/if}}
                 query.AddParameter("@{{SprocParameterName}}", SqlDbType.{{SprocParameterType}}, {{MethodParameterName}});{{#newline}}
 {{/if}}
 {{#else}}
-                query.AddParameter("@{{SprocParameterName}}", SqlDbType.{{SprocParameterType}}, {{MethodParameterName}}, ParameterDirection.{{SprocParameterDirection}}{{#if HasStringLength}}, {{SprocParameterLength}}{{/if}});{{#newline}}
+                query.AddParameter("@{{SprocParameterName}}", SqlDbType.{{SprocParameterType}}, {{MethodParameterName}}, ParameterDirection.{{SprocParameterDirection}});{{#newline}}
 {{/if}}
 {{/if}}
 {{/each}}

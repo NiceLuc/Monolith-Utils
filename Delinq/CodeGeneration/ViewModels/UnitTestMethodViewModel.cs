@@ -1,6 +1,6 @@
 ﻿namespace Delinq.CodeGeneration.ViewModels;
 
-public class RepositoryMethodViewModel
+public class UnitTestMethodViewModel
 {
     public string MethodName { get; set; }
     public string SprocName { get; set; }
@@ -11,12 +11,12 @@ public class RepositoryMethodViewModel
     public List<ParameterDefinition> Parameters { get; set; } = new();
     public List<PropertyDefinition> Properties { get; set; }
 
-    public List<RepositoryParameterViewModel> SprocParameters { get; set; } = new();
+    public List<UnitTestParameterViewModel> SprocParameters { get; set; } = new();
 
     public bool HasOutputParameters => SprocParameters.Any(p => p.ShouldCaptureResult);
-    public IList<RepositoryParameterViewModel> OutputParameters 
+    public IList<UnitTestParameterViewModel> OutputParameters 
         => SprocParameters.Where(p => p.ShouldCaptureResult).ToList();
 
     public bool HasReturnValue => ReturnValueParameter != null;
-    public RepositoryParameterViewModel? ReturnValueParameter { get; set; }
+    public UnitTestParameterViewModel? ReturnValueParameter { get; set; }
 }

@@ -4,19 +4,20 @@ using MediatR;
 
 namespace Delinq.Programs;
 
-public sealed class CreateUnitTests
+public sealed class CreateRepositoryFiles
 {
     public class Request : IRequest<string>
     {
-        public string SettingsFilePath { get; set; }
-        public string OutputDirectory { get; set; }
+        public string SettingsFilePath { get; init; }
+        public string OutputDirectory { get; init; }
         public string MethodName { get; init; }
     }
 
     public class Handler(
         IContextDefinitionSerializer definitionSerializer,
         ITemplateEngine templateEngine,
-        IRendererProvider<ContextDefinition> provider)
+        IFileStorage fileStorage,
+        IRendererProvider<ContextDefinition> provider) 
         : IRequestHandler<Request, string>
     {
         public async Task<string> Handle(Request request, CancellationToken cancellationToken)
@@ -25,11 +26,16 @@ public sealed class CreateUnitTests
                 Directory.CreateDirectory(request.OutputDirectory);
 
             var definition = await definitionSerializer.DeserializeAsync(request.SettingsFilePath, cancellationToken);
-            if (!string.IsNullOrEmpty(request.MethodName))
-                FilterMethods(definition, request.MethodName);
+            if (!string.IsNullOrEmpty(request.MethodName)) 
+                FilterMethodsAndDTOModels(definition, request.MethodName);
 
-            await ProcessTemplate("TestUtils");
-            await ProcessTemplate("UnitTests");
+            await ProcessTemplate("RepositorySettingsInterface");
+            await ProcessTemplate("RepositoryInterface");
+            await ProcessTemplate("RepositorySettings");
+
+            await ProcessTemplate("DTOModels");
+            await ProcessTemplate("Repository");
+            await ProcessTemplate("DataContext");
 
             return request.OutputDirectory;
 
@@ -42,13 +48,13 @@ public sealed class CreateUnitTests
                 var generatedCode = await renderer.RenderAsync(templateEngine, definition, cancellationToken);
                 var fileName = string.Format(renderer.FileNameFormat, definition.ContextName);
                 var filePath = Path.Combine(request.OutputDirectory, fileName);
-                await File.WriteAllTextAsync(filePath, generatedCode, cancellationToken);
+                await fileStorage.WriteAllTextAsync(filePath, generatedCode, cancellationToken);
             }
         }
 
         #region Private Methods
 
-        private static void FilterMethods(ContextDefinition definition, string methodName)
+        private static void FilterMethodsAndDTOModels(ContextDefinition definition, string methodName)
         {
             var method = definition.RepositoryMethods.FirstOrDefault(m =>
                 m.MethodName.Equals(methodName, StringComparison.InvariantCultureIgnoreCase));
@@ -56,7 +62,11 @@ public sealed class CreateUnitTests
             if (method == null)
                 throw new InvalidOperationException($"Method '{methodName}' not found.");
 
+            var model = definition.DTOModels.FirstOrDefault(m =>
+                m.ClassName.Equals(method.ReturnType, StringComparison.InvariantCultureIgnoreCase));
+
             definition.RepositoryMethods = [method];
+            definition.DTOModels = model == null ? [] : [model];
         }
 
         #endregion

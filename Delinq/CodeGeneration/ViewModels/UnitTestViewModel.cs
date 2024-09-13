@@ -1,6 +1,6 @@
 ﻿namespace Delinq.CodeGeneration.ViewModels;
 
-public class RepositoryViewModel(ContextDefinition definition)
+public class UnitTestViewModel(ContextDefinition definition)
 {
     public string Namespace => definition.Namespace;
     public string ContextName => definition.ContextName;

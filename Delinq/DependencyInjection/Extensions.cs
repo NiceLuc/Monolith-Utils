@@ -27,25 +27,20 @@ namespace Delinq.DependencyInjection
         {
             services.AddSingleton<FormatCompiler>();
             services.AddSingleton<ITemplateProvider, TemplateProvider>();
-
+            services.AddSingleton<IFileStorage, FileStorage>();
             services.AddSingleton<IContextDefinitionSerializer, ContextDefinitionSerializer>();
-            services.AddSingleton<ITemplateEngine, HandlebarsTemplateEngine>();
 
             // used for resolving renderer instances
+            services.AddSingleton<ITemplateEngine, HandlebarsTemplateEngine>();
             services.AddSingleton<IRenderer<ContextDefinition>, RepositorySettingsInterfaceRenderer>();
             services.AddSingleton<IRenderer<ContextDefinition>, RepositorySettingsRenderer>();
             services.AddSingleton<IRenderer<ContextDefinition>, RepositoryInterfaceRenderer>();
             services.AddSingleton<IRenderer<ContextDefinition>, RepositoryRenderer>();
             services.AddSingleton<IRenderer<ContextDefinition>, DataContextRenderer>();
             services.AddSingleton<IRenderer<ContextDefinition>, DTOModelsRenderer>();
-
             services.AddSingleton<IRenderer<ContextDefinition>, TestUtilsRenderer>();
             services.AddSingleton<IRenderer<ContextDefinition>, UnitTestsRenderer>();
-            services.AddSingleton<IRendererProvider<ContextDefinition>, RepositoryRendererProvider>();
-
-            // used for resolving method renderers
-            services.AddSingleton<IRenderer<MethodDefinition>, RepositoryMethodRenderer>();
-            services.AddSingleton<IRendererProvider<MethodDefinition>, RepositoryMethodRendererProvider>();
+            services.AddSingleton<IRendererProvider<ContextDefinition>, RendererProvider<ContextDefinition>>();
         }
     }
 }
