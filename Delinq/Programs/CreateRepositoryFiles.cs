@@ -1,5 +1,6 @@
 ﻿using Delinq.CodeGeneration;
 using Delinq.CodeGeneration.Engine;
+using Delinq.CodeGeneration.ViewModels;
 using MediatR;
 
 namespace Delinq.Programs;
@@ -15,6 +16,7 @@ public sealed class CreateRepositoryFiles
 
     public class Handler(
         IContextDefinitionSerializer definitionSerializer,
+        ITemplateProvider templateProvider,
         ITemplateEngine templateEngine,
         IFileStorage fileStorage,
         IRendererProvider<ContextDefinition> provider) 
@@ -29,24 +31,22 @@ public sealed class CreateRepositoryFiles
             if (!string.IsNullOrEmpty(request.MethodName)) 
                 FilterMethodsAndDTOModels(definition, request.MethodName);
 
-            await ProcessTemplate("RepositorySettingsInterface");
-            await ProcessTemplate("RepositoryInterface");
-            await ProcessTemplate("RepositorySettings");
+            await ProcessTemplate("IRepositorySettings.hbs", "I{0}RepositorySettings.cs");
+            await ProcessTemplate("IRepository.hbs", "I{0}Repository.cs");
+            await ProcessTemplate("RepositorySettings.hbs", "{0}RepositorySettings.cs");
+            await ProcessTemplate("DTOModels.hbs", "{0}DataModels.cs");
 
-            await ProcessTemplate("DTOModels");
-            await ProcessTemplate("Repository");
-            await ProcessTemplate("DataContext");
+            var viewModel = await CreateViewModelAsync(definition, cancellationToken);
+            await ProcessTemplate("Repository.hbs", "{0}Repository.cs", viewModel);
+            await ProcessTemplate("DataContext.hbs", "{0}DataContext.cs");
 
             return request.OutputDirectory;
 
-            async Task ProcessTemplate(string rendererKey)
+            async Task ProcessTemplate(string resourceName, string fileNameFormat, object? data = null)
             {
-                var renderer = provider.GetRenderer(rendererKey);
-                if (string.IsNullOrEmpty(renderer.FileNameFormat))
-                    throw new InvalidOperationException($"FileNameFormat attribute required for {renderer.GetType()}");
-
-                var generatedCode = await renderer.RenderAsync(templateEngine, definition, cancellationToken);
-                var fileName = string.Format(renderer.FileNameFormat, definition.ContextName);
+                var template = await templateProvider.GetTemplateAsync(resourceName, cancellationToken);
+                var generatedCode = templateEngine.ProcessTemplate(template, data ?? definition);
+                var fileName = string.Format(fileNameFormat, definition.ContextName);
                 var filePath = Path.Combine(request.OutputDirectory, fileName);
                 await fileStorage.WriteAllTextAsync(filePath, generatedCode, cancellationToken);
             }
@@ -67,6 +67,94 @@ public sealed class CreateRepositoryFiles
 
             definition.RepositoryMethods = [method];
             definition.DTOModels = model == null ? [] : [model];
+        }
+
+        private async Task<object> CreateViewModelAsync(ContextDefinition data, CancellationToken cancellationToken)
+        {
+            var viewModel = new RepositoryViewModel(data);
+            foreach (var method in data.RepositoryMethods)
+            {
+                var model = data.DTOModels.FirstOrDefault(m => m.ClassName == method.ReturnType);
+                var methodViewModel = CreateMethodViewModel(method, model);
+
+                var resourceFileName = GetResourceFileName(methodViewModel, data);
+                var code = await templateEngine.ProcessAsync(resourceFileName, methodViewModel, cancellationToken);
+
+                viewModel.Methods.Add(code);
+            }
+
+            return viewModel;
+        }
+
+        private static RepositoryMethodViewModel CreateMethodViewModel(MethodDefinition method, DTOClassDefinition? model)
+        {
+            return new RepositoryMethodViewModel
+            {
+                IsList = method.IsList,
+                MethodName = method.MethodName,
+                ReturnType = method.ReturnType,
+                SprocName = method.DatabaseName,
+                DatabaseType = method.DatabaseType,
+                Parameters = method.Parameters,
+                Properties = model?.Properties ?? new(),
+                SprocParameters = GetSprocParameters(method),
+                ReturnValueParameter = method.HasReturnParameter
+                    ? CreateReturnParameter(method) : null
+            };
+        }
+
+        private static List<RepositoryParameterViewModel> GetSprocParameters(MethodDefinition method)
+        {
+            return method.Parameters.Select(parameter => new RepositoryParameterViewModel
+            {
+                // method parameter details
+                MethodParameterName = parameter.ParameterName,
+                MethodParameterType = parameter.ParameterType,
+
+                // sproc parameter details
+                SprocParameterName = parameter.SprocParameterName,
+                SprocParameterType = parameter.SqlDbType,
+                SprocParameterDirection = parameter.ParameterDirection,
+                SprocParameterLength = parameter.DatabaseLength,
+                HasStringLength = HasStringLength(parameter),
+                ShouldCaptureResult = parameter.IsRef,
+                IsInputParameter = IsInputParameter(parameter)
+
+            }).ToList();
+
+            bool IsInputParameter(ParameterDefinition parameter) =>
+                !parameter.IsRef && parameter.ParameterDirection.Equals("Input",
+                    StringComparison.InvariantCultureIgnoreCase);
+
+            bool HasStringLength(ParameterDefinition parameter) =>
+                !string.IsNullOrEmpty(parameter.DatabaseLength) &&
+                !parameter.DatabaseLength.Equals("max",
+                    StringComparison.InvariantCultureIgnoreCase);
+
+        }
+
+        private static RepositoryParameterViewModel CreateReturnParameter(MethodDefinition method)
+        {
+            return new RepositoryParameterViewModel
+            {
+                MethodParameterName = "returnValue",
+                MethodParameterType = "int",
+                SprocParameterName = "ReturnValue",
+                SprocParameterType = "Int",
+                SprocParameterDirection = "ReturnValue",
+                ShouldCaptureResult = true,
+                IsInputParameter = false
+            };
+        }
+
+        private static string GetResourceFileName(RepositoryMethodViewModel method, ContextDefinition data)
+        {
+            if (method.IsList)
+                return "RepositoryMethodQueryMany.hbs";
+
+            return data.DTOModels.Exists(m => m.ClassName == method.ReturnType)
+                ? "RepositoryMethodQuerySingle.hbs" 
+                : "RepositoryMethodNonQuery.hbs"; // example: int or bool or etc...
         }
 
         #endregion
