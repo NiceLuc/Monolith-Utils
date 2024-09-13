@@ -20,7 +20,17 @@ namespace {{Namespace}}{{#newline}}
         {{{#newline}}
             set => _repository = value;{{#newline}}
             get => _repository ?? (_repository = _lazy.Value);{{#newline}}
-        }{{#newline}}{{#newline}}
+        }{{#newline}}
+        {{#newline}}
+        #region Proxy Methods{{#newline}}
+        {{#newline}}
+{{#each RepositoryMethods}}
+		public {{#if IsList}}IEnumerable<{{/if}}{{ReturnType}}{{#if IsList}}>{{/if}} {{MethodName}}({{#each Parameters}}{{#if @index}}, {{/if}}{{#if IsRef}}ref {{/if}}{{ParameterType}} {{ParameterName}}{{/each}}){{#newline}}
+            => Repository.{{MethodName}}({{#each Parameters}}{{#if @index}}, {{/if}}{{#if IsRef}}ref {{/if}}{{ParameterName}}{{/each}});{{#newline}}
+        {{#newline}}
+{{/each}}
+        #endregion{{#newline}}
+        {{#newline}}
         public T SafeExec<T>(Func<I{{ContextName}}Repository, T> func) => func.Invoke(Repository);{{#newline}}
         public void SafeExec(Action<I{{ContextName}}Repository> action) => action.Invoke(Repository);{{#newline}}
         {{#newline}}
