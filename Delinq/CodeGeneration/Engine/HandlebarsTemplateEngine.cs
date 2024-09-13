@@ -9,8 +9,13 @@ internal class HandlebarsTemplateEngine(FormatCompiler compiler, ITemplateProvid
         ValidateParameters(resourceFileName, data);
 
         var template = await provider.GetTemplateAsync(resourceFileName, cancellationToken);
-        var generator = compiler.Compile(template);
 
+        return ProcessTemplate(template, data);
+    }
+
+    public string ProcessTemplate(string templateString, object data)
+    {
+        var generator = compiler.Compile(templateString);
         return generator.Render(data);
     }
 
