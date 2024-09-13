@@ -1,6 +1,5 @@
 ﻿using Delinq.CodeGeneration;
 using Delinq.CodeGeneration.Engine;
-using Delinq.CodeGeneration.Renderers;
 using Delinq.Parsers;
 using Microsoft.Extensions.DependencyInjection;
 using Mustache;
@@ -32,15 +31,6 @@ namespace Delinq.DependencyInjection
 
             // used for resolving renderer instances
             services.AddSingleton<ITemplateEngine, HandlebarsTemplateEngine>();
-            services.AddSingleton<IRenderer<ContextDefinition>, RepositorySettingsInterfaceRenderer>();
-            services.AddSingleton<IRenderer<ContextDefinition>, RepositorySettingsRenderer>();
-            services.AddSingleton<IRenderer<ContextDefinition>, RepositoryInterfaceRenderer>();
-            services.AddSingleton<IRenderer<ContextDefinition>, RepositoryRenderer>();
-            services.AddSingleton<IRenderer<ContextDefinition>, DataContextRenderer>();
-            services.AddSingleton<IRenderer<ContextDefinition>, DTOModelsRenderer>();
-            services.AddSingleton<IRenderer<ContextDefinition>, TestUtilsRenderer>();
-            services.AddSingleton<IRenderer<ContextDefinition>, UnitTestsRenderer>();
-            services.AddSingleton<IRendererProvider<ContextDefinition>, RendererProvider<ContextDefinition>>();
         }
     }
 }

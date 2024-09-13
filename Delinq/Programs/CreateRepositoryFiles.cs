@@ -18,8 +18,7 @@ public sealed class CreateRepositoryFiles
         IContextDefinitionSerializer definitionSerializer,
         ITemplateProvider templateProvider,
         ITemplateEngine templateEngine,
-        IFileStorage fileStorage,
-        IRendererProvider<ContextDefinition> provider) 
+        IFileStorage fileStorage) 
         : IRequestHandler<Request, string>
     {
         public async Task<string> Handle(Request request, CancellationToken cancellationToken)
