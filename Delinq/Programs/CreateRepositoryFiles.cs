@@ -41,6 +41,9 @@ public sealed class CreateRepositoryFiles
             async Task ProcessTemplate(string rendererKey)
             {
                 var renderer = provider.GetRenderer(rendererKey);
+                if (string.IsNullOrEmpty(renderer.FileNameFormat))
+                    throw new InvalidOperationException($"FileNameFormat attribute required for {renderer.GetType()}");
+
                 var generatedCode = await renderer.RenderAsync(templateEngine, definition, cancellationToken);
                 var fileName = string.Format(renderer.FileNameFormat, definition.ContextName);
                 var filePath = Path.Combine(request.OutputDirectory, fileName);

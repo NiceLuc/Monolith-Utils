@@ -19,7 +19,7 @@ public sealed class Initialize
         IContextDefinitionSerializer serializer)
         : IRequestHandler<Request, string>
     {
-        private static string[] TokensForReturnValueParameter = {"Add", "Create", "Insert"};
+        private static readonly string[] TokensForReturnValueParameter = ["Add", "Create", "Insert"];
 
         public async Task<string> Handle(Request request, CancellationToken cancellationToken)
         {
@@ -27,7 +27,7 @@ public sealed class Initialize
 
             var definition = new ContextDefinition();
 
-            // parse the designer file
+            // parse the designer file using the parser implementations created for ContextDefinition
             using (var reader = File.OpenText(request.DesignerFilePath))
             {
                 while (await reader.ReadLineAsync(cancellationToken) is { } line)
@@ -76,6 +76,7 @@ public sealed class Initialize
                 return false;
 
             // if the method name contains one of the tokens, we need to check if there are out parameters
+            // if there are, we don't need to add a return parameter, as it's handled by a 'ref' parameter
             return method.Parameters.All(p => p.ParameterDirection != "Output");
 
         }
