@@ -20,8 +20,7 @@ var mediator = host.Services.GetRequiredService<IMediator>();
 // parse the command line arguments and call appropriate handler
 Parser.Default.ParseArguments<InitializeOptions, ExtractDTOOptions, CreateRepositoryOptions, CreateUnitTestsOptions>(args)
     .WithParsed<InitializeOptions>(InitializeSettingsFile)
-    .WithParsed<ExtractDTOOptions>(GenerateDTOTypes)
-    .WithParsed<CreateRepositoryOptions>(GenerateRepositoryClass)
+    .WithParsed<CreateRepositoryOptions>(GenerateRepositoryFiles)
     .WithParsed<CreateUnitTestsOptions>(GenerateUnitTestFile);
 
 return;
@@ -39,20 +38,9 @@ void InitializeSettingsFile(InitializeOptions options)
     SendRequest(request);
 }
 
-void GenerateDTOTypes(ExtractDTOOptions options)
+void GenerateRepositoryFiles(CreateRepositoryOptions options)
 {
-    var request = new ExtractDTOs.Request
-    {
-        SettingsFilePath = options.SettingsFilePath,
-        OutputDirectory = options.OutputDirectory,
-    };
-
-    SendRequest(request);
-}
-
-void GenerateRepositoryClass(CreateRepositoryOptions options)
-{
-    var request = new CreateRepository.Request
+    var request = new CreateRepositoryFiles.Request
     {
         SettingsFilePath = options.SettingsFilePath,
         OutputDirectory = options.OutputDirectory,

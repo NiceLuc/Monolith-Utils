@@ -4,7 +4,7 @@ using MediatR;
 
 namespace Delinq.Programs;
 
-public sealed class CreateRepository
+public sealed class CreateRepositoryFiles
 {
     public class Request : IRequest<string>
     {
@@ -31,6 +31,8 @@ public sealed class CreateRepository
             await ProcessTemplate("RepositorySettingsInterface");
             await ProcessTemplate("RepositoryInterface");
             await ProcessTemplate("RepositorySettings");
+
+            await ProcessTemplate("DTOModels");
             await ProcessTemplate("Repository");
             await ProcessTemplate("DataContext");
 
