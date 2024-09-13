@@ -16,6 +16,7 @@ public sealed class CreateRepositoryFiles
     public class Handler(
         IContextDefinitionSerializer definitionSerializer,
         ITemplateEngine templateEngine,
+        IFileStorage fileStorage,
         IRendererProvider<ContextDefinition> provider) 
         : IRequestHandler<Request, string>
     {
@@ -47,7 +48,7 @@ public sealed class CreateRepositoryFiles
                 var generatedCode = await renderer.RenderAsync(templateEngine, definition, cancellationToken);
                 var fileName = string.Format(renderer.FileNameFormat, definition.ContextName);
                 var filePath = Path.Combine(request.OutputDirectory, fileName);
-                await File.WriteAllTextAsync(filePath, generatedCode, cancellationToken);
+                await fileStorage.WriteAllTextAsync(filePath, generatedCode, cancellationToken);
             }
         }
 

@@ -28,6 +28,7 @@ namespace Delinq.DependencyInjection
             services.AddSingleton<FormatCompiler>();
             services.AddSingleton<ITemplateProvider, TemplateProvider>();
 
+            services.AddSingleton<IFileStorage, FileStorage>();
             services.AddSingleton<IContextDefinitionSerializer, ContextDefinitionSerializer>();
             services.AddSingleton<ITemplateEngine, HandlebarsTemplateEngine>();
 

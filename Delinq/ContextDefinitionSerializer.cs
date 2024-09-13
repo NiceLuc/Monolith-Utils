@@ -2,13 +2,13 @@
 
 namespace Delinq;
 
-public class ContextDefinitionSerializer : IContextDefinitionSerializer
+public class ContextDefinitionSerializer(IFileStorage fileStorage) : IContextDefinitionSerializer
 {
     public async Task SerializeAsync(string filePath, ContextDefinition definition, CancellationToken cancellationToken)
     {
         var prettified = new JsonSerializerOptions {WriteIndented = true};
         var serialized = JsonSerializer.Serialize(definition, prettified);
-        await File.WriteAllTextAsync(filePath, serialized, cancellationToken);
+        await fileStorage.WriteAllTextAsync(filePath, serialized, cancellationToken);
     }
 
     public async Task<ContextDefinition> DeserializeAsync(string filePath, CancellationToken cancellationToken)
