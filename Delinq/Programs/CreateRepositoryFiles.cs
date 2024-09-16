@@ -77,7 +77,8 @@ public sealed class CreateRepositoryFiles
                 var methodViewModel = CreateMethodViewModel(method, model);
 
                 var resourceFileName = GetResourceFileName(methodViewModel, data);
-                var code = await templateEngine.ProcessAsync(resourceFileName, methodViewModel, cancellationToken);
+                var template = await templateProvider.GetTemplateAsync(resourceFileName, cancellationToken);
+                var code = templateEngine.ProcessTemplate(template, methodViewModel);
 
                 viewModel.Methods.Add(code);
             }

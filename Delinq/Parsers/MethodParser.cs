@@ -41,6 +41,9 @@ internal class MethodParser(IParser<MethodDefinition> parameterParser) : Setting
         else
         {
             method.DatabaseType = "NonQuery";
+
+            // todo: determine void vs. return value for non-query calls
+            // method.IsVoid = false;
         }
 
         // extract all parameters from the method line

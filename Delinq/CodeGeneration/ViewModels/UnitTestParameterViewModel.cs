@@ -11,3 +11,21 @@ public class UnitTestParameterViewModel
     public bool IsInputParameter { get; set; }
     public string InitialValue { get; set; }
 }
+
+public class UnitTestPropertyViewModel
+{
+    public string PropertyName { get; set; }
+    public string PropertyType { get; set; }
+    public bool IsString => PropertyType == "string";
+
+    public bool IsNumber => PropertyType.ToLower().Replace("?", "") switch
+    {
+        "int" => true,
+        "long" => true,
+        "decimal" => true,
+        "float" => true,
+        _ => false
+    };
+
+    public string FakeValue { get; set; }
+}

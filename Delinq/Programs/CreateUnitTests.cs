@@ -30,8 +30,7 @@ public sealed class CreateUnitTests
             if (!string.IsNullOrEmpty(request.MethodName))
                 FilterMethods(definition, request.MethodName);
 
-            var context = new Context(templateProvider, templateEngine, definition);
-            var viewModel = await CreateViewModelAsync(context, cancellationToken);
+            var viewModel = await CreateViewModelAsync(definition, cancellationToken);
             await ProcessTemplate("UnitTests.hbs", "{0}RepositoryTests.cs", viewModel);
             await ProcessTemplate("TestUtils.hbs", "TestUtils.cs");
 
@@ -47,17 +46,6 @@ public sealed class CreateUnitTests
             }
         }
 
-        private class Context(
-            ITemplateProvider templateProvider,
-            ITemplateEngine templateEngine,
-            ContextDefinition definition)
-        {
-            private readonly ITemplateProvider _templateProvider = templateProvider;
-            private readonly ITemplateEngine _templateEngine = templateEngine;
-
-            public ContextDefinition Definition { get; } = definition;
-        }
-
         #region Private Methods
 
         private static void FilterMethods(ContextDefinition definition, string methodName)
@@ -71,18 +59,17 @@ public sealed class CreateUnitTests
             definition.RepositoryMethods = [method];
         }
 
-        private async Task<object> CreateViewModelAsync(Context context, CancellationToken cancellationToken)
+        private async Task<object> CreateViewModelAsync(ContextDefinition definition, CancellationToken cancellationToken)
         {
-            var data = context.Definition;
-            var viewModel = new UnitTestViewModel(data);
-            foreach (var method in data.RepositoryMethods)
+            var viewModel = new UnitTestViewModel(definition);
+            foreach (var method in definition.RepositoryMethods)
             {
                 // find the model that matches the method's return type
-                var model = data.DTOModels.FirstOrDefault(m => m.ClassName == method.ReturnType);
-                var methodViewModel = CreateMethodViewModel(method, model);
+                var methodViewModel = CreateMethodViewModel(method, definition);
 
-                var resourceFileName = GetResourceFileName(methodViewModel, data);
-                var code = await templateEngine.ProcessAsync(resourceFileName, methodViewModel, cancellationToken);
+                var resourceFileName = GetResourceFileName(methodViewModel, definition);
+                var template = await templateProvider.GetTemplateAsync(resourceFileName, cancellationToken);
+                var code = templateEngine.ProcessTemplate(template, methodViewModel);
 
                 viewModel.Methods.Add(code);
             }
@@ -90,8 +77,11 @@ public sealed class CreateUnitTests
             return viewModel;
         }
 
-        private static UnitTestMethodViewModel CreateMethodViewModel(MethodDefinition method, DTOClassDefinition? model)
+        private static UnitTestMethodViewModel CreateMethodViewModel(MethodDefinition method, ContextDefinition definition)
         {
+            var model = definition.DTOModels.FirstOrDefault(m => m.ClassName == method.ReturnType);
+            var isList = method is {DatabaseType: "Query", IsList: true};
+
             return new UnitTestMethodViewModel
             {
                 IsList = method.IsList,
@@ -100,16 +90,19 @@ public sealed class CreateUnitTests
                 SprocName = method.DatabaseName,
                 DatabaseType = method.DatabaseType,
                 Parameters = CreateParameters(method),
-                Properties = model?.Properties ?? new(),
-                ReturnValueParameter = method.HasReturnParameter 
-                    ? CreateReturnParameter(method) : null
+                Properties = isList
+                    ? CreateEnumerableProperties(method, model)
+                    : CreateProperties(method, model),
+                ReturnValueParameter = method.HasReturnParameter
+                    ? CreateReturnParameter(method)
+                    : null
             };
         }
 
         private static List<UnitTestParameterViewModel> CreateParameters(MethodDefinition method)
         {
             return (from p in method.Parameters
-                let fakeValue = GetFakeValue(p)
+                let fakeValue = GetFakeValue(p.ParameterType, p.ParameterName)
                 select new UnitTestParameterViewModel
                 {
                     ParameterName = p.ParameterName,
@@ -117,22 +110,73 @@ public sealed class CreateUnitTests
                     IsNullable = p.IsNullable,
                     IsRef = p.IsRef,
                     IsInputParameter = IsInputParameter(p),
-                    InitialValue = GetFakeValue(p),
-                    FakeValue = p.IsRef ? p.ParameterName : GetFakeValue(p),
+                    InitialValue = GetFakeValue(p.ParameterType, p.ParameterName),
+                    FakeValue = p.IsRef ? p.ParameterName : GetFakeValue(p.ParameterType, p.ParameterName),
                 }).ToList();
         }
 
-        private static string GetFakeValue(ParameterDefinition parameter)
+        private static List<UnitTestPropertyViewModel> CreateEnumerableProperties(MethodDefinition method, DTOClassDefinition? model)
         {
-            return parameter.ParameterType.Replace("?", "") switch
+            if (model == null)
+                return new();
+
+            return model.Properties.Select(p => new UnitTestPropertyViewModel
             {
-                "string" => $"\"{parameter.ParameterName}\"",
+                PropertyName = p.PropertyName,
+                PropertyType = p.PropertyType,
+                FakeValue = p.PropertyType.Replace("?", "") switch
+                {
+                    "string" => $"\"{p.PropertyName} {{x}}",
+                    "bool" => "x % 2 == 0",
+                    "int" => "x",
+                    "double" => "x",
+                    "long" => "x",
+                    "DateTime" => "DateTime.Now.AddDays(x)",
+                    "Guid" => "Guid.NewGuid()",
+                    "byte" => "0b1",
+                    "byte[]" => "Enumerable.Empty<byte>().ToArray()",
+                    _ => throw new ArgumentOutOfRangeException(p.PropertyType)
+                }
+            }).ToList();
+        }
+        private static List<UnitTestPropertyViewModel> CreateProperties(MethodDefinition method, DTOClassDefinition? model)
+        {
+            if (model == null)
+                return new();
+
+            return model.Properties.Select(p => new UnitTestPropertyViewModel
+            {
+                PropertyName = p.PropertyName,
+                PropertyType = p.PropertyType,
+                FakeValue = p.PropertyType.Replace("?", "") switch
+                {
+                    "string" => $"\"{p.PropertyName}\"",
+                    "bool" => "false",
+                    "int" => "1",
+                    "double" => "1",
+                    "long" => "1",
+                    "DateTime" => "DateTime.Now",
+                    "Guid" => "Guid.NewGuid()",
+                    "byte[]" => "Enumerable.Empty<byte>().ToArray()",
+                    "byte" => "0b1",
+                    _ => throw new ArgumentOutOfRangeException(p.PropertyType)
+                }
+            }).ToList();
+        }
+
+        private static string GetFakeValue(string parameterType, string parameterName)
+        {
+            return parameterType.Replace("?", "") switch
+            {
+                "string" => $"\"{parameterName}\"",
+                "char" => "'x'",
                 "bool" => "false",
                 "int" => "1",
                 "long" => "1",
                 "DateTime" => "DateTime.Now",
                 "Guid" => "Guid.NewGuid()",
-                _ => throw new ArgumentOutOfRangeException()
+                "byte[]" => "Enumerable.Empty<byte>().ToArray()",
+                _ => throw new ArgumentOutOfRangeException(parameterType)
             };
         }
 

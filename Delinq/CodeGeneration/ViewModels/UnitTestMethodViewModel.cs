@@ -11,7 +11,7 @@ public class UnitTestMethodViewModel
     public List<UnitTestParameterViewModel> Parameters { get; set; } = new();
     public IEnumerable<UnitTestParameterViewModel> RefParameters => Parameters.Where(p => p.IsRef);
 
-    public List<PropertyDefinition> Properties { get; set; }
+    public List<UnitTestPropertyViewModel> Properties { get; set; }
 
     public bool HasOutputParameters => Parameters.Any(p => p.IsRef);
     public IList<UnitTestParameterViewModel> OutputParameters => Parameters.Where(p => p.IsRef).ToList();

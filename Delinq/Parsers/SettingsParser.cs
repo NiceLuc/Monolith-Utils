@@ -8,6 +8,10 @@ public abstract class SettingsParser<T> : IParser<T> where T : class
         @"nvarchar\((?<db_length>.+?)\)", 
         RegexOptions.Singleline | RegexOptions.IgnoreCase);
 
+    protected static readonly Regex _binaryLengthRegex = new(
+        @"varbinary\((?<db_length>.+?)\)", 
+        RegexOptions.Singleline | RegexOptions.IgnoreCase);
+
     protected readonly Regex _nullableRegex = new(
         @"Nullable\<(?<nullable_type>.+?)\>", 
         RegexOptions.Singleline);

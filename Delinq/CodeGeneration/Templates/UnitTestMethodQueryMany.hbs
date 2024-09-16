@@ -2,17 +2,48 @@
         public void {{MethodName}}_HappyPath(){{#newline}}
         { {{#newline}}
             // assemble{{#newline}}
+            var expectedResults = Enumerable.Range(1, 10).Select(x =>{{#newline}}
+                new {{ReturnType}}{{#newline}}
+                { {{#newline}}
+{{#each Properties}}
+                    {{PropertyName}} = {{#if IsString}}$"{{PropertyName}}{x}"{{#else}}{{FakeValue}}{{/if}},{{#newline}}
+{{/each}}
+                }).ToArray();{{#newline}}
+            {{#newline}}
+            _query.ConfigureReads(expectedResults.Length, (q, x) =>{{#newline}}
+            {{{#newline}}
+                var model = expectedResults[x];{{#newline}}
+{{#each Properties}}
+                q.SetupValue("{{PropertyName}}", model.{{PropertyName}});{{#newline}}
+{{/each}}
+            });{{#newline}}
+{{#each RefParameters}}
+            _query.ConfigureOutputParameter("@{{ParameterName}}", {{FakeValue}});{{#newline}}
+{{/each}}
+            var repository = CreateRepository();{{#newline}}
             {{#newline}}
             // act{{#newline}}
+            var actualResults = repository.{{MethodName}}({{#each Parameters}}{{#if @index}}, {{/if}}{{FakeValue}}{{/each}})).ToArray();{{#newline}}
             {{#newline}}
             // assert{{#newline}}
-            {{#newline}}
+            Assert.AreEqual(expectedResults.Length, actualResults.Length);{{#newline}}
+            for(var x = 0; x < actualResults.Length; x++){{#newline}}
+            {{{#newline}}
+                var expected = expectedResults[x];{{#newline}}
+                var actual = actualResults[x];{{#newline}}
+                {{#newline}}
+{{#each Properties}}
+                Assert.AreEqual(expected.{{PropertyName}}, actual.{{PropertyName}});{{#newline}}
+{{/each}}
+            }{{#newline}}
+            ValidateMocks();{{#newline}}
         }{{#newline}}
         {{#newline}}
         [TestMethod]{{#newline}}
         public void {{MethodName}}_ThrowsException(){{#newline}}
         {{{#newline}}
             // assemble{{#newline}}
+            // note: will fail on first read{{#newline}}
             _query.ConfigureRead(() => throw TestException);{{#newline}}
             var repository = CreateRepository();{{#newline}}
 {{#each RefParameters}}

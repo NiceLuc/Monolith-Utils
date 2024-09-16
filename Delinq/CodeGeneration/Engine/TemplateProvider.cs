@@ -6,6 +6,9 @@ internal class TemplateProvider(IDictionary<string, string>? resourceMap = null)
 
     public async Task<string> GetTemplateAsync(string resourceFileName, CancellationToken cancellationToken)
     {
+        if (string.IsNullOrEmpty(resourceFileName))
+            throw new ArgumentException("Value cannot be null or empty.", nameof(resourceFileName));
+
         if (_resourceMap.TryGetValue(resourceFileName, out var template))
             return template;
 
