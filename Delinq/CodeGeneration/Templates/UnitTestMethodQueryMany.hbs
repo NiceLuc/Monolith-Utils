@@ -18,7 +18,7 @@
 {{/each}}
             });{{#newline}}
 {{#each RefParameters}}
-            {{#if IsNullable}}{{ParameterType}}{{#else}}var{{/if}} {{ParameterName}} = {{InitialValue}};{{#newline}}
+            _query.ConfigureOutputParameter("@{{ParameterName}}", {{FakeValue}});{{#newline}}
 {{/each}}
             var repository = CreateRepository();{{#newline}}
             {{#newline}}

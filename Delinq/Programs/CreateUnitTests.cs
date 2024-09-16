@@ -124,14 +124,17 @@ public sealed class CreateUnitTests
             {
                 PropertyName = p.PropertyName,
                 PropertyType = p.PropertyType,
-                FakeValue = p.PropertyType.ToLower().Replace("?", "") switch
+                FakeValue = p.PropertyType.Replace("?", "") switch
                 {
                     "string" => $"\"{p.PropertyName} {{x}}",
                     "bool" => "x % 2 == 0",
                     "int" => "x",
-                    "long" => "",
+                    "double" => "x",
+                    "long" => "x",
                     "DateTime" => "DateTime.Now.AddDays(x)",
                     "Guid" => "Guid.NewGuid()",
+                    "byte" => "0b1",
+                    "byte[]" => "Enumerable.Empty<byte>().ToArray()",
                     _ => throw new ArgumentOutOfRangeException(p.PropertyType)
                 }
             }).ToList();
@@ -145,14 +148,17 @@ public sealed class CreateUnitTests
             {
                 PropertyName = p.PropertyName,
                 PropertyType = p.PropertyType,
-                FakeValue = p.PropertyType.ToLower().Replace("?", "") switch
+                FakeValue = p.PropertyType.Replace("?", "") switch
                 {
                     "string" => p.PropertyName,
                     "bool" => "false",
                     "int" => "1",
+                    "double" => "1",
                     "long" => "1",
                     "DateTime" => "DateTime.Now",
                     "Guid" => "Guid.NewGuid()",
+                    "byte[]" => "Enumerable.Empty<byte>().ToArray()",
+                    "byte" => "0b1",
                     _ => throw new ArgumentOutOfRangeException(p.PropertyType)
                 }
             }).ToList();
@@ -163,12 +169,14 @@ public sealed class CreateUnitTests
             return parameterType.Replace("?", "") switch
             {
                 "string" => $"\"{parameterName}\"",
+                "char" => "'x'",
                 "bool" => "false",
                 "int" => "1",
                 "long" => "1",
                 "DateTime" => "DateTime.Now",
                 "Guid" => "Guid.NewGuid()",
-                _ => throw new ArgumentOutOfRangeException()
+                "byte[]" => "Enumerable.Empty<byte>().ToArray()",
+                _ => throw new ArgumentOutOfRangeException(parameterType)
             };
         }
 
