@@ -2,17 +2,12 @@
 
 public class UnitTestParameterViewModel
 {
-    public string MethodParameterType { get; set; }
-    public string MethodParameterName { get; set; }
-
-    public string SprocParameterType { get; set; }
-    public string SprocParameterName { get; set; }
-    public string SprocParameterLength { get; set; }
-    public string SprocParameterDirection { get; set; }
+    public string ParameterType { get; set; }
+    public string ParameterName { get; set; }
+    public string FakeValue { get; set; }
+    public bool IsNullable { get; set; }
 
     public bool ShouldCaptureResult { get; set; }
     public bool IsInputParameter { get; set; }
-    public bool HasStringLength { get; set; }
-
-    public string ExpectedValue { get; set; }
+    public string InitialValue { get; set; }
 }

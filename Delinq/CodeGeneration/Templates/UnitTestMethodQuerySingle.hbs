@@ -13,9 +13,17 @@
         public void {{MethodName}}_ThrowsException(){{#newline}}
         {{{#newline}}
             // assemble{{#newline}}
+            _query.ConfigureRead(() => throw TestException);{{#newline}}
+            var repository = CreateRepository();{{#newline}}
+{{#each RefParameters}}
+            {{#if IsNullable}}{{ParameterType}}{{#else}}var{{/if}} {{ParameterName}} = {{InitialValue}};{{#newline}}
+{{/each}}
             {{#newline}}
             // act{{#newline}}
+            var exception = Assert.ThrowsException<Exception>((){{#newline}}
+                => repository.{{MethodName}}({{#each Parameters}}{{#if @index}}, {{/if}}{{FakeValue}}{{/each}}));{{#newline}}
             {{#newline}}
             // assert{{#newline}}
-            {{#newline}}
-        }
+            Assert.AreSame(TestException, exception);{{#newline}}
+            ValidateMocks();{{#newline}}
+        }{{#newline}}

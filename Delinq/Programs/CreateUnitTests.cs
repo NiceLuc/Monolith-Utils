@@ -1,4 +1,5 @@
-﻿using Delinq.CodeGeneration.Engine;
+﻿using System.Runtime.CompilerServices;
+using Delinq.CodeGeneration.Engine;
 using Delinq.CodeGeneration.ViewModels;
 using MediatR;
 
@@ -29,7 +30,8 @@ public sealed class CreateUnitTests
             if (!string.IsNullOrEmpty(request.MethodName))
                 FilterMethods(definition, request.MethodName);
 
-            var viewModel = await CreateViewModelAsync(definition, cancellationToken);
+            var context = new Context(templateProvider, templateEngine, definition);
+            var viewModel = await CreateViewModelAsync(context, cancellationToken);
             await ProcessTemplate("UnitTests.hbs", "{0}RepositoryTests.cs", viewModel);
             await ProcessTemplate("TestUtils.hbs", "TestUtils.cs");
 
@@ -45,6 +47,17 @@ public sealed class CreateUnitTests
             }
         }
 
+        private class Context(
+            ITemplateProvider templateProvider,
+            ITemplateEngine templateEngine,
+            ContextDefinition definition)
+        {
+            private readonly ITemplateProvider _templateProvider = templateProvider;
+            private readonly ITemplateEngine _templateEngine = templateEngine;
+
+            public ContextDefinition Definition { get; } = definition;
+        }
+
         #region Private Methods
 
         private static void FilterMethods(ContextDefinition definition, string methodName)
@@ -58,8 +71,9 @@ public sealed class CreateUnitTests
             definition.RepositoryMethods = [method];
         }
 
-        private async Task<object> CreateViewModelAsync(ContextDefinition data, CancellationToken cancellationToken)
+        private async Task<object> CreateViewModelAsync(Context context, CancellationToken cancellationToken)
         {
+            var data = context.Definition;
             var viewModel = new UnitTestViewModel(data);
             foreach (var method in data.RepositoryMethods)
             {
@@ -85,52 +99,53 @@ public sealed class CreateUnitTests
                 ReturnType = method.ReturnType,
                 SprocName = method.DatabaseName,
                 DatabaseType = method.DatabaseType,
-                Parameters = method.Parameters,
+                Parameters = CreateParameters(method),
                 Properties = model?.Properties ?? new(),
-                SprocParameters = GetSprocParameters(method),
                 ReturnValueParameter = method.HasReturnParameter 
                     ? CreateReturnParameter(method) : null
             };
         }
 
-        private static List<UnitTestParameterViewModel> GetSprocParameters(MethodDefinition method)
+        private static List<UnitTestParameterViewModel> CreateParameters(MethodDefinition method)
         {
-            return method.Parameters.Select(parameter => new UnitTestParameterViewModel
-            {
-                // method parameter details
-                MethodParameterName = parameter.ParameterName,
-                MethodParameterType = parameter.ParameterType,
-
-                // sproc parameter details
-                SprocParameterName = parameter.SprocParameterName,
-                SprocParameterType = parameter.SqlDbType,
-                SprocParameterDirection = parameter.ParameterDirection,
-                SprocParameterLength = parameter.DatabaseLength,
-                HasStringLength = HasStringLength(parameter),
-                ShouldCaptureResult = parameter.IsRef,
-                IsInputParameter = IsInputParameter(parameter)
-
-            }).ToList();
-
-            bool IsInputParameter(ParameterDefinition parameter) =>
-                !parameter.IsRef && parameter.ParameterDirection.Equals("Input",
-                    StringComparison.InvariantCultureIgnoreCase);
-
-            bool HasStringLength(ParameterDefinition parameter) =>
-                !string.IsNullOrEmpty(parameter.DatabaseLength) &&
-                !parameter.DatabaseLength.Equals("max",
-                    StringComparison.InvariantCultureIgnoreCase);
+            return (from p in method.Parameters
+                let fakeValue = GetFakeValue(p)
+                select new UnitTestParameterViewModel
+                {
+                    ParameterName = p.ParameterName,
+                    ParameterType = p.ParameterType,
+                    IsNullable = p.IsNullable,
+                    ShouldCaptureResult = p.IsRef,
+                    IsInputParameter = IsInputParameter(p),
+                    InitialValue = GetFakeValue(p),
+                    FakeValue = p.IsRef ? p.ParameterName : GetFakeValue(p),
+                }).ToList();
         }
+
+        private static string GetFakeValue(ParameterDefinition parameter)
+        {
+            return parameter.ParameterType.Replace("?", "") switch
+            {
+                "string" => $"\"{parameter.ParameterName}\"",
+                "bool" => "false",
+                "int" => "1",
+                "long" => "1",
+                "DateTime" => "DateTime.Now",
+                "Guid" => "Guid.NewGuid()",
+                _ => throw new ArgumentOutOfRangeException()
+            };
+        }
+
+        private static bool IsInputParameter(ParameterDefinition parameter) =>
+            !parameter.IsRef && parameter.ParameterDirection.Equals("Input",
+                StringComparison.InvariantCultureIgnoreCase);
 
         private static UnitTestParameterViewModel CreateReturnParameter(MethodDefinition method)
         {
             return new UnitTestParameterViewModel
             {
-                MethodParameterName = "returnValue",
-                MethodParameterType = "int",
-                SprocParameterName = "ReturnValue",
-                SprocParameterType = "Int",
-                SprocParameterDirection = "ReturnValue",
+                ParameterName = "returnValue",
+                ParameterType = "int",
                 ShouldCaptureResult = true,
                 IsInputParameter = false
             };

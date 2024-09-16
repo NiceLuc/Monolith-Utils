@@ -8,7 +8,9 @@ public class UnitTestMethodViewModel
     public string ReturnType { get; set; }
     public bool IsList { get; set; }
 
-    public List<ParameterDefinition> Parameters { get; set; } = new();
+    public List<UnitTestParameterViewModel> Parameters { get; set; } = new();
+    public IEnumerable<UnitTestParameterViewModel> RefParameters => Parameters.Where(p => p.ShouldCaptureResult);
+
     public List<PropertyDefinition> Properties { get; set; }
 
     public List<UnitTestParameterViewModel> SprocParameters { get; set; } = new();
