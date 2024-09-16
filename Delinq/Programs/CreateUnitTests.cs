@@ -150,7 +150,7 @@ public sealed class CreateUnitTests
                 PropertyType = p.PropertyType,
                 FakeValue = p.PropertyType.Replace("?", "") switch
                 {
-                    "string" => p.PropertyName,
+                    "string" => $"\"{p.PropertyName}\"",
                     "bool" => "false",
                     "int" => "1",
                     "double" => "1",
