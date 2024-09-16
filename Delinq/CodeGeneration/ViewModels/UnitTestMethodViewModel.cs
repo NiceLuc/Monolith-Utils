@@ -8,14 +8,13 @@ public class UnitTestMethodViewModel
     public string ReturnType { get; set; }
     public bool IsList { get; set; }
 
-    public List<ParameterDefinition> Parameters { get; set; } = new();
+    public List<UnitTestParameterViewModel> Parameters { get; set; } = new();
+    public IEnumerable<UnitTestParameterViewModel> RefParameters => Parameters.Where(p => p.IsRef);
+
     public List<PropertyDefinition> Properties { get; set; }
 
-    public List<UnitTestParameterViewModel> SprocParameters { get; set; } = new();
-
-    public bool HasOutputParameters => SprocParameters.Any(p => p.ShouldCaptureResult);
-    public IList<UnitTestParameterViewModel> OutputParameters 
-        => SprocParameters.Where(p => p.ShouldCaptureResult).ToList();
+    public bool HasOutputParameters => Parameters.Any(p => p.IsRef);
+    public IList<UnitTestParameterViewModel> OutputParameters => Parameters.Where(p => p.IsRef).ToList();
 
     public bool HasReturnValue => ReturnValueParameter != null;
     public UnitTestParameterViewModel? ReturnValueParameter { get; set; }

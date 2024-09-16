@@ -29,6 +29,7 @@ public class ParameterDefinition
     public string ParameterName { get; set; }
     public bool IsRef { get; set; }
     public string ParameterDirection { get; set; }
+    public bool IsNullable => ParameterType.EndsWith("?");
 }
 
 public class DTOClassDefinition

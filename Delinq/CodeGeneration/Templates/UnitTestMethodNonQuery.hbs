@@ -2,20 +2,40 @@
         public void {{MethodName}}_HappyPath(){{#newline}}
         { {{#newline}}
             // assemble{{#newline}}
+            _query.ConfigureNonQuery();{{#newline}}
+{{#if HasReturnValue}}
+            _query.ConfigureReturnValueParameter("@ReturnValue", 1, false);{{#newline}}
+{{/if}}
+            var repository = CreateRepository();{{#newline}}
+{{#each RefParameters}}
+            {{#if IsNullable}}{{ParameterType}}{{#else}}var{{/if}} {{ParameterName}} = {{InitialValue}};{{#newline}}
+{{/each}}
             {{#newline}}
             // act{{#newline}}
+            var result = repository.{{MethodName}}({{#each Parameters}}{{#if @index}}, {{/if}}{{#if IsRef}}ref {{/if}}{{FakeValue}}{{/each}});{{#newline}}
             {{#newline}}
             // assert{{#newline}}
-            {{#newline}}
+            Assert.AreEqual(1, result);{{#newline}}
+            _query.VerifySet(q => q.CommandType = CommandType.StoredProcedure);{{#newline}}
+            _query.VerifySet(q => q.SQL = "{{SprocName}}");{{#newline}}
+            ValidateMocks();{{#newline}}
         }{{#newline}}
         {{#newline}}
         [TestMethod]{{#newline}}
         public void {{MethodName}}_ThrowsException(){{#newline}}
         {{{#newline}}
             // assemble{{#newline}}
+            _query.ConfigureNonQuery(() => throw TestException);{{#newline}}
+            var repository = CreateRepository();{{#newline}}
+{{#each RefParameters}}
+            {{#if IsNullable}}{{ParameterType}}{{#else}}var{{/if}} {{ParameterName}} = {{InitialValue}};{{#newline}}
+{{/each}}
             {{#newline}}
             // act{{#newline}}
+            var exception = Assert.ThrowsException<Exception>((){{#newline}}
+                => repository.{{MethodName}}({{#each Parameters}}{{#if @index}}, {{/if}}{{#if IsRef}}ref {{/if}}{{FakeValue}}{{/each}}));{{#newline}}
             {{#newline}}
             // assert{{#newline}}
-            {{#newline}}
-        }
+            Assert.AreSame(TestException, exception);{{#newline}}
+            ValidateMocks();{{#newline}}
+        }{{#newline}}
