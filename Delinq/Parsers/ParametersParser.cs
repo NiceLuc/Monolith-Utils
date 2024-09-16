@@ -5,7 +5,7 @@ namespace Delinq.Parsers;
 internal class ParametersParser : SettingsParser<MethodDefinition>
 {
     private static readonly Regex _parameterRegex = new(
-        @"ParameterAttribute\(Name\=""(?<db_name>.+?)"",\sDbType\=""(?<db_type>.+?)"".+?]\s(?<ref_token>ref\s)?(?<net_type>.+?)\s(?<net_name>.+?)[,\)]",
+        @"ParameterAttribute\(Name\s?\=\s?""(?<db_name>.+?)"",\sDbType\s?\=\s?""(?<db_type>.+?)"".+?]\s(?<ref_token>ref\s)?(?<net_type>.+?)\s(?<net_name>.+?)[,\)]",
         RegexOptions.Singleline);
 
     protected override bool CanParseImpl(string lineOfCode) => true;
@@ -40,11 +40,21 @@ internal class ParametersParser : SettingsParser<MethodDefinition>
 
     private static void ExtractDatabaseStringLength(ParameterDefinition parameter)
     {
-        var stringMatch = _charLengthRegex.Match(parameter.SqlDbType);
-        if (stringMatch.Success)
+        var match = _charLengthRegex.Match(parameter.SqlDbType);
+        if (match.Success)
         {
             parameter.SqlDbType = "NVarChar";
-            parameter.DatabaseLength = stringMatch.Groups["db_length"].Value;
+            parameter.DatabaseLength = match.Groups["db_length"].Value;
+            return;
+        }
+
+        match = _binaryLengthRegex.Match(parameter.SqlDbType);
+        if (match.Success)
+        {
+            parameter.ParameterType = "byte[]";
+            parameter.SqlDbType = "VarBinary";
+            parameter.DatabaseLength = match.Groups["db_length"].Value;
+            return;
         }
     }
 
