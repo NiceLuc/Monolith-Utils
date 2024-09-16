@@ -7,7 +7,7 @@ public class UnitTestParameterViewModel
     public string FakeValue { get; set; }
     public bool IsNullable { get; set; }
 
-    public bool ShouldCaptureResult { get; set; }
+    public bool IsRef { get; set; }
     public bool IsInputParameter { get; set; }
     public string InitialValue { get; set; }
 }

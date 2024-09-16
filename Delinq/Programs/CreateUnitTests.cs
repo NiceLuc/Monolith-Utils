@@ -115,7 +115,7 @@ public sealed class CreateUnitTests
                     ParameterName = p.ParameterName,
                     ParameterType = p.ParameterType,
                     IsNullable = p.IsNullable,
-                    ShouldCaptureResult = p.IsRef,
+                    IsRef = p.IsRef,
                     IsInputParameter = IsInputParameter(p),
                     InitialValue = GetFakeValue(p),
                     FakeValue = p.IsRef ? p.ParameterName : GetFakeValue(p),
@@ -146,7 +146,7 @@ public sealed class CreateUnitTests
             {
                 ParameterName = "returnValue",
                 ParameterType = "int",
-                ShouldCaptureResult = true,
+                IsRef = true,
                 IsInputParameter = false
             };
         }

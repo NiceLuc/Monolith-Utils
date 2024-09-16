@@ -77,7 +77,8 @@ namespace {{Namespace}}.Tests{{#newline}}
         /// <param name="query">Valid mock of ISQLQueryEx.</param>{{#newline}}
         /// <param name="parameterName">The name of the output parameter.</param>{{#newline}}
         /// <param name="value">The value to be returned.</param>{{#newline}}
-        public static void ConfigureOutputParameter(this Mock<ISQLQueryEx> query, string parameterName, object value){{#newline}}
+        /// <param name="setupClose">Pass true when used on stored procedures that use query.Read()</param>{{#newline}}
+        public static void ConfigureOutputParameter(this Mock<ISQLQueryEx> query, string parameterName, object value, bool setupClose = true){{#newline}}
         {{{#newline}}
             var parameter = new Mock<IDataParameter>();{{#newline}}
             parameter.Setup(p => p.Value).Returns(value);{{#newline}}
@@ -89,9 +90,10 @@ namespace {{Namespace}}.Tests{{#newline}}
                     ParameterDirection.Output)){{#newline}}
                 .Returns(parameter.Object);{{#newline}}
 {{#newline}}
-            // this is required for capturing record counts in stored procedures {{#newline}}
+            // this is required for capturing record counts in stored procedures{{#newline}}
             // connections must be closed before reading the output parameter value{{#newline}}
-            query.Setup(q => q.Close());{{#newline}}
+            if(setupClose){{#newline}}
+                query.Setup(q => q.Close());{{#newline}}
         }{{#newline}}
 {{#newline}}
         #region Private Methods{{#newline}}
