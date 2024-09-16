@@ -10,11 +10,7 @@ public {{ReturnType}} {{MethodName}}({{#each Parameters}}{{#if @index}}, {{/if}}
                 var {{MethodParameterName}}Param = query.AddParameter("@{{SprocParameterName}}", SqlDbType.{{SprocParameterType}}, {{MethodParameterName}}, ParameterDirection.{{SprocParameterDirection}});{{#newline}}
 {{#else}}
 {{#if IsInputParameter}}
-{{#if HasStringLength}}
-                query.AddParameter("@{{SprocParameterName}}", SqlDbType.{{SprocParameterType}}, {{MethodParameterName}}, ParameterDirection.Input, {{SprocParameterLength}});{{#newline}}
-{{#else}}
                 query.AddParameter("@{{SprocParameterName}}", SqlDbType.{{SprocParameterType}}, {{MethodParameterName}});{{#newline}}
-{{/if}}
 {{#else}}
                 query.AddParameter("@{{SprocParameterName}}", SqlDbType.{{SprocParameterType}}, {{MethodParameterName}}, ParameterDirection.{{SprocParameterDirection}});{{#newline}}
 {{/if}}

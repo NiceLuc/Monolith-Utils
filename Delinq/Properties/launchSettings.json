@@ -17,11 +17,16 @@
       */
       /* BusinessUnit
       "commandLineArgs": "init c:\\temp\\Delinq\\BusinessUnits\\BusinessUnits.dbml"
-      "commandLineArgs": "repo c:\\temp\\Delinq\\BusinessUnits\\BusinessUnit.metadata.settings -o c:\\temp\\Delinq\\BusinessUnits\\repo"
       "commandLineArgs": "repo c:\\temp\\Delinq\\BusinessUnits\\BusinessUnit.metadata.settings -o c:\\temp\\Delinq\\BusinessUnits\\repo -m IC_UpdateBusinessUnitAddress"
+      "commandLineArgs": "repo c:\\temp\\Delinq\\BusinessUnits\\BusinessUnit.metadata.settings -o c:\\temp\\Delinq\\BusinessUnits\\repo"
       "commandLineArgs": "tests c:\\temp\\Delinq\\BusinessUnits\\BusinessUnit.metadata.settings -o c:\\temp\\Delinq\\BusinessUnits\\tests -m IC_UpdateBusinessUnitAddress"
-      */
       "commandLineArgs": "tests c:\\temp\\Delinq\\BusinessUnits\\BusinessUnit.metadata.settings -o c:\\temp\\Delinq\\BusinessUnits\\tests"
+      */
+      /* WebManager
+      "commandLineArgs": "repo c:\\temp\\Delinq\\WebManager\\WebManager.metadata.settings -o c:\\temp\\Delinq\\WebManager\\repo"
+      "commandLineArgs": "tests c:\\temp\\Delinq\\WebManager\\WebManager.metadata.settings -o c:\\temp\\Delinq\\WebManager\\tests"
+      */
+      "commandLineArgs": "init c:\\temp\\Delinq\\WebManager\\WebManager.dbml"
     }
   }
 }

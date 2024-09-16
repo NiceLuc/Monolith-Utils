@@ -127,10 +127,13 @@ public sealed class CreateUnitTests
                 FakeValue = p.PropertyType.Replace("?", "") switch
                 {
                     "string" => $"\"{p.PropertyName} {{x}}",
+                    "char" => "'x'",
                     "bool" => "x % 2 == 0",
                     "int" => "x",
+                    "short" => "x",
                     "double" => "x",
                     "long" => "x",
+                    "decimal" => "x",
                     "DateTime" => "DateTime.Now.AddDays(x)",
                     "Guid" => "Guid.NewGuid()",
                     "byte" => "0b1",
@@ -151,10 +154,13 @@ public sealed class CreateUnitTests
                 FakeValue = p.PropertyType.Replace("?", "") switch
                 {
                     "string" => $"\"{p.PropertyName}\"",
+                    "char" => "'x'",
                     "bool" => "false",
                     "int" => "1",
+                    "short" => "1",
                     "double" => "1",
-                    "long" => "1",
+                    "long" => "1L",
+                    "decimal" => "1d",
                     "DateTime" => "DateTime.Now",
                     "Guid" => "Guid.NewGuid()",
                     "byte[]" => "Enumerable.Empty<byte>().ToArray()",
@@ -172,10 +178,14 @@ public sealed class CreateUnitTests
                 "char" => "'x'",
                 "bool" => "false",
                 "int" => "1",
-                "long" => "1",
+                "short" => "1",
+                "double" => "1",
+                "long" => "1L",
+                "decimal" => "1d",
                 "DateTime" => "DateTime.Now",
                 "Guid" => "Guid.NewGuid()",
                 "byte[]" => "Enumerable.Empty<byte>().ToArray()",
+                "byte" => "0b1",
                 _ => throw new ArgumentOutOfRangeException(parameterType)
             };
         }

@@ -29,14 +29,19 @@ internal class DTOPropertyParser : SettingsParser<DTOClassDefinition>
             PropertyName = match.Groups["name"].Value
         };
 
+        if (propertyDefinition.PropertyType.StartsWith("System."))
+            propertyDefinition.PropertyType = propertyDefinition.PropertyType.Replace("System.", "");
+
         var nullableMatch = _nullableRegex.Match(propertyDefinition.PropertyType);
         if (nullableMatch.Success)
         {
             propertyDefinition.PropertyType = nullableMatch.Groups["nullable_type"].Value + "?";
         }
 
-        if (propertyDefinition.PropertyType.StartsWith("System."))
-            propertyDefinition.PropertyType = propertyDefinition.PropertyType.Replace("System.", "");
+        if (propertyDefinition.PropertyType.Contains("Linq.Binary"))
+        {
+            propertyDefinition.PropertyType = "byte[]";
+        }
 
         model.Properties.Add(propertyDefinition);
     }
