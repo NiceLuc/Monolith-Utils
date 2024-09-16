@@ -1,4 +1,4 @@
-﻿using System.Runtime.CompilerServices;
+using System.Runtime.CompilerServices;
 using Delinq.CodeGeneration.Engine;
 using Delinq.CodeGeneration.ViewModels;
 using MediatR;
@@ -71,18 +71,19 @@ public sealed class CreateUnitTests
             definition.RepositoryMethods = [method];
         }
 
-        private async Task<object> CreateViewModelAsync(Context context, CancellationToken cancellationToken)
+        private async Task<object> CreateViewModelAsync(ContextDefinition definition, CancellationToken cancellationToken)
         {
-            var data = context.Definition;
-            var viewModel = new UnitTestViewModel(data);
+            var viewModel = new UnitTestViewModel(definition);
+            foreach (var method in definition.RepositoryMethods)
             foreach (var method in data.RepositoryMethods)
             {
                 // find the model that matches the method's return type
                 var model = data.DTOModels.FirstOrDefault(m => m.ClassName == method.ReturnType);
                 var methodViewModel = CreateMethodViewModel(method, model);
 
-                var resourceFileName = GetResourceFileName(methodViewModel, data);
-                var code = await templateEngine.ProcessAsync(resourceFileName, methodViewModel, cancellationToken);
+                var resourceFileName = GetResourceFileName(methodViewModel, definition);
+                var template = await templateProvider.GetTemplateAsync(resourceFileName, cancellationToken);
+                var code = templateEngine.ProcessTemplate(template, methodViewModel);
 
                 viewModel.Methods.Add(code);
             }
