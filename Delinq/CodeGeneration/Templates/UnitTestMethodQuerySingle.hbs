@@ -21,7 +21,7 @@
             var repository = CreateRepository();{{#newline}}
             {{#newline}}
             // act{{#newline}}
-            var actual = repository.{{MethodName}}({{#each Parameters}}{{#if @index}}, {{/if}}{{FakeValue}}{{/each}}));{{#newline}}
+            var actual = repository.{{MethodName}}({{#each Parameters}}{{#if @index}}, {{/if}}{{FakeValue}}{{/each}});{{#newline}}
             {{#newline}}
             // assert{{#newline}}
             Assert.IsNotNull(actual);{{#newline}}

@@ -23,7 +23,7 @@
             var repository = CreateRepository();{{#newline}}
             {{#newline}}
             // act{{#newline}}
-            var actualResults = repository.{{MethodName}}({{#each Parameters}}{{#if @index}}, {{/if}}{{FakeValue}}{{/each}})).ToArray();{{#newline}}
+            var actualResults = repository.{{MethodName}}({{#each Parameters}}{{#if @index}}, {{/if}}{{FakeValue}}{{/each}}).ToArray();{{#newline}}
             {{#newline}}
             // assert{{#newline}}
             Assert.AreEqual(expectedResults.Length, actualResults.Length);{{#newline}}
