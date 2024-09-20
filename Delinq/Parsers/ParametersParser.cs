@@ -5,7 +5,7 @@ namespace Delinq.Parsers;
 internal class ParametersParser : SettingsParser<MethodDefinition>
 {
     private static readonly Regex _parameterRegex = new(
-        @"ParameterAttribute\(Name\s?\=\s?""(?<db_name>.+?)"",\sDbType\s?\=\s?""(?<db_type>.+?)"".+?]\s(?<ref_token>ref\s)?(?<net_type>.+?)\s(?<net_name>.+?)[,\)]",
+        @"ParameterAttribute\((\s?Name\s?\=\s?""(?<db_name>.+?)"",)?\s?DbType\s?\=\s?""(?<db_type>.+?)"".+?]\s(?<ref_token>ref\s)?(?<net_type>.+?)\s(?<net_name>.+?)[,\)]",
         RegexOptions.Singleline);
 
     protected override bool CanParseImpl(string lineOfCode) => true;
@@ -18,7 +18,9 @@ internal class ParametersParser : SettingsParser<MethodDefinition>
         {
             var parameter = new ParameterDefinition
             {
-                SprocParameterName = parameterMatch.Groups["db_name"].Value,
+                SprocParameterName = parameterMatch.Groups["db_name"].Success
+                    ? parameterMatch.Groups["db_name"].Value
+                    : parameterMatch.Groups["net_name"].Value,
                 SqlDbType = parameterMatch.Groups["db_type"].Value,
                 ParameterName = parameterMatch.Groups["net_name"].Value,
                 ParameterType = parameterMatch.Groups["net_type"].Value,

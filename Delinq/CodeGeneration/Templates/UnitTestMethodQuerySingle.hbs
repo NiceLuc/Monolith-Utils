@@ -21,7 +21,7 @@
             var repository = CreateRepository();{{#newline}}
             {{#newline}}
             // act{{#newline}}
-            var actual = repository.{{MethodName}}({{#each Parameters}}{{#if @index}}, {{/if}}{{FakeValue}}{{/each}}));{{#newline}}
+            var actual = repository.{{MethodName}}({{#each Parameters}}{{#if @index}}, {{/if}}{{FakeValue}}{{/each}});{{#newline}}
             {{#newline}}
             // assert{{#newline}}
             Assert.IsNotNull(actual);{{#newline}}
@@ -35,7 +35,7 @@
         public void {{MethodName}}_ThrowsException(){{#newline}}
         {{{#newline}}
             // assemble{{#newline}}
-            _query.ConfigureRead(() => throw TestException);{{#newline}}
+            _query.ConfigureRead(_ => throw TestException);{{#newline}}
             var repository = CreateRepository();{{#newline}}
 {{#each RefParameters}}
             {{#if IsNullable}}{{ParameterType}}{{#else}}var{{/if}} {{ParameterName}} = {{InitialValue}};{{#newline}}
