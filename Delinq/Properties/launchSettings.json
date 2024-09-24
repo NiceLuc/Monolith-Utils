@@ -15,18 +15,32 @@
       "commandLineArgs": "tests c:\\temp\\Delinq\\CNEventing\\CNEventing.metadata.settings -o c:\\temp\\Delinq\\CNEventing\\tests -m CN_GetAgentSupervisorID"
       "commandLineArgs": "tests c:\\temp\\Delinq\\CNEventing\\CNEventing.metadata.settings -o c:\\temp\\Delinq\\CNEventing\\tests"
       */
+      /* InContactDW
+      "commandLineArgs": "init c:\\temp\\Delinq\\InContactDW\\InContactDW.dbml"
+      "commandLineArgs": "repo c:\\temp\\Delinq\\InContactDW\\InContactDW.metadata.settings -o c:\\temp\\Delinq\\InContactDW\\repo"
+      "commandLineArgs": "repo c:\\temp\\Delinq\\InContactDW\\InContactDW.metadata.settings -o c:\\temp\\Delinq\\InContactDW\\repo -m IC_CheckItCanBeLock"
+      "commandLineArgs": "tests c:\\temp\\Delinq\\InContactDW\\InContactDW.metadata.settings -o c:\\temp\\Delinq\\InContactDW\\tests"
+      */
+      "commandLineArgs": "tests c:\\temp\\Delinq\\InContactDW\\InContactDW.metadata.settings -o c:\\temp\\Delinq\\InContactDW\\tests -m IC_CheckItCanBeLock"
       /* BusinessUnit
       "commandLineArgs": "init c:\\temp\\Delinq\\BusinessUnits\\BusinessUnits.dbml"
       "commandLineArgs": "repo c:\\temp\\Delinq\\BusinessUnits\\BusinessUnit.metadata.settings -o c:\\temp\\Delinq\\BusinessUnits\\repo -m IC_UpdateBusinessUnitAddress"
       "commandLineArgs": "repo c:\\temp\\Delinq\\BusinessUnits\\BusinessUnit.metadata.settings -o c:\\temp\\Delinq\\BusinessUnits\\repo"
-      "commandLineArgs": "tests c:\\temp\\Delinq\\BusinessUnits\\BusinessUnit.metadata.settings -o c:\\temp\\Delinq\\BusinessUnits\\tests -m IC_UpdateBusinessUnitAddress"
+      "commandLineArgs": "tests c:\\temp\\Delinq\\BusinessUnits\\BusinessUnit.metadata.settings -o c:\\temp\\Delinq\\BusinessUnits\\tests -m IC_SelectTrustedBusinessUnits"
       "commandLineArgs": "tests c:\\temp\\Delinq\\BusinessUnits\\BusinessUnit.metadata.settings -o c:\\temp\\Delinq\\BusinessUnits\\tests"
       */
+      /* PermissionRoles
+      "commandLineArgs": "init c:\\temp\\Delinq\\PermissionRoles\\PermissionRoles.dbml"
+      "commandLineArgs": "repo c:\\temp\\Delinq\\PermissionRoles\\PermissionRoles.metadata.settings -o c:\\temp\\Delinq\\PermissionRoles\\repo -m IC_GetRoleList"
+      "commandLineArgs": "repo c:\\temp\\Delinq\\PermissionRoles\\PermissionRoles.metadata.settings -o c:\\temp\\Delinq\\PermissionRoles\\repo"
+      "commandLineArgs": "tests c:\\temp\\Delinq\\PermissionRoles\\PermissionRoles.metadata.settings -o c:\\temp\\Delinq\\PermissionRoles\\tests -m IC_SelectUserRoles"
+      "commandLineArgs": "tests c:\\temp\\Delinq\\PermissionRoles\\PermissionRoles.metadata.settings -o c:\\temp\\Delinq\\PermissionRoles\\tests"
+      */
       /* WebManager
+      "commandLineArgs": "init c:\\temp\\Delinq\\WebManager\\WebManager.dbml"
       "commandLineArgs": "repo c:\\temp\\Delinq\\WebManager\\WebManager.metadata.settings -o c:\\temp\\Delinq\\WebManager\\repo"
       "commandLineArgs": "tests c:\\temp\\Delinq\\WebManager\\WebManager.metadata.settings -o c:\\temp\\Delinq\\WebManager\\tests"
       */
-      "commandLineArgs": "init c:\\temp\\Delinq\\WebManager\\WebManager.dbml"
     }
   }
 }
