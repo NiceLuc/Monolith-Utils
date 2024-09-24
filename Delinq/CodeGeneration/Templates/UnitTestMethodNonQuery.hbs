@@ -15,7 +15,7 @@
             var result = repository.{{MethodName}}({{#each Parameters}}{{#if @index}}, {{/if}}{{#if IsRef}}ref {{/if}}{{FakeValue}}{{/each}});{{#newline}}
             {{#newline}}
             // assert{{#newline}}
-            Assert.AreEqual(1, result);{{#newline}}
+            Assert.AreEqual(0, result);{{#newline}}
             _query.VerifySet(q => q.CommandType = CommandType.StoredProcedure);{{#newline}}
             _query.VerifySet(q => q.SQL = "{{SprocName}}");{{#newline}}
             ValidateMocks();{{#newline}}
