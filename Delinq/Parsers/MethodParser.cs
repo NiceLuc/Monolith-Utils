@@ -5,7 +5,7 @@ namespace Delinq.Parsers;
 internal class MethodParser(IParser<MethodDefinition> parameterParser) : SettingsParser<ContextDefinition>
 {
     private static readonly Regex _sprocRegex = new(
-        @"FunctionAttribute\(Name\=""(?<sproc_name>.+)""", 
+        @"FunctionAttribute\(\s?Name\s?\=\s?""(?<sproc_name>.+)""", 
         RegexOptions.Singleline);
 
     private static readonly Regex _methodRegex = new(

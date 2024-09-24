@@ -21,7 +21,7 @@ namespace {{Namespace}}{{#newline}}
         {{this}}{{#newline}}
         {{#newline}}
 {{/each}}
-        #region Primary Methods{{#newline}}
+        #region Private Methods{{#newline}}
         {{#newline}}
         private ISQLQueryEx CreateQuery() => _factory.CreateEx(_settings.ConnectionString);{{#newline}}
         {{#newline}}
