@@ -21,7 +21,7 @@
             var repository = CreateRepository();{{#newline}}
             {{#newline}}
             // act{{#newline}}
-            var actual = repository.{{MethodName}}({{#each Parameters}}{{#if @index}}, {{/if}}{{FakeValue}}{{/each}});{{#newline}}
+            var actual = repository.{{MethodName}}({{#each Parameters}}{{#if @index}}, {{/if}}{{#if IsRef}}ref {{/if}}{{FakeValue}}{{/each}});{{#newline}}
             {{#newline}}
             // assert{{#newline}}
             Assert.IsNotNull(actual);{{#newline}}
@@ -43,7 +43,7 @@
             {{#newline}}
             // act{{#newline}}
             var exception = Assert.ThrowsException<Exception>((){{#newline}}
-                => repository.{{MethodName}}({{#each Parameters}}{{#if @index}}, {{/if}}{{FakeValue}}{{/each}}));{{#newline}}
+                => repository.{{MethodName}}({{#each Parameters}}{{#if @index}}, {{/if}}{{#if IsRef}}ref {{/if}}{{FakeValue}}{{/each}}));{{#newline}}
             {{#newline}}
             // assert{{#newline}}
             Assert.AreSame(TestException, exception);{{#newline}}

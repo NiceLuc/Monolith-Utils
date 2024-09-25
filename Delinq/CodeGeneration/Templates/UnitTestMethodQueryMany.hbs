@@ -23,7 +23,7 @@
             var repository = CreateRepository();{{#newline}}
             {{#newline}}
             // act{{#newline}}
-            var actualResults = repository.{{MethodName}}({{#each Parameters}}{{#if @index}}, {{/if}}{{FakeValue}}{{/each}}).ToArray();{{#newline}}
+            var actualResults = repository.{{MethodName}}({{#each Parameters}}{{#if @index}}, {{/if}}{{#if IsRef}}ref {{/if}}{{FakeValue}}{{/each}}).ToArray();{{#newline}}
             {{#newline}}
             // assert{{#newline}}
             Assert.AreEqual(expectedResults.Length, actualResults.Length);{{#newline}}
@@ -52,7 +52,7 @@
             {{#newline}}
             // act{{#newline}}
             var exception = Assert.ThrowsException<Exception>((){{#newline}}
-                => repository.{{MethodName}}({{#each Parameters}}{{#if @index}}, {{/if}}{{FakeValue}}{{/each}}));{{#newline}}
+                => repository.{{MethodName}}({{#each Parameters}}{{#if @index}}, {{/if}}{{#if IsRef}}ref {{/if}}{{FakeValue}}{{/each}}));{{#newline}}
             {{#newline}}
             // assert{{#newline}}
             Assert.AreSame(TestException, exception);{{#newline}}
