@@ -20,8 +20,8 @@
       "commandLineArgs": "repo c:\\temp\\Delinq\\InContactDW\\InContactDW.metadata.settings -o c:\\temp\\Delinq\\InContactDW\\repo"
       "commandLineArgs": "repo c:\\temp\\Delinq\\InContactDW\\InContactDW.metadata.settings -o c:\\temp\\Delinq\\InContactDW\\repo -m IC_CheckItCanBeLock"
       "commandLineArgs": "tests c:\\temp\\Delinq\\InContactDW\\InContactDW.metadata.settings -o c:\\temp\\Delinq\\InContactDW\\tests"
-      */
       "commandLineArgs": "tests c:\\temp\\Delinq\\InContactDW\\InContactDW.metadata.settings -o c:\\temp\\Delinq\\InContactDW\\tests -m IC_CheckItCanBeLock"
+      */
       /* BusinessUnit
       "commandLineArgs": "init c:\\temp\\Delinq\\BusinessUnits\\BusinessUnits.dbml"
       "commandLineArgs": "repo c:\\temp\\Delinq\\BusinessUnits\\BusinessUnit.metadata.settings -o c:\\temp\\Delinq\\BusinessUnits\\repo -m IC_UpdateBusinessUnitAddress"
@@ -38,9 +38,9 @@
       */
       /* WebManager
       "commandLineArgs": "init c:\\temp\\Delinq\\WebManager\\WebManager.dbml"
-      "commandLineArgs": "repo c:\\temp\\Delinq\\WebManager\\WebManager.metadata.settings -o c:\\temp\\Delinq\\WebManager\\repo"
-      "commandLineArgs": "tests c:\\temp\\Delinq\\WebManager\\WebManager.metadata.settings -o c:\\temp\\Delinq\\WebManager\\tests"
+      "commandLineArgs": "repo c:\\temp\\Delinq\\WebManager\\WebManager.metadata.settings -o c:\\temp\\Delinq\\WebManager\\repo -m IC_UpdateBlockedScriptStatus"
       */
+      "commandLineArgs": "tests c:\\temp\\Delinq\\WebManager\\WebManager.metadata.settings -o c:\\temp\\Delinq\\WebManager\\tests -m IC_UpdateBlockedScriptStatus"
     }
   }
 }
