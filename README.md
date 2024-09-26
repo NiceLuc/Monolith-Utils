@@ -29,13 +29,13 @@ We defined a standard approach for calling the database.
 Here is the line of code that will generate all of the above files:
 
 ```powershell
-$> delinq repo "c:\temp\SomeData.metadata.settings -o c:\temp\SomeData\RepoFiles"
+$> delinq repo "c:\temp\SomeData.metadata.settings" -o "c:\temp\SomeData\RepoFiles"
 ```
 
 If you only need to generate code for a specific method, you can define it using a flag:
 
 ```powershell
-$> delinq repo "c:\temp\SomeData.metadata.settings -o c:\temp\SomeData\RepoFiles -m SomeSpecificMethodName"
+$> delinq repo "c:\temp\SomeData.metadata.settings" -o "c:\temp\SomeData\RepoFiles" -m SomeSpecificMethodName
 ```
 
 This is useful if you only have to generate code for a specific database call.
@@ -52,13 +52,13 @@ We defined a standard approach for testing our repository methods.
 Here is the line of code that will generate all of the above files:
 
 ```powershell
-$> delinq tests "c:\temp\SomeData.metadata.settings -o c:\temp\SomeData\TestFiles"
+$> delinq tests "c:\temp\SomeData.metadata.settings" -o "c:\temp\SomeData\TestFiles"
 ```
 
 If you only need to generate test code for a specific repository method, you can define it using a flag:
 
 ```powershell
-$> delinq tests "c:\temp\SomeData.metadata.settings -o c:\temp\SomeData\TestFiles -m SomeSpecificMethodName"
+$> delinq tests "c:\temp\SomeData.metadata.settings" -o "c:\temp\SomeData\TestFiles" -m SomeSpecificMethodName
 ```
 
 This is useful if you only have to generate code for a specific database call.
