@@ -1,4 +1,4 @@
-# Linq_Conversion_Tool
+# Delinq CLI - Linq Conversion Tool
 
 This app will parse a LINQ designer file and extract the necessary data that it needs to recreate the queries to a backing "Repository" approach. This will allow the queries to be run against a database without the need for the LINQ designer file.
 
@@ -19,7 +19,7 @@ This will create a `SomeData.metadata.settings` file which contains all the info
 ### Generate Repository Files
 
 We defined a standard approach for calling the database.
-* `DataModels.cs - Contains all of the `DTO` objects in one code file.
+* `DataModels.cs` - Contains all of the `DTO` objects in one code file.
 * `DataContext.cs` - A new (very light-weight) implementation of the original DataContext.
 * `IRepository.cs` - An interface of all required methods that match the original DataContext methods.
 * `Repository.cs` - The customized implementation of all stored procedure calls.
