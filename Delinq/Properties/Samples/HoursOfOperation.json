@@ -1,0 +1,13 @@
+{
+  "profiles": {
+    "GVLinQOptimizer": {
+      "commandName": "Project",
+      /*
+      "commandLineArgs": "repo c:\\temp\\Delinq\\HoursOfOperation\\HoursOfOperation.metadata.settings -o c:\\temp\\Delinq\\HoursOfOperation\\repo"
+      "commandLineArgs": "repo c:\\temp\\Delinq\\HoursOfOperation\\HoursOfOperation.metadata.settings -o c:\\temp\\Delinq\\HoursOfOperation\\repo -m IC_DataRole_CreateBusinessUnitFilter"
+      "commandLineArgs": "tests c:\\temp\\Delinq\\HoursOfOperation\\HoursOfOperation.metadata.settings -o c:\\temp\\Delinq\\HoursOfOperation\\tests"
+      */
+      "commandLineArgs": "init c:\\temp\\Delinq\\HoursOfOperation\\HoursOfOperationManager.dbml"
+    }
+  }
+}

@@ -1,0 +1,14 @@
+{
+  "profiles": {
+    "GVLinQOptimizer": {
+      "commandName": "Project",
+      /* ICEventing
+      "commandLineArgs": "repo c:\\temp\\Delinq\\ICEventing\\ICEventing.metadata.settings -o c:\\temp\\Delinq\\ICEventing\\repo"
+      "commandLineArgs": "repo c:\\temp\\Delinq\\ICEventing\\ICEventing.metadata.settings -o c:\\temp\\Delinq\\ICEventing\\repo"
+      "commandLineArgs": "tests c:\\temp\\Delinq\\ICEventing\\ICEventing.metadata.settings -o c:\\temp\\Delinq\\ICEventing\\tests -m CN_GetAgentSupervisorID"
+      "commandLineArgs": "tests c:\\temp\\Delinq\\ICEventing\\ICEventing.metadata.settings -o c:\\temp\\Delinq\\ICEventing\\tests"
+      */
+      "commandLineArgs": "init c:\\temp\\Delinq\\ICEventing\\ICEventing.dbml"
+    }
+  }
+}

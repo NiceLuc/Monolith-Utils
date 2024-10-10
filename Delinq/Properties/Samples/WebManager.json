@@ -1,0 +1,12 @@
+{
+  "profiles": {
+    "GVLinQOptimizer": {
+      "commandName": "Project",
+      /*
+      "commandLineArgs": "init c:\\temp\\Delinq\\WebManager\\WebManager.dbml"
+      "commandLineArgs": "repo c:\\temp\\Delinq\\WebManager\\WebManager.metadata.settings -o c:\\temp\\Delinq\\WebManager\\repo"
+      */
+      "commandLineArgs": "tests c:\\temp\\Delinq\\WebManager\\WebManager.metadata.settings -o c:\\temp\\Delinq\\WebManager\\tests"
+    }
+  }
+}

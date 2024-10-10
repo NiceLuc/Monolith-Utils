@@ -1,0 +1,13 @@
+{
+  "profiles": {
+    "GVLinQOptimizer": {
+      "commandName": "Project",
+      /*
+      "commandLineArgs": "repo c:\\temp\\Delinq\\WFOIntelligenceEventing\\WFOIntelligenceEventing.metadata.settings -o c:\\temp\\Delinq\\WFOIntelligenceEventing\\repo"
+      "commandLineArgs": "repo c:\\temp\\Delinq\\WFOIntelligenceEventing\\WFOIntelligenceEventing.metadata.settings -o c:\\temp\\Delinq\\WFOIntelligenceEventing\\repo -m IC_DataRole_CreateBusinessUnitFilter"
+      "commandLineArgs": "tests c:\\temp\\Delinq\\WFOIntelligenceEventing\\WFOIntelligenceEventing.metadata.settings -o c:\\temp\\Delinq\\WFOIntelligenceEventing\\tests"
+      */
+      "commandLineArgs": "init c:\\temp\\Delinq\\WFOIntelligenceEventing\\WFOIntelligenceEventing.dbml"
+    }
+  }
+}

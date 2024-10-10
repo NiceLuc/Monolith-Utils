@@ -1,0 +1,13 @@
+{
+  "profiles": {
+    "GVLinQOptimizer": {
+      "commandName": "Project",
+      /*
+      "commandLineArgs": "repo c:\\temp\\Delinq\\Tools\\Tools.metadata.settings -o c:\\temp\\Delinq\\Tools\\repo"
+      "commandLineArgs": "repo c:\\temp\\Delinq\\Tools\\Tools.metadata.settings -o c:\\temp\\Delinq\\Tools\\repo -m IC_DataRole_CreateBusinessUnitFilter"
+      "commandLineArgs": "tests c:\\temp\\Delinq\\Tools\\Tools.metadata.settings -o c:\\temp\\Delinq\\Tools\\tests"
+      */
+      "commandLineArgs": "init c:\\temp\\Delinq\\Tools\\Tools.dbml"
+    }
+  }
+}
