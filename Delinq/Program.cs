@@ -5,14 +5,32 @@ using Delinq.DependencyInjection;
 using Delinq.Options;
 using Delinq.Programs;
 using MediatR;
+using Microsoft.Extensions.Configuration;
 
-var builder = Host.CreateApplicationBuilder(args);
-var services = builder.Services;
+var builder = Host.CreateDefaultBuilder(args)
+    .ConfigureAppConfiguration((context, config) =>
+    {
+        // Add appsettings.json settings
+        config.AddJsonFile("appsettings.json", optional: true, reloadOnChange: true);
 
-services.AddCustomDesignerParsers();
-services.AddHandlebarsTemplateSupport();
+        // Add Machine.config
+        var machineConfigPath = Path.Combine(
+            Environment.GetFolderPath(Environment.SpecialFolder.System),
+            @"..\Microsoft.NET\Framework\v4.0.30319\Config\Machine.config");
 
-services.AddMediatR(config => config.RegisterServicesFromAssembly(typeof(Program).Assembly));
+        if (File.Exists(machineConfigPath)) 
+            config.AddXmlFile(machineConfigPath, optional: false, reloadOnChange: true);
+
+        // Add environment variables
+        config.AddEnvironmentVariables();
+    })
+    .ConfigureServices((context, services) =>
+    {
+        services.AddCustomDesignerParsers();
+        services.AddHandlebarsTemplateSupport();
+        services.AddMediatR(config => config.RegisterServicesFromAssembly(typeof(Program).Assembly));
+
+    });
 
 using var host = builder.Build();
 var mediator = host.Services.GetRequiredService<IMediator>();
