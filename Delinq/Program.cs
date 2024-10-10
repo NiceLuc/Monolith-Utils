@@ -29,17 +29,17 @@ var builder = Host.CreateDefaultBuilder(args)
         services.AddCustomDesignerParsers();
         services.AddHandlebarsTemplateSupport();
         services.AddMediatR(config => config.RegisterServicesFromAssembly(typeof(Program).Assembly));
-
     });
 
 using var host = builder.Build();
 var mediator = host.Services.GetRequiredService<IMediator>();
 
 // parse the command line arguments and call appropriate handler
-Parser.Default.ParseArguments<InitializeOptions, CreateRepositoryOptions, CreateUnitTestsOptions>(args)
+Parser.Default.ParseArguments<InitializeOptions, CreateRepositoryOptions, CreateUnitTestsOptions, VerifySprocOptions>(args)
     .WithParsed<InitializeOptions>(InitializeSettingsFile)
     .WithParsed<CreateRepositoryOptions>(GenerateRepositoryFiles)
-    .WithParsed<CreateUnitTestsOptions>(GenerateUnitTestFile);
+    .WithParsed<CreateUnitTestsOptions>(GenerateUnitTestFile)
+    .WithParsed<VerifySprocOptions>(VerifySprocsForRepository);
 
 return;
 
@@ -80,6 +80,17 @@ void GenerateUnitTestFile(CreateUnitTestsOptions options)
     SendRequest(request);
 }
 
+void VerifySprocsForRepository(VerifySprocOptions options)
+{
+    var request = new VerifySprocs.Request
+    {
+        SettingsFilePath = options.SettingsFilePath,
+        ConnectionString = options.ConnectionString,
+        RepositoryFilePath = options.RepositoryFilePath
+    };
+
+    SendRequest(request);
+}
 void SendRequest<TRequest>(TRequest request) where TRequest : IRequest<string>
 {
     var result = mediator.Send(request)
