@@ -63,6 +63,18 @@ $> delinq tests "c:\temp\SomeData.metadata.settings" -o "c:\temp\SomeData\TestFi
 
 This is useful if you only have to generate code for a specific database call.
 
+### Validate Repository Files
+
+This is used to ensure that we have accounted for proper implementations of the repository methods.
+
+> **Note:** This requires user secrets to be set up for the connection string.
+
+```shell
+dotnet user-secrets init
+dotnet user-secrets set "ConnectionStrings:InCode" "YourConnectionString"
+```
+
+```powershell
 ## For More Information
 
 Feel free to use the custom calls defined in the `Delinq/Properties/launchSettings.json` file to get started.

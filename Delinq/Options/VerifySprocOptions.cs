@@ -11,6 +11,9 @@ internal class VerifySprocOptions
     [Option('c', "connection-string", Required = true, HelpText = "The connection string to the database containing the stored procedures.")]
     public string ConnectionString { get; set; }
 
-    [Option('o', "output", Required = false, HelpText = "The output file name (default = '').")]
-    public string SettingsFilePath { get; set; }
+    [Option('o', "output", Required = false, HelpText = "The output file name to list results (default = '').")]
+    public string ReportFilePath { get; set; }
+
+    [Option('m', "method", HelpText = "Only validate a single method.")]
+    public string MethodName { get; set; }
 }

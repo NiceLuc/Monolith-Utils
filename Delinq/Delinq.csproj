@@ -6,6 +6,7 @@
     <ImplicitUsings>enable</ImplicitUsings>
     <Nullable>enable</Nullable>
     <AssemblyName>delinq</AssemblyName>
+    <UserSecretsId>3046e187-0f15-4814-b6d0-865a1c544dde</UserSecretsId>
   </PropertyGroup>
 
   <ItemGroup>

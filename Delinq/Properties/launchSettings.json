@@ -1,11 +1,14 @@
 {
   "profiles": {
-    "GVLinQOptimizer": {
+    "delinq": {
       "commandName": "Project",
+      "environmentVariables": {
+        "ASPNETCORE_ENVIRONMENT": "Development"
+      },
       /* 
-      Use example arguments from the /Properties/Samples directory.
+        NOTE: Use example arguments from the /Properties/Samples/*.json files!
       */
-      "commandLineArgs": "tests c:\\temp\\Delinq\\WebManager\\WebManager.metadata.settings -o c:\\temp\\Delinq\\WebManager\\tests -m IC_UpdateBlockedScriptStatus"
+      "commandLineArgs": "verify D:\\tfs\\API-CONT\\Code\\C#\\Library\\incontactDAL\\inContactDAL\\BusinessUnits\\BusinessUnitRepository.cs -c SECRET:ConnectionStrings:InCode -o c:\\temp\\Delinq\\BusinessUnits\\Validation.txt -m IC_GetPhoneTypeSkills"
     }
   }
 }

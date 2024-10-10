@@ -1,11 +1,15 @@
 ﻿using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 using CommandLine;
+using Delinq;
 using Delinq.DependencyInjection;
 using Delinq.Options;
 using Delinq.Programs;
 using MediatR;
 using Microsoft.Extensions.Configuration;
+
+// TODO: Figure out why the console app is not respecting the launchSettings.json environment variable
+//Environment.SetEnvironmentVariable("ASPNETCORE_ENVIRONMENT", "Development");
 
 var builder = Host.CreateDefaultBuilder(args)
     .ConfigureAppConfiguration((context, config) =>
@@ -13,6 +17,7 @@ var builder = Host.CreateDefaultBuilder(args)
         // Add appsettings.json settings
         config.AddJsonFile("appsettings.json", optional: true, reloadOnChange: true);
 
+        /*
         // Add Machine.config
         var machineConfigPath = Path.Combine(
             Environment.GetFolderPath(Environment.SpecialFolder.System),
@@ -23,12 +28,21 @@ var builder = Host.CreateDefaultBuilder(args)
 
         // Add environment variables
         config.AddEnvironmentVariables();
+        */
+
+        // Add user secrets (only in local development)
+        // TODO: if (context.HostingEnvironment.IsDevelopment())
+            config.AddUserSecrets<Program>();
     })
     .ConfigureServices((context, services) =>
     {
         services.AddCustomDesignerParsers();
         services.AddHandlebarsTemplateSupport();
         services.AddMediatR(config => config.RegisterServicesFromAssembly(typeof(Program).Assembly));
+
+        // supports user secrets!
+        services.Configure<ConnectionStrings>(context.Configuration.GetSection("ConnectionStrings"));
+        services.AddTransient<ConnectionStrings>();
     });
 
 using var host = builder.Build();
@@ -84,9 +98,10 @@ void VerifySprocsForRepository(VerifySprocOptions options)
 {
     var request = new VerifySprocs.Request
     {
-        SettingsFilePath = options.SettingsFilePath,
+        RepositoryFilePath = options.RepositoryFilePath,
         ConnectionString = options.ConnectionString,
-        RepositoryFilePath = options.RepositoryFilePath
+        ReportFilePath = options.ReportFilePath,
+        MethodName = options.MethodName
     };
 
     SendRequest(request);
