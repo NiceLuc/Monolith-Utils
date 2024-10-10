@@ -1,5 +1,6 @@
-using System.Data;
+﻿using System.Data;
 using System.Data.SqlClient;
+using Delinq.Parsers;
 using MediatR;
 using Microsoft.Extensions.Options;
 
@@ -15,19 +16,17 @@ public sealed class VerifySprocs
         public string MethodName { get; set; }
     }
 
-    public class Handler : IRequestHandler<Request, string>
+    public class Handler(
+        IEnumerable<IParser<RepositoryDefinition>> parsers,
+        IContextDefinitionSerializer serializer,
+        IOptions<ConnectionStrings> connectionStrings,
+        IFileStorage fileStorage) : IRequestHandler<Request, string>
     {
-        private readonly IFileStorage _fileStorage;
-        private readonly ConnectionStrings _connectionStrings;
+        private readonly ConnectionStrings _connectionStrings = connectionStrings.Value;
 
-        public Handler(IOptions<ConnectionStrings> connectionStrings, IFileStorage fileStorage)
+        public async Task<string> Handle(Request request, CancellationToken cancellationToken)
         {
-            _fileStorage = fileStorage;
-            _connectionStrings = connectionStrings.Value;
-        }
-
-        public Task<string> Handle(Request request, CancellationToken cancellationToken)
-        {
+            // if the connection string is a secret, replace it with the actual connection string
             if (request.ConnectionString.StartsWith("SECRET:"))
             {
                 if (request.ConnectionString != "SECRET:ConnectionStrings:InCode")
@@ -36,9 +35,40 @@ public sealed class VerifySprocs
                 request.ConnectionString = _connectionStrings.InCode;
             }
 
+            // before doing anything more, ensure we have a valid connection string!
+            await ValidateConnectionAsync(request.ConnectionString);
+
+            var definition = new RepositoryDefinition {FilePath = request.RepositoryFilePath};
+
+            // read the repository file and extract all the method names that return IEnumerable<T>
+            // parse the designer file using the parser implementations created for ContextDefinition
+            using (var reader = File.OpenText(definition.FilePath))
+            {
+                while (await reader.ReadLineAsync(cancellationToken) is { } line)
+                {
+                    var parser = parsers.FirstOrDefault(p => p.CanParse(line));
+                    parser?.Parse(definition, reader);
+                }
+            }
+            var repositoryCode = await fileStorage.ReadAllTextAsync(request.RepositoryFilePath, cancellationToken);
+            var methodDetails = await ExtractMethodNamesAndSprocNamesAsync(repositoryCode, cancellationToken);
+
             var code = GetStoredProcedureCode(request.ConnectionString, request.MethodName);
             Console.WriteLine($"Request: {code}");
-            return Task.FromResult("Implement me!!");
+            return "Implement me!!";
+        }
+
+        private Task<Dictionary<string, string>> ExtractMethodNamesAndSprocNamesAsync(string repositoryCode, CancellationToken cancellationToken)
+        {
+            var result = new Dictionary<string, string>();
+            return Task.FromResult(result);
+        }
+
+        private async Task ValidateConnectionAsync(string connectionString)
+        {
+            await using var connection = new SqlConnection(connectionString);
+            await connection.OpenAsync();
+            connection.Close();
         }
 
         private string GetStoredProcedureCode(string connectionString, string sprocName)

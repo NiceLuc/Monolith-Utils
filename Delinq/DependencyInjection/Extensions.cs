@@ -1,7 +1,7 @@
-using Delinq.CodeGeneration;
-using Delinq.CodeGeneration.Engine;
+﻿using Delinq.CodeGeneration.Engine;
 using Delinq.Parsers;
 using Delinq.Parsers.DesignerFile;
+using Delinq.Parsers.RepositoryFile;
 using Microsoft.Extensions.DependencyInjection;
 using Mustache;
 
@@ -20,7 +20,11 @@ namespace Delinq.DependencyInjection
             // types that are used in context definition parsers
             services.AddSingleton<IParser<MethodDefinition>, ParametersParser>();
             services.AddSingleton<IParser<DTOClassDefinition>, DTOPropertyParser>();
-            services.AddSingleton<ScopeTracker>();
+
+            // used for VerifySprocs.Handler() constructor
+            services.AddSingleton<IParser<RepositoryDefinition>, EnumerableMethodParser>();
+
+            services.AddTransient<ScopeTracker>();
         }
 
         public static void AddHandlebarsTemplateSupport(this IServiceCollection services)

@@ -3,6 +3,7 @@
 internal class ScopeTracker
 {
     private int _counter;
+    private bool _isNewScope = true;
 
     public bool IsInScope(string lineOfCode)
     {
@@ -10,12 +11,13 @@ internal class ScopeTracker
         if (trimmed == "{")
         {
             _counter++;
+            _isNewScope = false;
             return true;
         }
 
-        if (trimmed == "}") 
+        if (trimmed is "}" or "};") 
             _counter--;
 
-        return _counter > 0;
+        return _isNewScope || _counter > 0;
     }
 }
