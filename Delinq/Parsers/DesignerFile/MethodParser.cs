@@ -1,15 +1,15 @@
 ﻿using System.Text.RegularExpressions;
 
-namespace Delinq.Parsers;
+namespace Delinq.Parsers.DesignerFile;
 
 internal class MethodParser(IParser<MethodDefinition> parameterParser) : SettingsParser<ContextDefinition>
 {
     private static readonly Regex _sprocRegex = new(
-        @"FunctionAttribute\(\s?Name\s?\=\s?""(?<sproc_name>.+)""", 
+        @"FunctionAttribute\(\s?Name\s?\=\s?""(?<sproc_name>.+)""",
         RegexOptions.Singleline);
 
     private static readonly Regex _methodRegex = new(
-        @"(public|protected internal) (ISingleResult\<(?<return_type>.+?)\>|(?<return_type>.+?))\s(?<method_name>.+?)\(", 
+        @"(public|protected internal) (ISingleResult\<(?<return_type>.+?)\>|(?<return_type>.+?))\s(?<method_name>.+?)\(",
         RegexOptions.Singleline);
 
     protected override bool CanParseImpl(string lineOfCode) => _sprocRegex.IsMatch(lineOfCode);
@@ -20,7 +20,7 @@ internal class MethodParser(IParser<MethodDefinition> parameterParser) : Setting
         if (!match.Success)
             throw new InvalidOperationException($"Unable to parse stored procedure name for method: '{CurrentLine}'");
 
-        var method = new MethodDefinition {DatabaseName = match.Groups["sproc_name"].Value};
+        var method = new MethodDefinition { DatabaseName = match.Groups["sproc_name"].Value };
 
         ReadNextLine(reader);
 

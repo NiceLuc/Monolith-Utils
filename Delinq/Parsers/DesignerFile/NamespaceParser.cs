@@ -1,11 +1,11 @@
 ﻿using System.Text.RegularExpressions;
 
-namespace Delinq.Parsers;
+namespace Delinq.Parsers.DesignerFile;
 
 internal class NamespaceParser : SettingsParser<ContextDefinition>
 {
     private static readonly Regex _namespaceRegex = new(
-        @"^namespace (?<namespace>.+)$", 
+        @"^namespace (?<namespace>.+)$",
         RegexOptions.Singleline);
 
     protected override bool CanParseImpl(string lineOfCode) => _namespaceRegex.IsMatch(lineOfCode);

@@ -1,11 +1,11 @@
 ﻿using System.Text.RegularExpressions;
 
-namespace Delinq.Parsers;
+namespace Delinq.Parsers.DesignerFile;
 
 internal class ContextClassParser : SettingsParser<ContextDefinition>
 {
     private static readonly Regex _classRegex = new(
-        @"public partial class (?<class_name>.+)DataContext \:", 
+        @"public partial class (?<class_name>.+)DataContext \:",
         RegexOptions.Singleline);
 
     protected override bool CanParseImpl(string lineOfCode) => _classRegex.IsMatch(lineOfCode);
