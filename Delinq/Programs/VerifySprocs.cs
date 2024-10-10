@@ -1,4 +1,4 @@
-﻿using System.Data;
+using System.Data;
 using System.Data.SqlClient;
 using MediatR;
 using Microsoft.Extensions.Options;
@@ -17,10 +17,12 @@ public sealed class VerifySprocs
 
     public class Handler : IRequestHandler<Request, string>
     {
+        private readonly IFileStorage _fileStorage;
         private readonly ConnectionStrings _connectionStrings;
 
-        public Handler(IOptions<ConnectionStrings> connectionStrings)
+        public Handler(IOptions<ConnectionStrings> connectionStrings, IFileStorage fileStorage)
         {
+            _fileStorage = fileStorage;
             _connectionStrings = connectionStrings.Value;
         }
 
