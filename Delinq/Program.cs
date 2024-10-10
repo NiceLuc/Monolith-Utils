@@ -18,7 +18,7 @@ using var host = builder.Build();
 var mediator = host.Services.GetRequiredService<IMediator>();
 
 // parse the command line arguments and call appropriate handler
-Parser.Default.ParseArguments<InitializeOptions, ExtractDTOOptions, CreateRepositoryOptions, CreateUnitTestsOptions>(args)
+Parser.Default.ParseArguments<InitializeOptions, CreateRepositoryOptions, CreateUnitTestsOptions>(args)
     .WithParsed<InitializeOptions>(InitializeSettingsFile)
     .WithParsed<CreateRepositoryOptions>(GenerateRepositoryFiles)
     .WithParsed<CreateUnitTestsOptions>(GenerateUnitTestFile);
