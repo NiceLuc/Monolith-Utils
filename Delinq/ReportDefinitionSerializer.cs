@@ -1,4 +1,5 @@
 ﻿using System.Text.Json;
+using System.Text.Json.Serialization;
 
 namespace Delinq;
 
@@ -6,7 +7,13 @@ public class RepositoryDefinitionSerializer(IFileStorage fileStorage) : IContext
 {
     public async Task SerializeAsync(string filePath, RepositoryDefinition definition, CancellationToken cancellationToken)
     {
-        var prettified = new JsonSerializerOptions {WriteIndented = true};
+        var prettified = new JsonSerializerOptions
+        {
+            WriteIndented = true, Converters =
+            {
+                new JsonStringEnumConverter()
+            }
+        };
         var serialized = JsonSerializer.Serialize(definition, prettified);
         await fileStorage.WriteAllTextAsync(filePath, serialized, cancellationToken);
     }

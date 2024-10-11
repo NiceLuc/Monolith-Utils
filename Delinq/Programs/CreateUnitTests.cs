@@ -1,5 +1,4 @@
-﻿using System.Runtime.CompilerServices;
-using Delinq.CodeGeneration.Engine;
+﻿using Delinq.CodeGeneration.Engine;
 using Delinq.CodeGeneration.ViewModels;
 using MediatR;
 
