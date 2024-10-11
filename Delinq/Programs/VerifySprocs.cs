@@ -1,7 +1,10 @@
-using System.Data;
+﻿using System.Data;
 using System.Data.SqlClient;
 using Delinq.Parsers;
 using MediatR;
+using Microsoft.CodeAnalysis;
+using Microsoft.CodeAnalysis.CSharp;
+using Microsoft.CodeAnalysis.CSharp.Syntax;
 using Microsoft.Extensions.Options;
 
 namespace Delinq.Programs;
@@ -38,33 +41,46 @@ public sealed class VerifySprocs
             // before doing anything more, ensure we have a valid connection string!
             await ValidateConnectionAsync(request.ConnectionString);
 
+            // read repository file to extract all details using Roslyn
+            var methods = await ExtractMethodsFromFile(request.RepositoryFilePath, cancellationToken);
+
             var definition = new RepositoryDefinition {FilePath = request.RepositoryFilePath};
-
-            // read the repository file and extract all the method names that return IEnumerable<T>
-            // parse the designer file using the parser implementations created for ContextDefinition
-            using (var reader = File.OpenText(definition.FilePath))
+            foreach (var method in methods)
             {
-                while (await reader.ReadLineAsync(cancellationToken) is { } line)
+                var returnType = method.ReturnType.ToString();
+                var methodName = method.Identifier.Text;
+                var parameters = method.ParameterList.Parameters.Select(p => new ParameterDefinition
                 {
-                    var parser = parsers.FirstOrDefault(p => p.CanParse(line));
-                    parser?.Parse(definition, reader);
-                }
+                    ParameterName = p.Identifier.Text,
+                    ParameterType = p.Type.ToString(),
+                }).ToList();
+
+                definition.EnumerableMethods.Add(new EnumerableMethod
+                {
+                    MethodName = methodName,
+                    MethodReturnType = returnType,
+                    MethodParameters = parameters
+                });
             }
-            var repositoryCode = await fileStorage.ReadAllTextAsync(request.RepositoryFilePath, cancellationToken);
-            var methodDetails = await ExtractMethodNamesAndSprocNamesAsync(repositoryCode, cancellationToken);
 
-            var code = GetStoredProcedureCode(request.ConnectionString, request.MethodName);
-            Console.WriteLine($"Request: {code}");
-            return "Implement me!!";
+            var sproc = GetStoredProcedureCode(request.ConnectionString, request.MethodName);
+            Console.WriteLine($"Request: {sproc}");
+
+            await serializer.SerializeAsync(request.ReportFilePath, definition, cancellationToken);
+            return request.ReportFilePath;
         }
 
-        private Task<Dictionary<string, string>> ExtractMethodNamesAndSprocNamesAsync(string repositoryCode, CancellationToken cancellationToken)
+        private async Task<IEnumerable<MethodDeclarationSyntax>> ExtractMethodsFromFile(string filePath, CancellationToken cancellationToken)
         {
-            var result = new Dictionary<string, string>();
-            return Task.FromResult(result);
+            var code = await fileStorage.ReadAllTextAsync(filePath, cancellationToken);
+
+            var tree = CSharpSyntaxTree.ParseText(code);
+            var root = (CompilationUnitSyntax)await tree.GetRootAsync(cancellationToken);
+
+            return root.DescendantNodes().OfType<MethodDeclarationSyntax>();
         }
 
-        private async Task ValidateConnectionAsync(string connectionString)
+        private static async Task ValidateConnectionAsync(string connectionString)
         {
             await using var connection = new SqlConnection(connectionString);
             await connection.OpenAsync();
