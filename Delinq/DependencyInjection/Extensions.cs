@@ -19,10 +19,10 @@ namespace Delinq.DependencyInjection
             services.AddSingleton<IParser<ContextDefinition>, DTOClassParser>();
             services.AddSingleton<IParser<MethodDefinition>, ParametersParser>();
             services.AddSingleton<IParser<DTOClassDefinition>, DTOPropertyParser>();
-            services.AddSingleton<IContextDefinitionSerializer<ContextDefinition>, ContextDefinitionSerializer>();
+            services.AddSingleton<IDefinitionSerializer<ContextDefinition>, ContextDefinitionSerializer>();
 
             // used for VerifySprocs.Handler() constructor
-            services.AddSingleton<IContextDefinitionSerializer<RepositoryDefinition>, RepositoryDefinitionSerializer>();
+            services.AddSingleton<IDefinitionSerializer<RepositoryDefinition>, RepositoryDefinitionSerializer>();
         }
 
         public static void AddHandlebarsTemplateSupport(this IServiceCollection services)

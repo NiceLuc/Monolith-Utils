@@ -3,7 +3,7 @@ using System.Text.Json.Serialization;
 
 namespace Delinq;
 
-public class RepositoryDefinitionSerializer(IFileStorage fileStorage) : IContextDefinitionSerializer<RepositoryDefinition>
+public class RepositoryDefinitionSerializer(IFileStorage fileStorage) : IDefinitionSerializer<RepositoryDefinition>
 {
     public async Task SerializeAsync(string filePath, RepositoryDefinition definition, CancellationToken cancellationToken)
     {

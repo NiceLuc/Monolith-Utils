@@ -19,7 +19,7 @@ public sealed class VerifyRepositoryMethods
     }
 
     public class Handler(
-        IContextDefinitionSerializer<RepositoryDefinition> serializer,
+        IDefinitionSerializer<RepositoryDefinition> serializer,
         IOptions<ConnectionStrings> connectionStrings,
         IFileStorage fileStorage) : IRequestHandler<Request, string>
     {

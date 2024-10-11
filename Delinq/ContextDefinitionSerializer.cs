@@ -2,7 +2,7 @@
 
 namespace Delinq;
 
-public class ContextDefinitionSerializer(IFileStorage fileStorage) : IContextDefinitionSerializer<ContextDefinition>
+public class ContextDefinitionSerializer(IFileStorage fileStorage) : IDefinitionSerializer<ContextDefinition>
 {
     public async Task SerializeAsync(string filePath, ContextDefinition definition, CancellationToken cancellationToken)
     {

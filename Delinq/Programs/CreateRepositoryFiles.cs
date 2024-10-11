@@ -14,7 +14,7 @@ public sealed class CreateRepositoryFiles
     }
 
     public class Handler(
-        IContextDefinitionSerializer<ContextDefinition> definitionSerializer,
+        IDefinitionSerializer<ContextDefinition> definitionSerializer,
         ITemplateProvider templateProvider,
         ITemplateEngine templateEngine,
         IFileStorage fileStorage) 
