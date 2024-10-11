@@ -6,7 +6,7 @@
         "ASPNETCORE_ENVIRONMENT": "Development"
       },
       /* NOTE: Use example arguments from the /Properties/Samples/* files!  */
-      "commandLineArgs": "verify D:\\tfs\\API-CONT\\Code\\C#\\Library\\incontactDAL\\inContactDAL\\BusinessUnits\\BusinessUnitRepository.cs -c SECRET:ConnectionStrings:InCode -o c:\\temp\\Delinq\\BusinessUnits\\Validation.json"
+      "commandLineArgs": "report c:\\temp\\Delinq\\BusinessUnits\\Validation.json"
     }
   }
 }

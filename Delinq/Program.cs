@@ -49,11 +49,12 @@ using var host = builder.Build();
 var mediator = host.Services.GetRequiredService<IMediator>();
 
 // parse the command line arguments and call appropriate handler
-Parser.Default.ParseArguments<InitializeOptions, CreateRepositoryOptions, CreateUnitTestsOptions, VerifyRepositoryMethodOptions>(args)
+Parser.Default.ParseArguments<InitializeOptions, CreateRepositoryOptions, CreateUnitTestsOptions, VerifyRepositoryMethodOptions, VerifyReportOptions>(args)
     .WithParsed<InitializeOptions>(InitializeSettingsFile)
     .WithParsed<CreateRepositoryOptions>(GenerateRepositoryFiles)
     .WithParsed<CreateUnitTestsOptions>(GenerateUnitTestFile)
-    .WithParsed<VerifyRepositoryMethodOptions>(InitializeVerificationFile);
+    .WithParsed<VerifyRepositoryMethodOptions>(InitializeVerificationFile)
+    .WithParsed<VerifyReportOptions>(GenerateVerificationReport);
 
 return;
 
@@ -106,6 +107,18 @@ void InitializeVerificationFile(VerifyRepositoryMethodOptions options)
 
     SendRequest(request);
 }
+
+void GenerateVerificationReport(VerifyReportOptions options)
+{
+    var request = new VerificationReport.Request
+    {
+        ValidationFilePath = options.ValidationFilePath,
+        ReportName = options.ReportName
+    };
+
+    SendRequest(request);
+}
+
 void SendRequest<TRequest>(TRequest request) where TRequest : IRequest<string>
 {
     var result = mediator.Send(request)

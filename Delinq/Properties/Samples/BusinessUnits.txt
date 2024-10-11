@@ -3,5 +3,5 @@
 "commandLineArgs": "repo c:\\temp\\Delinq\\BusinessUnits\\BusinessUnit.metadata.settings -o c:\\temp\\Delinq\\BusinessUnits\\repo"
 "commandLineArgs": "tests c:\\temp\\Delinq\\BusinessUnits\\BusinessUnit.metadata.settings -o c:\\temp\\Delinq\\BusinessUnits\\tests -m IC_SelectTrustedBusinessUnits"
 "commandLineArgs": "tests c:\\temp\\Delinq\\BusinessUnits\\BusinessUnit.metadata.settings -o c:\\temp\\Delinq\\BusinessUnits\\tests"
-
 "commandLineArgs": "verify d:\\tfs\\API-CONT\\Code\\C#\\Library\\incontactDAL\\inContactDAL\\BusinessUnits\\BusinessUnitRepository.cs -c SECRET:ConnectionStrings:InCode -o c:\\temp\\Delinq\\BusinessUnits\\Validation.json"
+"commandLineArgs": "report c:\\temp\\Delinq\\BusinessUnits\\Validation.json"
