@@ -74,6 +74,10 @@ This is used to ensure that we have accounted for proper implementations of the 
 * Look for specific calls inside the stored procedure to determine what the "QueryType" should be
 * Compare the repository implementation to the stored procedure and set the Status for each method.
 
+```powershell
+$> delinq verify "c:\temp\SomeRepository.cs" SECRET:ConnectionStrings.InCode -o "c:\temp\Verification.json"
+```
+
 > **Note:** This requires user secrets to be set up for the connection string.
 
 ```shell
@@ -81,7 +85,16 @@ dotnet user-secrets init
 dotnet user-secrets set "ConnectionStrings:InCode" "YourConnectionString"
 ```
 
+### Generate Verification Report
+
+Reads the json file generated from the `verify` results and generates a report of the findings.
+
+> **NOTE**: The results are output to "csv" format, but can be opened in Excel to filter and sort results easily.
+
 ```powershell
+$> delinq report "c:\temp\Verification.json"
+```
+
 ## For More Information
 
 Feel free to use the custom calls defined in the `Delinq/Properties/launchSettings.json` file to get started.
