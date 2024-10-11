@@ -48,6 +48,7 @@ public sealed class VerifyRepositoryMethods
             await ExtractSprocDetailsAsync(definition, request.ConnectionString, cancellationToken);
 
             // todo: set the status of each repository method to help determine what things may need updated
+            FinalizeMethodStatusValues(definition);
 
             await serializer.SerializeAsync(request.ValidationFilePath, definition, cancellationToken);
             return request.ValidationFilePath;
@@ -104,6 +105,34 @@ public sealed class VerifyRepositoryMethods
 
                 sproc.Parameters = ExtractSprocParameters(header);
                 sproc.QueryType = GetSprocQueryType(body);
+            }
+        }
+
+        private void FinalizeMethodStatusValues(RepositoryDefinition definition)
+        {
+            foreach (var method in definition.Methods)
+            {
+                // if the status has already been determined, there is nothing to check
+                if (method.Status != RepositoryMethodStatus.Unknown)
+                    continue;
+
+                var sproc = method.StoredProcedure;
+                if (method.CurrentQueryType != sproc.QueryType)
+                {
+                    method.Status = RepositoryMethodStatus.InvalidQueryType;
+                    continue;
+                }
+
+                if (method.Parameters.Count != sproc.Parameters.Count)
+                {
+                    method.Status = method.Parameters.Count > sproc.Parameters.Count
+                        ? RepositoryMethodStatus.TooManySprocParameters
+                        : RepositoryMethodStatus.MissingSprocParameters;
+                    continue;
+                }
+
+                // if we've made it here, we have done the best we can to determine the status
+                method.Status = RepositoryMethodStatus.OK;
             }
         }
 
