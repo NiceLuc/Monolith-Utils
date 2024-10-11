@@ -1,27 +1,59 @@
 ﻿using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 using CommandLine;
+using Delinq;
 using Delinq.DependencyInjection;
 using Delinq.Options;
 using Delinq.Programs;
 using MediatR;
+using Microsoft.Extensions.Configuration;
 
-var builder = Host.CreateApplicationBuilder(args);
-var services = builder.Services;
+// TODO: Figure out why the console app is not respecting the launchSettings.json environment variable
+//Environment.SetEnvironmentVariable("ASPNETCORE_ENVIRONMENT", "Development");
 
-services.AddCustomDesignerParsers();
-services.AddHandlebarsTemplateSupport();
+var builder = Host.CreateDefaultBuilder(args)
+    .ConfigureAppConfiguration((context, config) =>
+    {
+        // Add appsettings.json settings
+        config.AddJsonFile("appsettings.json", optional: true, reloadOnChange: true);
 
-services.AddMediatR(config => config.RegisterServicesFromAssembly(typeof(Program).Assembly));
+        /*
+        // Add Machine.config
+        var machineConfigPath = Path.Combine(
+            Environment.GetFolderPath(Environment.SpecialFolder.System),
+            @"..\Microsoft.NET\Framework\v4.0.30319\Config\Machine.config");
+
+        if (File.Exists(machineConfigPath)) 
+            config.AddXmlFile(machineConfigPath, optional: false, reloadOnChange: true);
+
+        // Add environment variables
+        config.AddEnvironmentVariables();
+        */
+
+        // Add user secrets (only in local development)
+        // TODO: if (context.HostingEnvironment.IsDevelopment())
+            config.AddUserSecrets<Program>();
+    })
+    .ConfigureServices((context, services) =>
+    {
+        services.AddCustomDesignerParsers();
+        services.AddHandlebarsTemplateSupport();
+        services.AddMediatR(config => config.RegisterServicesFromAssembly(typeof(Program).Assembly));
+
+        // supports user secrets!
+        services.Configure<ConnectionStrings>(context.Configuration.GetSection("ConnectionStrings"));
+        services.AddTransient<ConnectionStrings>();
+    });
 
 using var host = builder.Build();
 var mediator = host.Services.GetRequiredService<IMediator>();
 
 // parse the command line arguments and call appropriate handler
-Parser.Default.ParseArguments<InitializeOptions, ExtractDTOOptions, CreateRepositoryOptions, CreateUnitTestsOptions>(args)
+Parser.Default.ParseArguments<InitializeOptions, CreateRepositoryOptions, CreateUnitTestsOptions, VerifyRepositoryMethodOptions>(args)
     .WithParsed<InitializeOptions>(InitializeSettingsFile)
     .WithParsed<CreateRepositoryOptions>(GenerateRepositoryFiles)
-    .WithParsed<CreateUnitTestsOptions>(GenerateUnitTestFile);
+    .WithParsed<CreateUnitTestsOptions>(GenerateUnitTestFile)
+    .WithParsed<VerifyRepositoryMethodOptions>(InitializeVerificationFile);
 
 return;
 
@@ -62,6 +94,18 @@ void GenerateUnitTestFile(CreateUnitTestsOptions options)
     SendRequest(request);
 }
 
+void InitializeVerificationFile(VerifyRepositoryMethodOptions options)
+{
+    var request = new VerifyRepositoryMethods.Request
+    {
+        RepositoryFilePath = options.RepositoryFilePath,
+        ConnectionString = options.ConnectionString,
+        ValidationFilePath = options.ValidationFilePath,
+        MethodName = options.MethodName
+    };
+
+    SendRequest(request);
+}
 void SendRequest<TRequest>(TRequest request) where TRequest : IRequest<string>
 {
     var result = mediator.Send(request)

@@ -1,0 +1,5 @@
+"commandLineArgs": "init c:\\temp\\Delinq\\PermissionRoles\\PermissionRoles.dbml"
+"commandLineArgs": "repo c:\\temp\\Delinq\\PermissionRoles\\PermissionRoles.metadata.settings -o c:\\temp\\Delinq\\PermissionRoles\\repo -m IC_GetRoleList"
+"commandLineArgs": "repo c:\\temp\\Delinq\\PermissionRoles\\PermissionRoles.metadata.settings -o c:\\temp\\Delinq\\PermissionRoles\\repo"
+"commandLineArgs": "tests c:\\temp\\Delinq\\PermissionRoles\\PermissionRoles.metadata.settings -o c:\\temp\\Delinq\\PermissionRoles\\tests -m IC_SelectUserRoles"
+"commandLineArgs": "tests c:\\temp\\Delinq\\PermissionRoles\\PermissionRoles.metadata.settings -o c:\\temp\\Delinq\\PermissionRoles\\tests"

@@ -1,5 +1,4 @@
-﻿using Delinq.CodeGeneration;
-using Delinq.CodeGeneration.Engine;
+﻿using Delinq.CodeGeneration.Engine;
 using Delinq.Parsers;
 using Microsoft.Extensions.DependencyInjection;
 using Mustache;
@@ -10,26 +9,26 @@ namespace Delinq.DependencyInjection
     {
         public static void AddCustomDesignerParsers(this IServiceCollection services)
         {
+            services.AddTransient<ScopeTracker>();
+            services.AddSingleton<IFileStorage, FileStorage>();
+
             // used for Initialize.Handler() constructor
             services.AddSingleton<IParser<ContextDefinition>, NamespaceParser>();
             services.AddSingleton<IParser<ContextDefinition>, ContextClassParser>();
             services.AddSingleton<IParser<ContextDefinition>, MethodParser>();
             services.AddSingleton<IParser<ContextDefinition>, DTOClassParser>();
-
-            // types that are used in context definition parsers
             services.AddSingleton<IParser<MethodDefinition>, ParametersParser>();
             services.AddSingleton<IParser<DTOClassDefinition>, DTOPropertyParser>();
-            services.AddSingleton<ScopeTracker>();
+            services.AddSingleton<IDefinitionSerializer<ContextDefinition>, DefinitionSerializer<ContextDefinition>>();
+
+            // used for VerifySprocs.Handler() constructor
+            services.AddSingleton<IDefinitionSerializer<RepositoryDefinition>, DefinitionSerializer<RepositoryDefinition>>();
         }
 
         public static void AddHandlebarsTemplateSupport(this IServiceCollection services)
         {
             services.AddSingleton<FormatCompiler>();
             services.AddSingleton<ITemplateProvider, TemplateProvider>();
-            services.AddSingleton<IFileStorage, FileStorage>();
-            services.AddSingleton<IContextDefinitionSerializer, ContextDefinitionSerializer>();
-
-            // used for resolving renderer instances
             services.AddSingleton<ITemplateEngine, HandlebarsTemplateEngine>();
         }
     }

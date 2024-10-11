@@ -1,0 +1,4 @@
+"commandLineArgs": "init c:\\temp\\Delinq\\WFI\\WFI.dbml"
+"commandLineArgs": "repo c:\\temp\\Delinq\\WFI\\WFI.metadata.settings -o c:\\temp\\Delinq\\WFI\\repo"
+"commandLineArgs": "repo c:\\temp\\Delinq\\WFI\\WFI.metadata.settings -o c:\\temp\\Delinq\\WFI\\repo -m IC_DataRole_CreateBusinessUnitFilter"
+"commandLineArgs": "tests c:\\temp\\Delinq\\WFI\\WFI.metadata.settings -o c:\\temp\\Delinq\\WFI\\tests"

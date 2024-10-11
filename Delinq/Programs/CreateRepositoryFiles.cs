@@ -1,5 +1,4 @@
-﻿using Delinq.CodeGeneration;
-using Delinq.CodeGeneration.Engine;
+﻿using Delinq.CodeGeneration.Engine;
 using Delinq.CodeGeneration.ViewModels;
 using MediatR;
 
@@ -15,7 +14,7 @@ public sealed class CreateRepositoryFiles
     }
 
     public class Handler(
-        IContextDefinitionSerializer definitionSerializer,
+        IDefinitionSerializer<ContextDefinition> definitionSerializer,
         ITemplateProvider templateProvider,
         ITemplateEngine templateEngine,
         IFileStorage fileStorage) 

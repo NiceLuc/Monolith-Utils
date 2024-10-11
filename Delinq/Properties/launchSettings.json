@@ -1,46 +1,12 @@
 {
   "profiles": {
-    "GVLinQOptimizer": {
+    "delinq": {
       "commandName": "Project",
-      /* DataRoles
-      "commandLineArgs": "init c:\\temp\\Delinq\\DataRoles\\DataRoles.dbml"
-      "commandLineArgs": "repo c:\\temp\\Delinq\\DataRoles\\DataRoles.metadata.settings -o c:\\temp\\Delinq\\DataRoles\\repo"
-      "commandLineArgs": "repo c:\\temp\\Delinq\\DataRoles\\DataRoles.metadata.settings -o c:\\temp\\Delinq\\DataRoles\\repo -m IC_DataRole_CreateBusinessUnitFilter"
-      "commandLineArgs": "tests c:\\temp\\Delinq\\DataRoles\\DataRoles.metadata.settings -o c:\\temp\\Delinq\\DataRoles\\tests"
-      */
-      /* CNEventing
-      "commandLineArgs": "init c:\\temp\\Delinq\\CNEventing\\CNEventing.dbml"
-      "commandLineArgs": "repo c:\\temp\\Delinq\\CNEventing\\CNEventing.metadata.settings -o c:\\temp\\Delinq\\CNEventing\\repo"
-      "commandLineArgs": "repo c:\\temp\\Delinq\\CNEventing\\CNEventing.metadata.settings -o c:\\temp\\Delinq\\CNEventing\\repo"
-      "commandLineArgs": "tests c:\\temp\\Delinq\\CNEventing\\CNEventing.metadata.settings -o c:\\temp\\Delinq\\CNEventing\\tests -m CN_GetAgentSupervisorID"
-      "commandLineArgs": "tests c:\\temp\\Delinq\\CNEventing\\CNEventing.metadata.settings -o c:\\temp\\Delinq\\CNEventing\\tests"
-      */
-      /* InContactDW
-      "commandLineArgs": "init c:\\temp\\Delinq\\InContactDW\\InContactDW.dbml"
-      "commandLineArgs": "repo c:\\temp\\Delinq\\InContactDW\\InContactDW.metadata.settings -o c:\\temp\\Delinq\\InContactDW\\repo"
-      "commandLineArgs": "repo c:\\temp\\Delinq\\InContactDW\\InContactDW.metadata.settings -o c:\\temp\\Delinq\\InContactDW\\repo -m IC_CheckItCanBeLock"
-      "commandLineArgs": "tests c:\\temp\\Delinq\\InContactDW\\InContactDW.metadata.settings -o c:\\temp\\Delinq\\InContactDW\\tests"
-      "commandLineArgs": "tests c:\\temp\\Delinq\\InContactDW\\InContactDW.metadata.settings -o c:\\temp\\Delinq\\InContactDW\\tests -m IC_CheckItCanBeLock"
-      */
-      /* BusinessUnit
-      "commandLineArgs": "init c:\\temp\\Delinq\\BusinessUnits\\BusinessUnits.dbml"
-      "commandLineArgs": "repo c:\\temp\\Delinq\\BusinessUnits\\BusinessUnit.metadata.settings -o c:\\temp\\Delinq\\BusinessUnits\\repo -m IC_UpdateBusinessUnitAddress"
-      "commandLineArgs": "repo c:\\temp\\Delinq\\BusinessUnits\\BusinessUnit.metadata.settings -o c:\\temp\\Delinq\\BusinessUnits\\repo"
-      "commandLineArgs": "tests c:\\temp\\Delinq\\BusinessUnits\\BusinessUnit.metadata.settings -o c:\\temp\\Delinq\\BusinessUnits\\tests -m IC_SelectTrustedBusinessUnits"
-      "commandLineArgs": "tests c:\\temp\\Delinq\\BusinessUnits\\BusinessUnit.metadata.settings -o c:\\temp\\Delinq\\BusinessUnits\\tests"
-      */
-      /* PermissionRoles
-      "commandLineArgs": "init c:\\temp\\Delinq\\PermissionRoles\\PermissionRoles.dbml"
-      "commandLineArgs": "repo c:\\temp\\Delinq\\PermissionRoles\\PermissionRoles.metadata.settings -o c:\\temp\\Delinq\\PermissionRoles\\repo -m IC_GetRoleList"
-      "commandLineArgs": "repo c:\\temp\\Delinq\\PermissionRoles\\PermissionRoles.metadata.settings -o c:\\temp\\Delinq\\PermissionRoles\\repo"
-      "commandLineArgs": "tests c:\\temp\\Delinq\\PermissionRoles\\PermissionRoles.metadata.settings -o c:\\temp\\Delinq\\PermissionRoles\\tests -m IC_SelectUserRoles"
-      "commandLineArgs": "tests c:\\temp\\Delinq\\PermissionRoles\\PermissionRoles.metadata.settings -o c:\\temp\\Delinq\\PermissionRoles\\tests"
-      */
-      /* WebManager
-      "commandLineArgs": "init c:\\temp\\Delinq\\WebManager\\WebManager.dbml"
-      "commandLineArgs": "repo c:\\temp\\Delinq\\WebManager\\WebManager.metadata.settings -o c:\\temp\\Delinq\\WebManager\\repo -m IC_UpdateBlockedScriptStatus"
-      */
-      "commandLineArgs": "tests c:\\temp\\Delinq\\WebManager\\WebManager.metadata.settings -o c:\\temp\\Delinq\\WebManager\\tests -m IC_UpdateBlockedScriptStatus"
+      "environmentVariables": {
+        "ASPNETCORE_ENVIRONMENT": "Development"
+      },
+      /* NOTE: Use example arguments from the /Properties/Samples/* files!  */
+      "commandLineArgs": "verify D:\\tfs\\API-CONT\\Code\\C#\\Library\\incontactDAL\\inContactDAL\\BusinessUnits\\BusinessUnitRepository.cs -c SECRET:ConnectionStrings:InCode -o c:\\temp\\Delinq\\BusinessUnits\\Validation.json"
     }
   }
 }

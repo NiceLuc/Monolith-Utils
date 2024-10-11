@@ -63,6 +63,25 @@ $> delinq tests "c:\temp\SomeData.metadata.settings" -o "c:\temp\SomeData\TestFi
 
 This is useful if you only have to generate code for a specific database call.
 
+### Validate Repository Files
+
+This is used to ensure that we have accounted for proper implementations of the repository methods.
+* Parse the repository files and ensure that all methods are accounted for.
+* Capture all parameters from the method definition.
+* Look for specific calls inside the code to ensure that the parameters are being used correctly.
+* Connect to the database and read the stored procedure that is being called from the method.
+* Capture all parameters from the stored procedure definition.
+* Look for specific calls inside the stored procedure to determine what the "QueryType" should be
+* Compare the repository implementation to the stored procedure and set the Status for each method.
+
+> **Note:** This requires user secrets to be set up for the connection string.
+
+```shell
+dotnet user-secrets init
+dotnet user-secrets set "ConnectionStrings:InCode" "YourConnectionString"
+```
+
+```powershell
 ## For More Information
 
 Feel free to use the custom calls defined in the `Delinq/Properties/launchSettings.json` file to get started.

@@ -1,0 +1,4 @@
+"commandLineArgs": "init c:\\temp\\Delinq\\Agents\\Agents.dbml"
+"commandLineArgs": "repo c:\\temp\\Delinq\\Agents\\Agents.metadata.settings -o c:\\temp\\Delinq\\Agents\\repo"
+"commandLineArgs": "repo c:\\temp\\Delinq\\Agents\\Agents.metadata.settings -o c:\\temp\\Delinq\\Agents\\repo -m IC_DataRole_CreateBusinessUnitFilter"
+"commandLineArgs": "tests c:\\temp\\Delinq\\Agents\\Agents.metadata.settings -o c:\\temp\\Delinq\\Agents\\tests"

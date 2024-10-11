@@ -37,7 +37,7 @@ internal class ParametersParser : SettingsParser<MethodDefinition>
 
     #region Private Methods
 
-    private static void SetParameterDirection(ParameterDefinition parameter) 
+    private static void SetParameterDirection(ParameterDefinition parameter)
         => parameter.ParameterDirection = parameter.IsRef ? "Output" : "Input";
 
     private static void ExtractDatabaseStringLength(ParameterDefinition parameter)

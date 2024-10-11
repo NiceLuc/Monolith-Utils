@@ -5,11 +5,11 @@ namespace Delinq.Parsers;
 internal class DTOPropertyParser : SettingsParser<DTOClassDefinition>
 {
     private readonly Regex _propertyHeaderRegex = new(
-        @"Mapping\.ColumnAttribute\(", 
+        @"Mapping\.ColumnAttribute\(",
         RegexOptions.Singleline);
 
     private readonly Regex _propertyRegex = new(
-        "public (?<type>.+?) (?<name>.+?)$", 
+        "public (?<type>.+?) (?<name>.+?)$",
         RegexOptions.Singleline);
 
     protected override bool CanParseImpl(string lineOfCode) => _propertyHeaderRegex.IsMatch(lineOfCode);

@@ -1,0 +1,5 @@
+"commandLineArgs": "init c:\\temp\\Delinq\\BusinessRules\\BusinessRules.dbml"
+"commandLineArgs": "repo c:\\temp\\Delinq\\BusinessRules\\BusinessUnit.metadata.settings -o c:\\temp\\Delinq\\BusinessRules\\repo -m IC_UpdateBusinessUnitAddress"
+"commandLineArgs": "repo c:\\temp\\Delinq\\BusinessRules\\BusinessUnit.metadata.settings -o c:\\temp\\Delinq\\BusinessRules\\repo"
+"commandLineArgs": "tests c:\\temp\\Delinq\\BusinessRules\\BusinessUnit.metadata.settings -o c:\\temp\\Delinq\\BusinessRules\\tests -m IC_SelectTrustedBusinessRules"
+"commandLineArgs": "tests c:\\temp\\Delinq\\BusinessRules\\BusinessUnit.metadata.settings -o c:\\temp\\Delinq\\BusinessRules\\tests"

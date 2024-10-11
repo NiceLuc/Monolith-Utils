@@ -1,5 +1,4 @@
-﻿using System.Runtime.CompilerServices;
-using Delinq.CodeGeneration.Engine;
+﻿using Delinq.CodeGeneration.Engine;
 using Delinq.CodeGeneration.ViewModels;
 using MediatR;
 
@@ -15,7 +14,7 @@ public sealed class CreateUnitTests
     }
 
     public class Handler(
-        IContextDefinitionSerializer definitionSerializer,
+        IDefinitionSerializer<ContextDefinition> definitionSerializer,
         ITemplateProvider templateProvider,
         ITemplateEngine templateEngine,
         IFileStorage fileStorage)

@@ -1,0 +1,5 @@
+"commandLineArgs": "init c:\\temp\\Delinq\\InContactDW\\InContactDW.dbml"
+"commandLineArgs": "repo c:\\temp\\Delinq\\InContactDW\\InContactDW.metadata.settings -o c:\\temp\\Delinq\\InContactDW\\repo"
+"commandLineArgs": "repo c:\\temp\\Delinq\\InContactDW\\InContactDW.metadata.settings -o c:\\temp\\Delinq\\InContactDW\\repo -m IC_CheckItCanBeLock"
+"commandLineArgs": "tests c:\\temp\\Delinq\\InContactDW\\InContactDW.metadata.settings -o c:\\temp\\Delinq\\InContactDW\\tests"
+"commandLineArgs": "tests c:\\temp\\Delinq\\InContactDW\\InContactDW.metadata.settings -o c:\\temp\\Delinq\\InContactDW\\tests -m IC_CheckItCanBeLock"
