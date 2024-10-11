@@ -39,15 +39,13 @@ public sealed class VerifyRepositoryMethods
             // before doing anything more, ensure we have a valid connection string!
             await ValidateConnectionAsync(request.ConnectionString);
 
-            // read repository file to extract all details using Roslyn
             var definition = new RepositoryDefinition {FilePath = request.RepositoryFilePath};
+
+            // read repository file to extract all details using Roslyn (respecting method name filter)
             await ExtractRepositoryMethodsAsync(definition, request.MethodName, cancellationToken);
 
             // read each method and extract the stored procedure details from database
-            foreach (var method in definition.Methods)
-            {
-                await ExtractSprocDetailsAsync(request.ConnectionString, method);
-            }
+            await ExtractSprocDetailsAsync(definition, request.ConnectionString, cancellationToken);
 
             // todo: set the status of each repository method to help determine what things may need updated
 
@@ -56,6 +54,13 @@ public sealed class VerifyRepositoryMethods
         }
 
         #region Private Methods
+
+        private static async Task ValidateConnectionAsync(string connectionString)
+        {
+            await using var connection = new SqlConnection(connectionString);
+            await connection.OpenAsync();
+            connection.Close();
+        }
 
         private async Task ExtractRepositoryMethodsAsync(RepositoryDefinition definition, string? methodName, CancellationToken cancellationToken)
         {
@@ -79,12 +84,29 @@ public sealed class VerifyRepositoryMethods
             }
         }
 
-        private static async Task ValidateConnectionAsync(string connectionString)
+        private static async Task ExtractSprocDetailsAsync(RepositoryDefinition definition, string connectionString, CancellationToken cancellationToken)
         {
-            await using var connection = new SqlConnection(connectionString);
-            await connection.OpenAsync();
-            connection.Close();
+            foreach (var method in definition.Methods)
+            {
+                var sproc = method.StoredProcedure;
+                var sprocName = sproc.Name.Replace("dbo.", "");
+                var code = await GetStoredProcedureCodeAsync(connectionString, sprocName, cancellationToken);
+
+                if (string.IsNullOrEmpty(code))
+                {
+                    method.Status = RepositoryMethodStatus.SprocNotFound;
+                    return;
+                }
+
+                var splitIndex = code.IndexOf("BEGIN", StringComparison.Ordinal);
+                var header = code[..splitIndex];
+                var body = code[splitIndex..];
+
+                sproc.Parameters = ExtractSprocParameters(header);
+                sproc.QueryType = GetSprocQueryType(body);
+            }
         }
+
 
         private static RepositoryMethod ExtractRepositoryMethod(MethodDeclarationSyntax method)
         {
@@ -138,27 +160,7 @@ public sealed class VerifyRepositoryMethods
             return SprocQueryType.Unknown;
         }
 
-        private static async Task ExtractSprocDetailsAsync(string connectionString, RepositoryMethod method)
-        {
-            var sproc = method.StoredProcedure;
-            var sprocName = sproc.Name.Replace("dbo.", "");
-            var code = await GetStoredProcedureCodeAsync(connectionString, sprocName);
-
-            if (string.IsNullOrEmpty(code))
-            {
-                method.Status = RepositoryMethodStatus.SprocNotFound;
-                return;
-            }
-
-            var splitIndex = code.IndexOf("BEGIN", StringComparison.Ordinal);
-            var header = code[..splitIndex];
-            var body = code[splitIndex..];
-
-            sproc.Parameters = ExtractSprocParameters(header);
-            sproc.QueryType = GetSprocQueryType(body);
-        }
-
-        private static async Task<string?> GetStoredProcedureCodeAsync(string connectionString, string sprocName)
+        private static async Task<string?> GetStoredProcedureCodeAsync(string connectionString, string sprocName, CancellationToken cancellationToken)
         {
             const string query = """
                  SELECT sm.definition
@@ -172,8 +174,8 @@ public sealed class VerifyRepositoryMethods
             command.Parameters.Add(new SqlParameter("@StoredProcedureName", SqlDbType.NVarChar, 128));
             command.Parameters["@StoredProcedureName"].Value = sprocName;
 
-            await connection.OpenAsync();
-            var result = await command.ExecuteScalarAsync();
+            await connection.OpenAsync(cancellationToken);
+            var result = await command.ExecuteScalarAsync(cancellationToken);
             return result?.ToString();
         }
 
