@@ -15,7 +15,7 @@ internal class ScopeTracker
             return true;
         }
 
-        if (trimmed is "}" or "};") 
+        if (trimmed is "}" or "};" or "});") 
             _counter--;
 
         return _isNewScope || _counter > 0;

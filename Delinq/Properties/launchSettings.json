@@ -8,7 +8,7 @@
       /* 
         NOTE: Use example arguments from the /Properties/Samples/*.json files!
       */
-      "commandLineArgs": "verify D:\\tfs\\API-CONT\\Code\\C#\\Library\\incontactDAL\\inContactDAL\\BusinessUnits\\BusinessUnitRepository.cs -c SECRET:ConnectionStrings:InCode -o c:\\temp\\Delinq\\BusinessUnits\\Validation.txt -m IC_GetPhoneTypeSkills"
+      "commandLineArgs": "verify D:\\tfs\\API-CONT\\Code\\C#\\Library\\incontactDAL\\inContactDAL\\BusinessUnits\\BusinessUnitRepository.cs -c SECRET:ConnectionStrings:InCode -o c:\\temp\\Delinq\\BusinessUnits\\Validation.json"
     }
   }
 }
