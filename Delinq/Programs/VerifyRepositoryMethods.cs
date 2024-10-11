@@ -96,7 +96,8 @@ public sealed class VerifyRepositoryMethods
                 if (string.IsNullOrEmpty(code))
                 {
                     method.Status = RepositoryMethodStatus.SprocNotFound;
-                    return;
+                    sproc.QueryType = method.CurrentQueryType;
+                    continue;
                 }
 
                 var splitIndex = code.IndexOf("BEGIN", StringComparison.Ordinal);
@@ -108,19 +109,15 @@ public sealed class VerifyRepositoryMethods
             }
         }
 
-        private void FinalizeMethodStatusValues(RepositoryDefinition definition)
+        private static void FinalizeMethodStatusValues(RepositoryDefinition definition)
         {
-            foreach (var method in definition.Methods)
+            foreach (var method in definition.Methods.Where(m => m.Status != RepositoryMethodStatus.Unknown))
             {
-                // if the status has already been determined, there is nothing to check
-                if (method.Status != RepositoryMethodStatus.Unknown)
-                    continue;
-
                 var sproc = method.StoredProcedure;
                 if (method.CurrentQueryType != sproc.QueryType)
                 {
                     method.Status = RepositoryMethodStatus.InvalidQueryType;
-                    continue;
+                    method.Errors.Add($"C#: {method.CurrentQueryType}, DB: {sproc.QueryType}");
                 }
 
                 if (method.Parameters.Count != sproc.Parameters.Count)
@@ -128,11 +125,12 @@ public sealed class VerifyRepositoryMethods
                     method.Status = method.Parameters.Count > sproc.Parameters.Count
                         ? RepositoryMethodStatus.TooManySprocParameters
                         : RepositoryMethodStatus.MissingSprocParameters;
-                    continue;
+                    method.Errors.Add($"C#: {method.Parameters.Count}, DB: {sproc.Parameters.Count}");
                 }
 
                 // if we've made it here, we have done the best we can to determine the status
-                method.Status = RepositoryMethodStatus.OK;
+                if (method.Errors.Count == 0)
+                    method.Status = RepositoryMethodStatus.OK;
             }
         }
 
@@ -154,18 +152,18 @@ public sealed class VerifyRepositoryMethods
             };
 
             var body = method.Body?.ToString();
-            if (!string.IsNullOrEmpty(body))
-            {
-                // every repository should have a stored procedure name
-                var match = Regex.Match(body, "SQL = \"(.*?)\"");
-                var sprocName = match.Success ? match.Groups[1].Value : string.Empty;
+            if (string.IsNullOrEmpty(body))
+                throw new InvalidOperationException("Method body is empty!");
 
-                // extend our method definition with details from the code
-                result.CurrentQueryType = GetCurrentQueryType(body);
-                result.HasReturnParameter = body.Contains("ReturnValue");
-                result.NumberOfOutParameters = Regex.Matches(body, "ParameterDirection\\.Output").Count;
-                result.StoredProcedure = new SprocDefinition { Name = sprocName };
-            }
+            // every repository should have a stored procedure name
+            var match = Regex.Match(body, "SQL = \"(.*?)\"");
+            var sprocName = match.Success ? match.Groups[1].Value : string.Empty;
+
+            // extend our method definition with details from the code
+            result.CurrentQueryType = GetCurrentQueryType(body);
+            result.HasReturnParameter = body.Contains("ReturnValue");
+            result.NumberOfOutParameters = Regex.Matches(body, "ParameterDirection\\.Output").Count;
+            result.StoredProcedure = new SprocDefinition {Name = sprocName, QueryType = SprocQueryType.Unknown};
 
             return result;
         }
@@ -232,14 +230,14 @@ public sealed class VerifyRepositoryMethods
         private static SprocQueryType GetSprocQueryType(string code)
         {
             // Check for RETURN statements
-            var returnRegex = new Regex(@"\bRETURN\b\s+(@|\d|SCOPE_IDENTITY)\d*", RegexOptions.Multiline);
+            var returnRegex = new Regex(@"\bRETURN\b\s+(@|\d|SCOPE_IDENTITY)\d*", RegexOptions.Multiline | RegexOptions.IgnoreCase);
             if (returnRegex.IsMatch(code))
                 return SprocQueryType.ReturnValue;
 
             // Check for SELECT statements that return result sets
             // note: regex considers very complex SELECT statements 
             var pattern = @"(?<!INSERT\s+INTO[\s\S]+?\)\s*)(?<!EXISTS\s*\()(?<!\()\bSELECT\b\s+(?!\@|\*\s+INTO|\@\w+\s*=)";
-            var selectRegex = new Regex(pattern, RegexOptions.Multiline);
+            var selectRegex = new Regex(pattern, RegexOptions.Multiline | RegexOptions.IgnoreCase);
             if (selectRegex.IsMatch(code))
                 return SprocQueryType.Query;
 
