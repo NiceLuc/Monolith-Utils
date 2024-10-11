@@ -1,0 +1,4 @@
+"commandLineArgs": "init c:\\temp\\Delinq\\VCEventing\\VCEventing.dbml"
+"commandLineArgs": "repo c:\\temp\\Delinq\\VCEventing\\VCEventing.metadata.settings -o c:\\temp\\Delinq\\VCEventing\\repo"
+"commandLineArgs": "repo c:\\temp\\Delinq\\VCEventing\\VCEventing.metadata.settings -o c:\\temp\\Delinq\\VCEventing\\repo -m IC_DataRole_CreateBusinessUnitFilter"
+"commandLineArgs": "tests c:\\temp\\Delinq\\VCEventing\\VCEventing.metadata.settings -o c:\\temp\\Delinq\\VCEventing\\tests"

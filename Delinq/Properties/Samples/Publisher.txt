@@ -1,0 +1,5 @@
+"commandLineArgs": "init c:\\temp\\Delinq\\Publisher\\Publisher.dbml"
+"commandLineArgs": "repo c:\\temp\\Delinq\\Publisher\\Publisher.metadata.settings -o c:\\temp\\Delinq\\Publisher\\repo -m IC_GetRoleList"
+"commandLineArgs": "repo c:\\temp\\Delinq\\Publisher\\Publisher.metadata.settings -o c:\\temp\\Delinq\\Publisher\\repo"
+"commandLineArgs": "tests c:\\temp\\Delinq\\Publisher\\Publisher.metadata.settings -o c:\\temp\\Delinq\\Publisher\\tests -m IC_SelectUserRoles"
+"commandLineArgs": "tests c:\\temp\\Delinq\\Publisher\\Publisher.metadata.settings -o c:\\temp\\Delinq\\Publisher\\tests"

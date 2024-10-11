@@ -1,0 +1,4 @@
+"commandLineArgs": "init c:\\temp\\Delinq\\WorkforceIntelligence\\WorkforceIntelligence.dbml"
+"commandLineArgs": "repo c:\\temp\\Delinq\\WorkforceIntelligence\\WorkforceIntelligence.metadata.settings -o c:\\temp\\Delinq\\WorkforceIntelligence\\repo"
+"commandLineArgs": "repo c:\\temp\\Delinq\\WorkforceIntelligence\\WorkforceIntelligence.metadata.settings -o c:\\temp\\Delinq\\WorkforceIntelligence\\repo -m IC_DataRole_CreateBusinessUnitFilter"
+"commandLineArgs": "tests c:\\temp\\Delinq\\WorkforceIntelligence\\WorkforceIntelligence.metadata.settings -o c:\\temp\\Delinq\\WorkforceIntelligence\\tests"

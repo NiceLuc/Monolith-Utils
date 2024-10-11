@@ -1,0 +1,4 @@
+"commandLineArgs": "init c:\\temp\\Delinq\\UserManager\\UserManager.dbml"
+"commandLineArgs": "repo c:\\temp\\Delinq\\UserManager\\UserManager.metadata.settings -o c:\\temp\\Delinq\\UserManager\\repo"
+"commandLineArgs": "repo c:\\temp\\Delinq\\UserManager\\UserManager.metadata.settings -o c:\\temp\\Delinq\\UserManager\\repo -m IC_DataRole_CreateBusinessUnitFilter"
+"commandLineArgs": "tests c:\\temp\\Delinq\\UserManager\\UserManager.metadata.settings -o c:\\temp\\Delinq\\UserManager\\tests"
