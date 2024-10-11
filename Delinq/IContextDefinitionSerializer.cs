@@ -1,7 +1,7 @@
 ﻿namespace Delinq;
 
-public interface IContextDefinitionSerializer
+public interface IContextDefinitionSerializer<T>
 {
-    Task SerializeAsync(string filePath, ContextDefinition definition, CancellationToken cancellationToken);
-    Task<ContextDefinition> DeserializeAsync(string filePath, CancellationToken cancellationToken);
+    Task SerializeAsync(string filePath, T definition, CancellationToken cancellationToken);
+    Task<T> DeserializeAsync(string filePath, CancellationToken cancellationToken);
 }

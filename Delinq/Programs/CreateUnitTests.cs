@@ -15,7 +15,7 @@ public sealed class CreateUnitTests
     }
 
     public class Handler(
-        IContextDefinitionSerializer definitionSerializer,
+        IContextDefinitionSerializer<ContextDefinition> definitionSerializer,
         ITemplateProvider templateProvider,
         ITemplateEngine templateEngine,
         IFileStorage fileStorage)

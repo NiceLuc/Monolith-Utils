@@ -1,4 +1,4 @@
-﻿using System.Data;
+using System.Data;
 using System.Data.SqlClient;
 using Delinq.Parsers;
 using MediatR;
@@ -18,7 +18,7 @@ public sealed class VerifySprocs
 
     public class Handler(
         IEnumerable<IParser<RepositoryDefinition>> parsers,
-        IContextDefinitionSerializer serializer,
+        IContextDefinitionSerializer<RepositoryDefinition> serializer,
         IOptions<ConnectionStrings> connectionStrings,
         IFileStorage fileStorage) : IRequestHandler<Request, string>
     {

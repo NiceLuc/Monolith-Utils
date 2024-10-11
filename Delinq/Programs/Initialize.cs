@@ -16,7 +16,7 @@ public sealed class Initialize
 
     public class Handler(
         IEnumerable<IParser<ContextDefinition>> parsers,
-        IContextDefinitionSerializer serializer)
+        IContextDefinitionSerializer<ContextDefinition> serializer)
         : IRequestHandler<Request, string>
     {
         private static readonly string[] TokensForReturnValueParameter = ["Add", "Create", "Insert"];
