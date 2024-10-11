@@ -1,6 +1,6 @@
 ﻿namespace Delinq.Parsers;
 
-internal class ScopeTracker
+internal class ScopeTracker(string startToken = "{", string endToken = "}")
 {
     private int _counter;
     private bool _isNewScope = true;
@@ -8,14 +8,14 @@ internal class ScopeTracker
     public bool IsInScope(string lineOfCode)
     {
         var trimmed = lineOfCode.Trim();
-        if (trimmed == "{")
+        if (trimmed.Equals(startToken, StringComparison.OrdinalIgnoreCase))
         {
             _counter++;
             _isNewScope = false;
             return true;
         }
 
-        if (trimmed is "}" or "};" or "});") 
+        if (trimmed.Equals(endToken, StringComparison.OrdinalIgnoreCase)) 
             _counter--;
 
         return _isNewScope || _counter > 0;

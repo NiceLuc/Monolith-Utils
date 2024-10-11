@@ -100,7 +100,7 @@ void VerifySprocsForRepository(VerifySprocOptions options)
     {
         RepositoryFilePath = options.RepositoryFilePath,
         ConnectionString = options.ConnectionString,
-        ReportFilePath = options.ReportFilePath,
+        ValidationFilePath = options.ValidationFilePath,
         MethodName = options.MethodName
     };
 

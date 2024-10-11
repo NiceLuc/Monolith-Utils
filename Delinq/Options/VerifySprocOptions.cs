@@ -12,7 +12,7 @@ internal class VerifySprocOptions
     public string ConnectionString { get; set; }
 
     [Option('o', "output", Required = false, HelpText = "The output file name to list results (default = '').")]
-    public string ReportFilePath { get; set; }
+    public string ValidationFilePath { get; set; }
 
     [Option('m', "method", HelpText = "Only validate a single method.")]
     public string MethodName { get; set; }
