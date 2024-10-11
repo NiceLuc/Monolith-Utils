@@ -3,7 +3,7 @@
 namespace Delinq.Options;
 
 [Verb("verify", HelpText = "Verify sproc calls for a given repository file.")]
-internal class VerifySprocOptions
+internal class VerifyRepositoryMethodOptions
 {
     [Value(0, Required = true, HelpText = "Full path to a legacy DBML file.")]
     public string RepositoryFilePath { get; set; }

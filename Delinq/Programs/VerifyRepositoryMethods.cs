@@ -8,7 +8,7 @@ using Microsoft.Extensions.Options;
 
 namespace Delinq.Programs;
 
-public sealed class VerifySprocs
+public sealed class VerifyRepositoryMethods
 {
     public record Request : IRequest<string>
     {
@@ -55,6 +55,7 @@ public sealed class VerifySprocs
             return request.ValidationFilePath;
         }
 
+        #region Private Methods
 
         private async Task ExtractRepositoryMethodsAsync(RepositoryDefinition definition, string? methodName, CancellationToken cancellationToken)
         {
@@ -77,7 +78,6 @@ public sealed class VerifySprocs
                 definition.Methods.Add(repositoryMethod);
             }
         }
-
 
         private static async Task ValidateConnectionAsync(string connectionString)
         {
@@ -214,5 +214,7 @@ public sealed class VerifySprocs
 
             return SprocQueryType.NonQuery;
         }
+
+        #endregion
     }
 }
