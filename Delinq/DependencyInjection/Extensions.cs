@@ -1,6 +1,5 @@
 ﻿using Delinq.CodeGeneration.Engine;
 using Delinq.Parsers;
-using Delinq.Parsers.DesignerFile;
 using Microsoft.Extensions.DependencyInjection;
 using Mustache;
 

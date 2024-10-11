@@ -1,6 +1,6 @@
 ﻿using System.Text.RegularExpressions;
 
-namespace Delinq.Parsers.DesignerFile;
+namespace Delinq.Parsers;
 
 internal class DTOPropertyParser : SettingsParser<DTOClassDefinition>
 {
