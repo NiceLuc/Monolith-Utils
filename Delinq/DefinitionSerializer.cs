@@ -3,13 +3,14 @@ using System.Text.Json.Serialization;
 
 namespace Delinq;
 
-public class RepositoryDefinitionSerializer(IFileStorage fileStorage) : IDefinitionSerializer<RepositoryDefinition>
+public class DefinitionSerializer<T>(IFileStorage fileStorage) : IDefinitionSerializer<T>
 {
-    public async Task SerializeAsync(string filePath, RepositoryDefinition definition, CancellationToken cancellationToken)
+    public async Task SerializeAsync(string filePath, T definition, CancellationToken cancellationToken)
     {
         var prettified = new JsonSerializerOptions
         {
-            WriteIndented = true, Converters =
+            WriteIndented = true,
+            Converters =
             {
                 new JsonStringEnumConverter()
             }
@@ -18,10 +19,10 @@ public class RepositoryDefinitionSerializer(IFileStorage fileStorage) : IDefinit
         await fileStorage.WriteAllTextAsync(filePath, serialized, cancellationToken);
     }
 
-    public async Task<RepositoryDefinition> DeserializeAsync(string filePath, CancellationToken cancellationToken)
+    public async Task<T> DeserializeAsync(string filePath, CancellationToken cancellationToken)
     {
         var stream = File.OpenRead(filePath);
-        var definition = await JsonSerializer.DeserializeAsync<RepositoryDefinition>(stream, 
+        var definition = await JsonSerializer.DeserializeAsync<T>(stream, 
             cancellationToken: cancellationToken);
 
         if (definition == null)
