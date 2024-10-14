@@ -28,13 +28,7 @@ public sealed class VerifyRepositoryMethods
         public async Task<string> Handle(Request request, CancellationToken cancellationToken)
         {
             // if the connection string is a secret, replace it with the actual connection string
-            if (request.ConnectionString.StartsWith("SECRET:"))
-            {
-                if (request.ConnectionString != "SECRET:ConnectionStrings:InCode")
-                    throw new InvalidOperationException("Must specify 'SECRET:ConnectionStrings:InCode'");
-
-                request.ConnectionString = _connectionStrings.InCode;
-            }
+            ResolveConnectionString(request);
 
             // before doing anything more, ensure we have a valid connection string!
             await ValidateConnectionAsync(request.ConnectionString);
@@ -55,6 +49,23 @@ public sealed class VerifyRepositoryMethods
         }
 
         #region Private Methods
+
+        private void ResolveConnectionString(Request request)
+        {
+            if (string.IsNullOrEmpty(request.ConnectionString))
+            {
+                request.ConnectionString = _connectionStrings.InCode;
+                return;
+            }
+
+            if (request.ConnectionString.StartsWith("SECRET:"))
+            {
+                if (request.ConnectionString != "SECRET:ConnectionStrings:InCode")
+                    throw new InvalidOperationException("Must specify 'SECRET:ConnectionStrings:InCode'");
+
+                request.ConnectionString = _connectionStrings.InCode;
+            }
+        }
 
         private static async Task ValidateConnectionAsync(string connectionString)
         {

@@ -1,3 +1,6 @@
 "commandLineArgs": "init c:\\temp\\Delinq\\WebManager\\WebManager.dbml"
 "commandLineArgs": "repo c:\\temp\\Delinq\\WebManager\\WebManager.metadata.settings -o c:\\temp\\Delinq\\WebManager\\repo"
 "commandLineArgs": "tests c:\\temp\\Delinq\\WebManager\\WebManager.metadata.settings -o c:\\temp\\Delinq\\WebManager\\tests"
+
+"commandLineArgs": "verify D:\\tfs\\API-CONT\\Code\\C#\\Library\\incontactDAL\\inContactDAL\\WebManager\\WebManagerRepository.cs -o c:\\temp\\delinq\\webmanager\\validation.json"
+"commandLineArgs": "report c:\\temp\\Delinq\\WebManager\\Validation.json"
