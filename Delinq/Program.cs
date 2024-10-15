@@ -103,8 +103,6 @@ void InitializeVerificationFile(VerifyRepositoryMethodOptions options)
 {
     var request = new VerifyRepositoryMethods.Request
     {
-        ContextName = options.ContextName,
-        BranchName = options.BranchName,
         RepositoryFilePath = options.RepositoryFilePath,
         ConnectionString = options.ConnectionString,
         ValidationFilePath = options.ValidationFilePath,
