@@ -36,13 +36,20 @@ public sealed class VerifyRepositoryMethods
             var definition = new RepositoryDefinition {FilePath = request.RepositoryFilePath};
 
             // read repository file to extract all details using Roslyn (respecting method name filter)
-            await ExtractRepositoryMethodsAsync(definition, request.MethodName, cancellationToken);
+            var methods = await ExtractRepositoryMethodsAsync(definition, request.MethodName, cancellationToken);
 
-            // read each method and extract the stored procedure details from database
-            await ExtractSprocDetailsAsync(definition, request.ConnectionString, cancellationToken);
+            foreach (var method in methods)
+            {
+                var repositoryMethod = ExtractRepositoryMethod(method, out var code);
 
-            // todo: set the status of each repository method to help determine what things may need updated
-            FinalizeMethodStatusValues(definition);
+                // read each method and extract the stored procedure details from database
+                await ExtractSprocDetailsAsync(repositoryMethod, request.ConnectionString, cancellationToken);
+
+                if (repositoryMethod.Status == RepositoryMethodStatus.Unknown)
+                    FinalizeMethodStatus(repositoryMethod, code);
+
+                definition.Methods.Add(repositoryMethod);
+            }
 
             await serializer.SerializeAsync(request.ValidationFilePath, definition, cancellationToken);
             return request.ValidationFilePath;
@@ -74,79 +81,24 @@ public sealed class VerifyRepositoryMethods
             connection.Close();
         }
 
-        private async Task ExtractRepositoryMethodsAsync(RepositoryDefinition definition, string? methodName, CancellationToken cancellationToken)
+        private async Task<IEnumerable<MethodDeclarationSyntax>> ExtractRepositoryMethodsAsync(RepositoryDefinition definition, string? methodName, CancellationToken cancellationToken)
         {
             // read the repository file
             var code = await fileStorage.ReadAllTextAsync(definition.FilePath, cancellationToken);
 
             // get the methods from the code
             var tree = CSharpSyntaxTree.ParseText(code);
-            var root = (CompilationUnitSyntax)await tree.GetRootAsync(cancellationToken);
-            var methods = root.DescendantNodes().OfType<MethodDeclarationSyntax>();
+            var root = (CompilationUnitSyntax) await tree.GetRootAsync(cancellationToken);
+            var methods = root.DescendantNodes().OfType<MethodDeclarationSyntax>()
+                .Where(m => m.Modifiers.ToString() == "public");
 
-            // populate our definition with details of each method
-            foreach (var method in methods.Where(m => m.Modifiers.ToString() == "public"))
-            {
-                // are we filtering by method name?
-                if (!string.IsNullOrEmpty(methodName) && method.Identifier.Text != methodName)
-                    continue;
-
-                var repositoryMethod = ExtractRepositoryMethod(method);
-                definition.Methods.Add(repositoryMethod);
-            }
+            // return one or all methods
+            return !string.IsNullOrEmpty(methodName)
+                ? methods.Where(m => m.Identifier.Text == methodName)
+                : methods;
         }
 
-        private static async Task ExtractSprocDetailsAsync(RepositoryDefinition definition, string connectionString, CancellationToken cancellationToken)
-        {
-            foreach (var method in definition.Methods)
-            {
-                var sproc = method.StoredProcedure;
-                var sprocName = sproc.Name.Replace("dbo.", "");
-                var code = await GetStoredProcedureCodeAsync(connectionString, sprocName, cancellationToken);
-
-                if (string.IsNullOrEmpty(code))
-                {
-                    method.Status = RepositoryMethodStatus.SprocNotFound;
-                    sproc.QueryType = method.CurrentQueryType;
-                    continue;
-                }
-
-                var splitIndex = code.IndexOf("BEGIN", StringComparison.Ordinal);
-                var header = code[..splitIndex];
-                var body = code[splitIndex..];
-
-                sproc.Parameters = ExtractSprocParameters(header);
-                sproc.QueryType = GetSprocQueryType(body);
-            }
-        }
-
-        private static void FinalizeMethodStatusValues(RepositoryDefinition definition)
-        {
-            foreach (var method in definition.Methods.Where(m => m.Status != RepositoryMethodStatus.Unknown))
-            {
-                var sproc = method.StoredProcedure;
-                if (method.CurrentQueryType != sproc.QueryType)
-                {
-                    method.Status = RepositoryMethodStatus.InvalidQueryType;
-                    method.Errors.Add($"C#: {method.CurrentQueryType}, DB: {sproc.QueryType}");
-                }
-
-                if (method.Parameters.Count != sproc.Parameters.Count)
-                {
-                    method.Status = method.Parameters.Count > sproc.Parameters.Count
-                        ? RepositoryMethodStatus.TooManySprocParameters
-                        : RepositoryMethodStatus.MissingSprocParameters;
-                    method.Errors.Add($"C#: {method.Parameters.Count}, DB: {sproc.Parameters.Count}");
-                }
-
-                // if we've made it here, we have done the best we can to determine the status
-                if (method.Errors.Count == 0)
-                    method.Status = RepositoryMethodStatus.OK;
-            }
-        }
-
-
-        private static RepositoryMethod ExtractRepositoryMethod(MethodDeclarationSyntax method)
+        private static RepositoryMethod ExtractRepositoryMethod(MethodDeclarationSyntax method, out string code)
         {
             var parameters = method.ParameterList.Parameters.Select(p => new RepositoryParameter
             {
@@ -159,25 +111,79 @@ public sealed class VerifyRepositoryMethods
             {
                 Name = method.Identifier.Text,
                 ReturnType = method.ReturnType.ToString(),
+                Status = RepositoryMethodStatus.Unknown,
                 Parameters = parameters,
             };
 
-            var body = method.Body?.ToString();
-            if (string.IsNullOrEmpty(body))
+            code = method.Body?.ToString() ?? string.Empty;
+            if (string.IsNullOrEmpty(code))
                 throw new InvalidOperationException("Method body is empty!");
 
-            // every repository should have a stored procedure name
-            var match = Regex.Match(body, "SQL = \"(.*?)\"");
-            var sprocName = match.Success ? match.Groups[1].Value : string.Empty;
-
             // extend our method definition with details from the code
-            result.CurrentQueryType = GetCurrentQueryType(body);
-            result.HasReturnParameter = body.Contains("ReturnValue");
-            result.NumberOfOutParameters = Regex.Matches(body, "ParameterDirection\\.Output").Count;
+            result.QueryType = GetCurrentQueryType(code);
+
+            // every repository should have a stored procedure name
+            var match = Regex.Match(code, "SQL = \"(.*?)\"");
+            var sprocName = match.Success ? match.Groups[1].Value : string.Empty;
             result.StoredProcedure = new SprocDefinition {Name = sprocName, QueryType = SprocQueryType.Unknown};
 
             return result;
         }
+
+        private static async Task ExtractSprocDetailsAsync(RepositoryMethod method, string connectionString, CancellationToken cancellationToken)
+        {
+            var sproc = method.StoredProcedure;
+            var sprocName = sproc.Name.Replace("dbo.", "");
+            var code = await GetStoredProcedureCodeAsync(connectionString, sprocName, cancellationToken);
+
+            if (string.IsNullOrEmpty(code))
+            {
+                method.Status = RepositoryMethodStatus.SprocNotFound;
+                sproc.QueryType = method.QueryType;
+                return;
+            }
+
+            var splitIndex = code.IndexOf("BEGIN", StringComparison.Ordinal);
+            var header = code[..splitIndex];
+            var body = code[splitIndex..];
+
+            sproc.Parameters = ExtractSprocParameters(header);
+            sproc.QueryType = GetSprocQueryType(body);
+        }
+
+        private static void FinalizeMethodStatus(RepositoryMethod method, string code)
+        {
+            var sproc = method.StoredProcedure;
+            if (method.QueryType != sproc.QueryType)
+            {
+                method.Status = RepositoryMethodStatus.InvalidQueryType;
+                method.Errors.Add($"C#: {method.QueryType}, DB: {sproc.QueryType}");
+            }
+
+            if (method.Parameters.Count != sproc.Parameters.Count)
+            {
+                method.Status = method.Parameters.Count > sproc.Parameters.Count
+                    ? RepositoryMethodStatus.TooManySprocParameters
+                    : RepositoryMethodStatus.MissingSprocParameters;
+                method.Errors.Add($"C#: {method.Parameters.Count}, DB: {sproc.Parameters.Count}");
+            }
+
+            // validate each sproc parameter
+            foreach (var parameter in sproc.Parameters)
+            {
+                var pattern = @$"AddParameter\(""@{parameter.Name}""";
+                if (Regex.IsMatch(code, pattern, RegexOptions.Multiline | RegexOptions.IgnoreCase))
+                    continue;
+
+                method.Status = RepositoryMethodStatus.NotAllParametersAreBeingSet;
+                method.Errors.Add($"Does not pass @{parameter.Name} parameter to sproc.");
+            }
+
+            // if we've made it here, we have done the best we can to determine the status
+            if (method.Errors.Count == 0)
+                method.Status = RepositoryMethodStatus.OK;
+        }
+
 
         private static SprocQueryType GetCurrentQueryType(string? body)
         {
