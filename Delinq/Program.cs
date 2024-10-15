@@ -40,6 +40,10 @@ var builder = Host.CreateDefaultBuilder(args)
         services.AddHandlebarsTemplateSupport();
         services.AddMediatR(config => config.RegisterServicesFromAssembly(typeof(Program).Assembly));
 
+        // required for various programs
+        services.Configure<ProgramSettings>(context.Configuration.GetSection("AppSettings"));
+        services.AddSingleton<ProgramSettings>();
+
         // supports user secrets!
         services.Configure<ConnectionStrings>(context.Configuration.GetSection("ConnectionStrings"));
         services.AddTransient<ConnectionStrings>();

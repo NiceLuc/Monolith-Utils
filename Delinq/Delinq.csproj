@@ -74,5 +74,11 @@
     <EmbeddedResource Include="CodeGeneration\Templates\TestUtils.hbs" />
   </ItemGroup>
 
+  <ItemGroup>
+    <None Update="appsettings.json">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </None>
+  </ItemGroup>
+
 
 </Project>

@@ -1,10 +1,5 @@
 ﻿namespace Delinq;
 
-public class ConnectionStrings
-{
-    public string InCode { get; set; }
-}
-
 public enum SprocQueryType
 {
     Unknown = 0,
@@ -18,7 +13,7 @@ public enum RepositoryMethodStatus
 {
     Unknown = 0,
     OK = 1,
-    NotAllParametersAreBeingUsed = 2, // todo
+    NotAllParametersAreBeingSet = 2,
     SprocNotFound = 3,
     MissingSprocParameters = 4,
     TooManySprocParameters = 5,
@@ -34,18 +29,16 @@ public class RepositoryDefinition
 
 public class RepositoryMethod
 {
-    public string Name { get; set; }
     public RepositoryMethodStatus Status { get; set; }
-    public List<string> Errors { get; set; } = new();
 
+    public string Name { get; set; }
     public string ReturnType { get; set; }
+    public SprocQueryType QueryType { get; set; }
+
     public List<RepositoryParameter> Parameters { get; set; } = new();
-
-    public int NumberOfOutParameters { get; set; }
-    public bool HasReturnParameter { get; set; }
-    public SprocQueryType CurrentQueryType { get; set; }
-
     public SprocDefinition StoredProcedure { get; set; }
+
+    public List<string> Errors { get; set; } = new();
 }
 
 public class RepositoryParameter
