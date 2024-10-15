@@ -1,0 +1,6 @@
+{
+  "SourceDirectoryPath": "C#\\Library\\inContactDAL\\inContactDAL\\DataWarehouse\\",
+  "DbmlFileName": "SurveysDW.dbml",
+  "DesignerFileName": "SurveysDW.designer.cs",
+  "RepositoryFileName": "SurveysDW\\SurveysDWRepository.cs"
+}

@@ -1,0 +1,6 @@
+{
+  "SourceDirectoryPath": "C#\\Library\\inContact.DataDownload\\",
+  "DbmlFileName": "DataDownload.dbml",
+  "DesignerFileName": "DataDownload.designer.cs",
+  "RepositoryFileName": "Repository\\DataDownloadRepository.cs"
+}

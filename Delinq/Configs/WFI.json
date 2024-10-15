@@ -1,0 +1,6 @@
+{
+  "SourceDirectoryPath": "C#\\Library\\inContact.WFI\\Data",
+  "DbmlFileName": "WFI.dbml",
+  "DesignerFileName": "WFI.designer.cs",
+  "RepositoryFileName": "Repository\\WFIRepository.cs"
+}

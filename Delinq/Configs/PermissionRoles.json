@@ -1,0 +1,6 @@
+{
+  "SourceDirectoryPath": "C#\\Library\\inContactDAL\\inContactDAL\\",
+  "DbmlFileName": "PermissionRoles.dbml",
+  "DesignerFileName": "PermissionRoles.designer.cs",
+  "RepositoryFileName": "PermissionRoles\\PermissionRolesRepository.cs"
+}
