@@ -1,10 +1,5 @@
 ﻿namespace Delinq;
 
-public class ConnectionStrings
-{
-    public string InCode { get; set; }
-}
-
 public enum SprocQueryType
 {
     Unknown = 0,
