@@ -11,6 +11,7 @@ namespace Delinq.DependencyInjection
         {
             services.AddTransient<ScopeTracker>();
             services.AddSingleton<IFileStorage, FileStorage>();
+            services.AddSingleton<IDefinitionSerializer<ContextConfig>, DefinitionSerializer<ContextConfig>>();
 
             // used for Initialize.Handler() constructor
             services.AddSingleton<IParser<ContextDefinition>, NamespaceParser>();

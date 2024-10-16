@@ -7,14 +7,7 @@ public class DefinitionSerializer<T>(IFileStorage fileStorage) : IDefinitionSeri
 {
     public async Task SerializeAsync(string filePath, T definition, CancellationToken cancellationToken)
     {
-        var prettified = new JsonSerializerOptions
-        {
-            WriteIndented = true,
-            Converters =
-            {
-                new JsonStringEnumConverter()
-            }
-        };
+        var prettified = GetSerializationOptions();
         var serialized = JsonSerializer.Serialize(definition, prettified);
         await fileStorage.WriteAllTextAsync(filePath, serialized, cancellationToken);
     }
@@ -22,14 +15,7 @@ public class DefinitionSerializer<T>(IFileStorage fileStorage) : IDefinitionSeri
     public async Task<T> DeserializeAsync(string filePath, CancellationToken cancellationToken)
     {
         var stream = File.OpenRead(filePath);
-        var options = new JsonSerializerOptions
-        {
-            Converters =
-            {
-                new RepositoryMethodStatusConverter(),
-                new SprocQueryTypeConverter()
-            }
-        };
+        var options = GetDeserializationOptions();
         var definition = await JsonSerializer.DeserializeAsync<T>(stream, options, cancellationToken);
 
         if (definition == null)
@@ -38,21 +24,11 @@ public class DefinitionSerializer<T>(IFileStorage fileStorage) : IDefinitionSeri
         return definition;
     }
 
-    private class RepositoryMethodStatusConverter : JsonConverter<RepositoryMethodStatus>
+    protected virtual JsonSerializerOptions GetSerializationOptions()  => new()
     {
-        public override RepositoryMethodStatus Read(ref Utf8JsonReader reader, Type typeToConvert, JsonSerializerOptions options) 
-            => Enum.TryParse(reader.GetString(), out RepositoryMethodStatus status) ? status : RepositoryMethodStatus.Unknown; // Handle unknown values
+        WriteIndented = true,
+        Converters = { new JsonStringEnumConverter() }
+    };
 
-        public override void Write(Utf8JsonWriter writer, RepositoryMethodStatus value, JsonSerializerOptions options) 
-            => writer.WriteStringValue(value.ToString());
-    }
-
-    private class SprocQueryTypeConverter : JsonConverter<SprocQueryType>
-    {
-        public override SprocQueryType Read(ref Utf8JsonReader reader, Type typeToConvert, JsonSerializerOptions options) 
-            => Enum.TryParse(reader.GetString(), out SprocQueryType status) ? status : SprocQueryType.Unknown; // Handle unknown values
-
-        public override void Write(Utf8JsonWriter writer, SprocQueryType value, JsonSerializerOptions options) 
-            => writer.WriteStringValue(value.ToString());
-    }
+    protected virtual JsonSerializerOptions GetDeserializationOptions() => new();
 }

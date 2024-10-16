@@ -5,7 +5,13 @@ namespace Delinq.Options;
 [Verb("verify", HelpText = "Verify sproc calls for a given repository file.")]
 internal class VerifyRepositoryMethodOptions
 {
-    [Value(0, Required = true, HelpText = "Full path to a repository implementation file.")]
+    [Value(0, Required = true, HelpText = "The name of the context file you want to validate (see Configs directory).")]
+    public string ContextName { get; set; }
+
+    [Option('b', "branch-name", HelpText = "The name of the branch which has the repository file you are validating.")]
+    public string BranchName { get; set; }
+
+    [Option('r', "repository-path", HelpText = "Full path to a repository implementation file (note: overrides BranchName argument).")]
     public string RepositoryFilePath { get; set; }
 
     [Option('c', "connection-string", HelpText = "The connection string to the database containing the stored procedures.")]
@@ -16,4 +22,5 @@ internal class VerifyRepositoryMethodOptions
 
     [Option('m', "method", HelpText = "Only validate a single method.")]
     public string MethodName { get; set; }
+
 }

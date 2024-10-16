@@ -1,5 +1,6 @@
 ﻿using System.Data;
 using System.Data.SqlClient;
+using System.Reflection;
 using System.Text.RegularExpressions;
 using MediatR;
 using Microsoft.CodeAnalysis.CSharp;
@@ -12,6 +13,8 @@ public sealed class VerifyRepositoryMethods
 {
     public record Request : IRequest<string>
     {
+        public string ContextName { get; set; }
+        public string BranchName { get; set; }
         public string RepositoryFilePath { get; set; }
         public string ConnectionString { get; set; }
         public string ValidationFilePath { get; set; }
@@ -20,10 +23,13 @@ public sealed class VerifyRepositoryMethods
 
     public class Handler(
         IDefinitionSerializer<RepositoryDefinition> serializer,
+        IDefinitionSerializer<ContextConfig> configSerializer,
         IOptions<ConnectionStrings> connectionStrings,
+        IOptions<ProgramSettings> programSettings,
         IFileStorage fileStorage) : IRequestHandler<Request, string>
     {
         private readonly ConnectionStrings _connectionStrings = connectionStrings.Value;
+        private readonly ProgramSettings _programSettings = programSettings.Value;
 
         public async Task<string> Handle(Request request, CancellationToken cancellationToken)
         {
@@ -33,7 +39,8 @@ public sealed class VerifyRepositoryMethods
             // before doing anything more, ensure we have a valid connection string!
             await ValidateConnectionAsync(request.ConnectionString);
 
-            var definition = new RepositoryDefinition {FilePath = request.RepositoryFilePath};
+            var filePath = await ResolveRepositoryFilePathAsync(request, cancellationToken);
+            var definition = new RepositoryDefinition {FilePath = filePath};
 
             // read repository file to extract all details using Roslyn (respecting method name filter)
             var methods = await ExtractRepositoryMethodsAsync(definition, request.MethodName, cancellationToken);
@@ -53,6 +60,27 @@ public sealed class VerifyRepositoryMethods
 
             await serializer.SerializeAsync(request.ValidationFilePath, definition, cancellationToken);
             return request.ValidationFilePath;
+        }
+
+        private async Task<string> ResolveRepositoryFilePathAsync(Request request, CancellationToken cancellationToken)
+        {
+            if (!string.IsNullOrEmpty(request.RepositoryFilePath))
+                return request.RepositoryFilePath;
+
+            var executingDirectory = Path.GetDirectoryName(Assembly.GetExecutingAssembly().Location);
+            var contextFilePath = Path.Combine(executingDirectory, "Configs", $"{request.ContextName}.json");
+            var context = await configSerializer.DeserializeAsync(contextFilePath, cancellationToken);
+
+            var branchName = string.IsNullOrEmpty(request.BranchName)
+                ? _programSettings.DefaultBranchName
+                : request.BranchName;
+
+            var branchPath = _programSettings.TFSRootTemplate.Replace("{{BRANCH_NAME}}", request.BranchName);
+            var path = Path.Combine(_programSettings.TFSRootTemplate, "Delinq", "Repositories", request.BranchName, "Repository.cs");
+            if (!File.Exists(path))
+                throw new FileNotFoundException($"File not found: {path}");
+
+            return path;
         }
 
         #region Private Methods
