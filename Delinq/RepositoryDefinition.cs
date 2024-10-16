@@ -18,6 +18,8 @@ public enum RepositoryMethodStatus
     MissingSprocParameters = 4,
     TooManySprocParameters = 5,
     InvalidQueryType = 6,
+    Warning = 7,
+    MultipleErrors = 8
 }
 
 public class RepositoryDefinition
@@ -54,6 +56,7 @@ public class SprocDefinition
     public string Name { get; init; }
     public SprocQueryType QueryType { get; set; }
     public List<SprocParameter> Parameters { get; set; } = new();
+    public float Confidence { get; set; }
 }
 
 public class SprocParameter
@@ -61,5 +64,7 @@ public class SprocParameter
     public string Name { get; set; }
     public string Type { get; set; }
     public string Modifier { get; set; }
-    public override string ToString() => $"{Name} {Type} {Modifier}";
+    public bool HasDefault { get; set; }
+
+    public override string ToString() => $"{Name} {Type} {Modifier} (has default: {HasDefault})";
 }

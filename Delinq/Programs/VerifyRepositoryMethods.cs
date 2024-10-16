@@ -188,39 +188,23 @@ public sealed class VerifyRepositoryMethods
             var body = code[splitIndex..];
 
             sproc.Parameters = ExtractSprocParameters(header);
-            sproc.QueryType = GetSprocQueryType(body);
+            sproc.QueryType = GetSprocQueryType(body, out var confidence);
+            sproc.Confidence = confidence;
         }
 
         private static void FinalizeMethodStatus(RepositoryMethod method, string code)
         {
-            var sproc = method.StoredProcedure;
-            if (method.QueryType != sproc.QueryType)
+            var validators = new List<MethodValidator>
             {
-                method.Status = RepositoryMethodStatus.InvalidQueryType;
-                method.Errors.Add($"C#: {method.QueryType}, DB: {sproc.QueryType}");
-            }
+                new QueryTypeValidator(),
+                new ParameterValidator()
+            };
 
-            if (method.Parameters.Count != sproc.Parameters.Count)
-            {
-                method.Status = method.Parameters.Count > sproc.Parameters.Count
-                    ? RepositoryMethodStatus.TooManySprocParameters
-                    : RepositoryMethodStatus.MissingSprocParameters;
-                method.Errors.Add($"C#: {method.Parameters.Count}, DB: {sproc.Parameters.Count}");
-            }
-
-            // validate each sproc parameter
-            foreach (var parameter in sproc.Parameters)
-            {
-                var pattern = @$"AddParameter\(""@{parameter.Name}""";
-                if (Regex.IsMatch(code, pattern, RegexOptions.Multiline | RegexOptions.IgnoreCase))
-                    continue;
-
-                method.Status = RepositoryMethodStatus.NotAllParametersAreBeingSet;
-                method.Errors.Add($"Does not pass @{parameter.Name} parameter to sproc.");
-            }
+            foreach (var validator in validators)
+                validator.Validate(method, code);
 
             // if we've made it here, we have done the best we can to determine the status
-            if (method.Errors.Count == 0)
+            if (method.Status == RepositoryMethodStatus.Unknown)
                 method.Status = RepositoryMethodStatus.OK;
         }
 
@@ -265,7 +249,7 @@ public sealed class VerifyRepositoryMethods
 
         private static List<SprocParameter> ExtractSprocParameters(string code)
         {
-            const string pattern = @"@(?<ParamName>\w+)\s+(?<DataType>[\w\(\)]+)\s*(?<Collation>COLLATE\s+\w+)?\s*(?<Output>OUT|OUTPUT)?\s*(?<ReadOnly>READONLY)?";
+            const string pattern = @"@(?<ParamName>\w+)\s+(?<DataType>[\w\(\)]+)\s*(?<Collation>COLLATE\s+\w+)?\s*(?<Output>OUT|OUTPUT)?\s*(?<ReadOnly>READONLY)?\s*(?<HasDefault>\=)?";
             var results = new List<SprocParameter>();
 
             var regex = new Regex(pattern);
@@ -275,7 +259,8 @@ public sealed class VerifyRepositoryMethods
                 {
                     Name = match.Groups["ParamName"].Value,
                     Type = match.Groups["DataType"].Value,
-                    Modifier = match.Groups["Output"].Value
+                    Modifier = match.Groups["Output"].Value,
+                    HasDefault = match.Groups["HasDefault"].Success
                 };
 
                 results.Add(parameter);
@@ -284,23 +269,129 @@ public sealed class VerifyRepositoryMethods
             return results;
         }
 
-        private static SprocQueryType GetSprocQueryType(string code)
+        private static SprocQueryType GetSprocQueryType(string code, out float confidence)
         {
             // Check for RETURN statements
             var returnRegex = new Regex(@"\bRETURN\b\s+(@|\d|SCOPE_IDENTITY)\d*", RegexOptions.Multiline | RegexOptions.IgnoreCase);
             if (returnRegex.IsMatch(code))
+            {
+                confidence = 1f;
                 return SprocQueryType.ReturnValue;
+            }
+
+            // for both query and non-query, we can calculate confidence
+            confidence = CalculateConfidence(code);
 
             // Check for SELECT statements that return result sets
             // note: regex considers very complex SELECT statements 
             var pattern = @"(?<!INSERT\s+INTO[\s\S]+?\)\s*)(?<!EXISTS\s*\()(?<!\()\bSELECT\b\s+(?!\@|\*\s+INTO|\@\w+\s*=)";
             var selectRegex = new Regex(pattern, RegexOptions.Multiline | RegexOptions.IgnoreCase);
             if (selectRegex.IsMatch(code))
+            {
                 return SprocQueryType.Query;
+            }
 
             return SprocQueryType.NonQuery;
         }
 
+        private static float CalculateConfidence(string code)
+        {
+            const int threshold = 3;
+            const int tooMany = 10;
+
+            var selectCount = Regex.Matches(code, @"\bSELECT\b").Count;
+            if (selectCount <= threshold)
+                return 1f; // 100% confident!! 
+
+            if (selectCount >= tooMany) 
+                return 0; // 0% confidence!!
+
+            // any count above the threshold reduces 10% confidence
+            var notSureLevel = 0.1f * (selectCount - threshold);
+            return 1f - notSureLevel;
+        }
+        #endregion
+
+        #region Private Classes
+
+        private abstract class MethodValidator
+        {
+            public void Validate(RepositoryMethod method, string code)
+            {
+                var originalValue = method.Status;
+
+                ValidateImpl(method, code);
+
+                // if there was a previous status set, and it's different, set to multiple errors
+                if (originalValue != RepositoryMethodStatus.Unknown && method.Status != originalValue) 
+                    method.Status = RepositoryMethodStatus.MultipleErrors;
+            }
+
+            protected abstract void ValidateImpl(RepositoryMethod method, string code);
+        }
+
+        private class ParameterValidator : MethodValidator
+        {
+            protected override void ValidateImpl(RepositoryMethod method, string code)
+            {
+                var sproc = method.StoredProcedure;
+
+                var addedParameters = GetParametersAdded(method, code);
+                var requiredAddedParameters = addedParameters.Where(p => !p.HasDefault).ToHashSet();
+                var optionalAddedParameters = addedParameters.Where(p => p.HasDefault).ToHashSet();
+
+                var sprocParameters = sproc.Parameters;
+                var requiredParameters = sprocParameters.Where(p => !p.HasDefault).ToHashSet();
+                var optionalParameters = sprocParameters.Where(p => p.HasDefault).ToHashSet();
+
+                if (requiredParameters.Count > requiredAddedParameters.Count)
+                {
+                    method.Errors.Add($"Required Parameters: C#: {requiredAddedParameters.Count}, DB: {requiredParameters.Count} (required)");
+                    method.Status = RepositoryMethodStatus.NotAllParametersAreBeingSet;
+                }
+
+                // todo: finish this logic!!
+            }
+
+            private static List<SprocParameter> GetParametersAdded(RepositoryMethod method, string code)
+            {
+                var result = new List<SprocParameter>(method.StoredProcedure.Parameters.Count);
+                foreach (var parameter in method.StoredProcedure.Parameters)
+                {
+                    var pattern = @$"AddParameter\(""@{parameter.Name}""";
+                    if (Regex.IsMatch(code, pattern, RegexOptions.Multiline | RegexOptions.IgnoreCase))
+                    {
+                        result.Add(parameter);
+                        continue;
+                    }
+
+                    if (parameter.HasDefault)
+                    {
+                        method.Errors.Add($"Warning: Does not pass optional @{parameter.Name} parameter to sproc.");
+                        method.Status = RepositoryMethodStatus.Warning;
+                        continue;
+                    }
+
+                    method.Errors.Add($"Does not pass @{parameter.Name} parameter to sproc.");
+                    method.Status = RepositoryMethodStatus.NotAllParametersAreBeingSet;
+                }
+
+                return result;
+            }
+        }
+
+        private class QueryTypeValidator : MethodValidator
+        {
+            protected override void ValidateImpl(RepositoryMethod method, string code)
+            {
+                var sproc = method.StoredProcedure;
+                if (method.QueryType == sproc.QueryType) 
+                    return;
+
+                method.Status = RepositoryMethodStatus.InvalidQueryType;
+                method.Errors.Add($"C#: {method.QueryType}, DB: {sproc.QueryType}");
+            }
+        }
         #endregion
     }
 }
