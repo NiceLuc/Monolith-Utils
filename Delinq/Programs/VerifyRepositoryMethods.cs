@@ -23,34 +23,29 @@ public sealed class VerifyRepositoryMethods
 
     public class Handler(
         IDefinitionSerializer<RepositoryDefinition> serializer,
-        IDefinitionSerializer<ContextConfig> configSerializer,
+        IConfigSettingsBuilder settingsBuilder,
         IOptions<ConnectionStrings> connectionStrings,
-        IOptions<ProgramSettings> programSettings,
         IFileStorage fileStorage) : IRequestHandler<Request, string>
     {
         private readonly ConnectionStrings _connectionStrings = connectionStrings.Value;
-        private readonly ProgramSettings _programSettings = programSettings.Value;
 
         public async Task<string> Handle(Request request, CancellationToken cancellationToken)
         {
-            // if the connection string is a secret, replace it with the actual connection string
-            ResolveConnectionString(request);
+            // get a custom settings object with all file and directory paths resolved from config files
+            var settings = await settingsBuilder.BuildAsync(request.ContextName, request.BranchName, cancellationToken);
 
-            // before doing anything more, ensure we have a valid connection string!
-            await ValidateConnectionAsync(request.ConnectionString);
-
-            var filePath = await ResolveRepositoryFilePathAsync(request, cancellationToken);
-            var definition = new RepositoryDefinition {FilePath = filePath};
+            await ValidateRequestAsync(settings, request);
 
             // read repository file to extract all details using Roslyn (respecting method name filter)
-            var methods = await ExtractRepositoryMethodsAsync(definition, request.MethodName, cancellationToken);
+            var methods = await GetRepositoryMethodsAsync(settings.TfsRepositoryFilePath, request.MethodName, cancellationToken);
 
+            var definition = new RepositoryDefinition {FilePath = settings.TfsRepositoryFilePath};
             foreach (var method in methods)
             {
-                var repositoryMethod = ExtractRepositoryMethod(method, out var code);
+                var repositoryMethod = CreateRepositoryMethod(method, out var code);
 
                 // read each method and extract the stored procedure details from database
-                await ExtractSprocDetailsAsync(repositoryMethod, request.ConnectionString, cancellationToken);
+                await FillSprocDetailsAsync(repositoryMethod, request.ConnectionString, cancellationToken);
 
                 if (repositoryMethod.Status == RepositoryMethodStatus.Unknown)
                     FinalizeMethodStatus(repositoryMethod, code);
@@ -58,32 +53,31 @@ public sealed class VerifyRepositoryMethods
                 definition.Methods.Add(repositoryMethod);
             }
 
-            await serializer.SerializeAsync(request.ValidationFilePath, definition, cancellationToken);
+            await serializer.SerializeAsync(settings.TempValidationFilePath, definition, cancellationToken);
             return request.ValidationFilePath;
         }
 
-        private async Task<string> ResolveRepositoryFilePathAsync(Request request, CancellationToken cancellationToken)
-        {
-            if (!string.IsNullOrEmpty(request.RepositoryFilePath))
-                return request.RepositoryFilePath;
-
-            var executingDirectory = Path.GetDirectoryName(Assembly.GetExecutingAssembly().Location);
-            var contextFilePath = Path.Combine(executingDirectory, "Configs", $"{request.ContextName}.json");
-            var context = await configSerializer.DeserializeAsync(contextFilePath, cancellationToken);
-
-            var branchName = string.IsNullOrEmpty(request.BranchName)
-                ? _programSettings.DefaultBranchName
-                : request.BranchName;
-
-            var branchPath = _programSettings.TFSRootTemplate.Replace("{{BRANCH_NAME}}", request.BranchName);
-            var path = Path.Combine(_programSettings.TFSRootTemplate, "Delinq", "Repositories", request.BranchName, "Repository.cs");
-            if (!File.Exists(path))
-                throw new FileNotFoundException($"File not found: {path}");
-
-            return path;
-        }
-
         #region Private Methods
+
+        private async Task ValidateRequestAsync(ConfigSettings settings, Request request)
+        {
+            // cli args override
+            if (!string.IsNullOrEmpty(request.RepositoryFilePath))
+                settings.TfsRepositoryFilePath = request.RepositoryFilePath;
+
+            if (!string.IsNullOrEmpty(request.ValidationFilePath))
+                settings.TempValidationFilePath = request.ValidationFilePath;
+
+            // note: repository file must exist
+            if (!File.Exists(settings.TfsRepositoryFilePath))
+                throw new FileNotFoundException($"File does not exist: {settings.TfsRepositoryFilePath}");
+
+            // if the connection string is a secret, replace it with the actual connection string
+            ResolveConnectionString(request);
+
+            // before doing anything more, ensure we have a valid connection string!
+            await ValidateConnectionAsync(request.ConnectionString);
+        }
 
         private void ResolveConnectionString(Request request)
         {
@@ -109,10 +103,11 @@ public sealed class VerifyRepositoryMethods
             connection.Close();
         }
 
-        private async Task<IEnumerable<MethodDeclarationSyntax>> ExtractRepositoryMethodsAsync(RepositoryDefinition definition, string? methodName, CancellationToken cancellationToken)
+        private async Task<IEnumerable<MethodDeclarationSyntax>> GetRepositoryMethodsAsync(
+            string repositoryFilePath, string? methodName, CancellationToken cancellationToken)
         {
             // read the repository file
-            var code = await fileStorage.ReadAllTextAsync(definition.FilePath, cancellationToken);
+            var code = await fileStorage.ReadAllTextAsync(repositoryFilePath, cancellationToken);
 
             // get the methods from the code
             var tree = CSharpSyntaxTree.ParseText(code);
@@ -126,7 +121,7 @@ public sealed class VerifyRepositoryMethods
                 : methods;
         }
 
-        private static RepositoryMethod ExtractRepositoryMethod(MethodDeclarationSyntax method, out string code)
+        private static RepositoryMethod CreateRepositoryMethod(MethodDeclarationSyntax method, out string code)
         {
             var parameters = method.ParameterList.Parameters.Select(p => new RepositoryParameter
             {
@@ -158,7 +153,7 @@ public sealed class VerifyRepositoryMethods
             return result;
         }
 
-        private static async Task ExtractSprocDetailsAsync(RepositoryMethod method, string connectionString, CancellationToken cancellationToken)
+        private static async Task FillSprocDetailsAsync(RepositoryMethod method, string connectionString, CancellationToken cancellationToken)
         {
             var sproc = method.StoredProcedure;
             var sprocName = sproc.Name.Replace("dbo.", "");

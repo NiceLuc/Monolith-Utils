@@ -36,18 +36,9 @@ var builder = Host.CreateDefaultBuilder(args)
     })
     .ConfigureServices((context, services) =>
     {
-        services.AddCustomDesignerParsers();
-        services.AddHandlebarsTemplateSupport();
+        services.InitializeDelinqServices(context);
+
         services.AddMediatR(config => config.RegisterServicesFromAssembly(typeof(Program).Assembly));
-
-
-        // required for various programs
-        services.Configure<ProgramSettings>(context.Configuration.GetSection("AppSettings"));
-        services.AddSingleton<ProgramSettings>();
-
-        // supports user secrets!
-        services.Configure<ConnectionStrings>(context.Configuration.GetSection("ConnectionStrings"));
-        services.AddTransient<ConnectionStrings>();
     });
 
 using var host = builder.Build();

@@ -1,6 +1,6 @@
 ﻿namespace Delinq;
 
-public class ProgramSettings
+public class AppSettings
 {
     public string TFSRootTemplate { get; set; }
     public string DefaultBranchName { get; set; }

@@ -141,6 +141,7 @@ public sealed class CreateUnitTests
                 }
             }).ToList();
         }
+
         private static List<UnitTestPropertyViewModel> CreateProperties(MethodDefinition method, DTOClassDefinition? model)
         {
             if (model == null)
