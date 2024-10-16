@@ -1,4 +1,4 @@
-using System.Data;
+﻿using System.Data;
 using System.Data.SqlClient;
 using System.Text.RegularExpressions;
 using MediatR;
@@ -62,11 +62,10 @@ public sealed class VerifyRepositoryMethods
             // get a custom settings object with all file and directory paths resolved from config files
             var settings = await settingsBuilder.BuildAsync(request.ContextName, request.BranchName, cancellationToken);
 
-            // cli args override
-            if (!string.IsNullOrEmpty(request.RepositoryFilePath))
+            if (string.IsNullOrEmpty(request.RepositoryFilePath))
                 request.RepositoryFilePath = settings.TfsRepositoryFilePath;
 
-            if (!string.IsNullOrEmpty(request.ValidationFilePath))
+            if (string.IsNullOrEmpty(request.ValidationFilePath))
                 request.ValidationFilePath = settings.TempValidationFilePath;
         }
 
@@ -169,6 +168,13 @@ public sealed class VerifyRepositoryMethods
                 sproc.QueryType = method.QueryType;
                 return;
             }
+
+            // ignore all comments above the definition
+            var match = Regex.Match(code, @"CREATE\s+PROCEDURE", RegexOptions.IgnoreCase);
+            if (!match.Success)
+                throw new InvalidOperationException("Sproc is missing [CREATE PROCEDURE]: " + sprocName);
+
+            code = code[match.Index..];
 
             var splitIndex = code.IndexOf("BEGIN", StringComparison.Ordinal);
             if (splitIndex < 0)
