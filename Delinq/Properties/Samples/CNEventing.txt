@@ -1,5 +1,0 @@
-"commandLineArgs": "init c:\\temp\\Delinq\\CNEventing\\CNEventing.dbml"
-"commandLineArgs": "repo c:\\temp\\Delinq\\CNEventing\\CNEventing.metadata.settings -o c:\\temp\\Delinq\\CNEventing\\repo"
-"commandLineArgs": "repo c:\\temp\\Delinq\\CNEventing\\CNEventing.metadata.settings -o c:\\temp\\Delinq\\CNEventing\\repo"
-"commandLineArgs": "tests c:\\temp\\Delinq\\CNEventing\\CNEventing.metadata.settings -o c:\\temp\\Delinq\\CNEventing\\tests -m CN_GetAgentSupervisorID"
-"commandLineArgs": "tests c:\\temp\\Delinq\\CNEventing\\CNEventing.metadata.settings -o c:\\temp\\Delinq\\CNEventing\\tests"

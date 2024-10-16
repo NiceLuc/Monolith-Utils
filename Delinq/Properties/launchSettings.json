@@ -5,8 +5,7 @@
       "environmentVariables": {
         "ASPNETCORE_ENVIRONMENT": "Development"
       },
-      /* NOTE: Use example arguments from the /Properties/Samples/* files!  */
-      "commandLineArgs": "verify WebManager -b API-CONT -r"
+      "commandLineArgs": "verify WebManager -b API-CONT"
     }
   }
 }

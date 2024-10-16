@@ -1,4 +1,0 @@
-"commandLineArgs": "init c:\\temp\\Delinq\\DataDownload\\DataDownload.dbml"
-"commandLineArgs": "repo c:\\temp\\Delinq\\DataDownload\\DataDownload.metadata.settings -o c:\\temp\\Delinq\\DataDownload\\repo"
-"commandLineArgs": "repo c:\\temp\\Delinq\\DataDownload\\DataDownload.metadata.settings -o c:\\temp\\Delinq\\DataDownload\\repo -m IC_DataRole_CreateBusinessUnitFilter"
-"commandLineArgs": "tests c:\\temp\\Delinq\\DataDownload\\DataDownload.metadata.settings -o c:\\temp\\Delinq\\DataDownload\\tests"

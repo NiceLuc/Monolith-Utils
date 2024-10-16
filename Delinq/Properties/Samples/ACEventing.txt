@@ -1,6 +1,0 @@
-"commandLineArgs": "init c:\\temp\\Delinq\\ACEventing\\ACEventing.dbml"
-"commandLineArgs": "repo c:\\temp\\Delinq\\ACEventing\\ACEventing.metadata.settings -o c:\\temp\\Delinq\\ACEventing\\repo"
-"commandLineArgs": "repo c:\\temp\\Delinq\\ACEventing\\ACEventing.metadata.settings -o c:\\temp\\Delinq\\ACEventing\\repo"
-"commandLineArgs": "tests c:\\temp\\Delinq\\ACEventing\\ACEventing.metadata.settings -o c:\\temp\\Delinq\\ACEventing\\tests -m CN_GetAgentSupervisorID"
-"commandLineArgs": "tests c:\\temp\\Delinq\\ACEventing\\ACEventing.metadata.settings -o c:\\temp\\Delinq\\ACEventing\\tests"
-"commandLineArgs": "verify D:\\tfs\\API-CONT\\Code\\C#\\Library\\inContact.Eventing\\Data\\ACEventing\\ACEventingRepository.cs -o c:\\temp\\delinq\\ACEventing\\validation.json"
