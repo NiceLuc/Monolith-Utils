@@ -22,6 +22,30 @@
     <None Remove="CodeGeneration\Templates\UnitTestMethodQueryMany.hbs" />
     <None Remove="CodeGeneration\Templates\UnitTestMethodQuerySingle.hbs" />
     <None Remove="CodeGeneration\Templates\UnitTests.hbs" />
+    <None Remove="Configs\ACEventing.json" />
+    <None Remove="Configs\Agents.json" />
+    <None Remove="Configs\BusinessRules.json" />
+    <None Remove="Configs\BusinessUnits.json" />
+    <None Remove="Configs\CNEventing.json" />
+    <None Remove="Configs\DataConnector.json" />
+    <None Remove="Configs\DataDownload.json" />
+    <None Remove="Configs\DataRoles.json" />
+    <None Remove="Configs\HoursOfOperation.json" />
+    <None Remove="Configs\ICCommon.json" />
+    <None Remove="Configs\ICEventing.json" />
+    <None Remove="Configs\InContactDW.json" />
+    <None Remove="Configs\PermissionRoles.json" />
+    <None Remove="Configs\Publisher.json" />
+    <None Remove="Configs\SurveyManager.json" />
+    <None Remove="Configs\SurveyReports.json" />
+    <None Remove="Configs\SurveysDW.json" />
+    <None Remove="Configs\Tools.json" />
+    <None Remove="Configs\UserManager.json" />
+    <None Remove="Configs\VCEventing.json" />
+    <None Remove="Configs\WebManager.json" />
+    <None Remove="Configs\WFI.json" />
+    <None Remove="Configs\WFOIntelligenceEventing.json" />
+    <None Remove="Configs\WorkforceIntelligence.json" />
   </ItemGroup>
 
   <ItemGroup>
@@ -72,6 +96,30 @@
     <EmbeddedResource Include="CodeGeneration\Templates\RepositorySettings.hbs" />
     <EmbeddedResource Include="CodeGeneration\Templates\UnitTests.hbs" />
     <EmbeddedResource Include="CodeGeneration\Templates\TestUtils.hbs" />
+    <EmbeddedResource Include="Configs\ACEventing.json" />
+    <EmbeddedResource Include="Configs\Agents.json" />
+    <EmbeddedResource Include="Configs\BusinessRules.json" />
+    <EmbeddedResource Include="Configs\BusinessUnits.json" />
+    <EmbeddedResource Include="Configs\CNEventing.json" />
+    <EmbeddedResource Include="Configs\DataConnector.json" />
+    <EmbeddedResource Include="Configs\DataDownload.json" />
+    <EmbeddedResource Include="Configs\DataRoles.json" />
+    <EmbeddedResource Include="Configs\HoursOfOperation.json" />
+    <EmbeddedResource Include="Configs\ICCommon.json" />
+    <EmbeddedResource Include="Configs\ICEventing.json" />
+    <EmbeddedResource Include="Configs\InContactDW.json" />
+    <EmbeddedResource Include="Configs\PermissionRoles.json" />
+    <EmbeddedResource Include="Configs\Publisher.json" />
+    <EmbeddedResource Include="Configs\SurveyManager.json" />
+    <EmbeddedResource Include="Configs\SurveyReports.json" />
+    <EmbeddedResource Include="Configs\SurveysDW.json" />
+    <EmbeddedResource Include="Configs\Tools.json" />
+    <EmbeddedResource Include="Configs\UserManager.json" />
+    <EmbeddedResource Include="Configs\VCEventing.json" />
+    <EmbeddedResource Include="Configs\WebManager.json" />
+    <EmbeddedResource Include="Configs\WFI.json" />
+    <EmbeddedResource Include="Configs\WFOIntelligenceEventing.json" />
+    <EmbeddedResource Include="Configs\WorkforceIntelligence.json" />
   </ItemGroup>
 
   <ItemGroup>
