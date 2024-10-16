@@ -1,6 +1,5 @@
-﻿using System.Data;
+using System.Data;
 using System.Data.SqlClient;
-using System.Reflection;
 using System.Text.RegularExpressions;
 using MediatR;
 using Microsoft.CodeAnalysis.CSharp;
@@ -31,20 +30,19 @@ public sealed class VerifyRepositoryMethods
 
         public async Task<string> Handle(Request request, CancellationToken cancellationToken)
         {
-            // get a custom settings object with all file and directory paths resolved from config files
-            var settings = await settingsBuilder.BuildAsync(request.ContextName, request.BranchName, cancellationToken);
-
-            await ValidateRequestAsync(settings, request);
+            // configure defaults and support file name overrides
+            await ConfigureRequestAsync(request, cancellationToken);
+            await ValidateRequestAsync(request, cancellationToken);
 
             // read repository file to extract all details using Roslyn (respecting method name filter)
-            var methods = await GetRepositoryMethodsAsync(settings.TfsRepositoryFilePath, request.MethodName, cancellationToken);
+            var methods = await GetRepositoryMethodsAsync(request.RepositoryFilePath, request.MethodName, cancellationToken);
 
-            var definition = new RepositoryDefinition {FilePath = settings.TfsRepositoryFilePath};
+            var definition = new RepositoryDefinition {FilePath = request.RepositoryFilePath};
             foreach (var method in methods)
             {
                 var repositoryMethod = CreateRepositoryMethod(method, out var code);
 
-                // read each method and extract the stored procedure details from database
+                // extract the stored procedure details from database
                 await FillSprocDetailsAsync(repositoryMethod, request.ConnectionString, cancellationToken);
 
                 if (repositoryMethod.Status == RepositoryMethodStatus.Unknown)
@@ -53,30 +51,36 @@ public sealed class VerifyRepositoryMethods
                 definition.Methods.Add(repositoryMethod);
             }
 
-            await serializer.SerializeAsync(settings.TempValidationFilePath, definition, cancellationToken);
+            await serializer.SerializeAsync(request.ValidationFilePath, definition, cancellationToken);
             return request.ValidationFilePath;
         }
 
         #region Private Methods
 
-        private async Task ValidateRequestAsync(ConfigSettings settings, Request request)
+        private async Task ConfigureRequestAsync(Request request, CancellationToken cancellationToken)
         {
+            // get a custom settings object with all file and directory paths resolved from config files
+            var settings = await settingsBuilder.BuildAsync(request.ContextName, request.BranchName, cancellationToken);
+
             // cli args override
             if (!string.IsNullOrEmpty(request.RepositoryFilePath))
-                settings.TfsRepositoryFilePath = request.RepositoryFilePath;
+                request.RepositoryFilePath = settings.TfsRepositoryFilePath;
 
             if (!string.IsNullOrEmpty(request.ValidationFilePath))
-                settings.TempValidationFilePath = request.ValidationFilePath;
+                request.ValidationFilePath = settings.TempValidationFilePath;
+        }
 
+        private async Task ValidateRequestAsync(Request request, CancellationToken cancellationToken)
+        {
             // note: repository file must exist
-            if (!File.Exists(settings.TfsRepositoryFilePath))
-                throw new FileNotFoundException($"File does not exist: {settings.TfsRepositoryFilePath}");
+            if (!File.Exists(request.RepositoryFilePath))
+                throw new FileNotFoundException($"File does not exist: {request.RepositoryFilePath}");
 
             // if the connection string is a secret, replace it with the actual connection string
             ResolveConnectionString(request);
 
             // before doing anything more, ensure we have a valid connection string!
-            await ValidateConnectionAsync(request.ConnectionString);
+            await ValidateConnectionAsync(request.ConnectionString, cancellationToken);
         }
 
         private void ResolveConnectionString(Request request)
@@ -96,10 +100,10 @@ public sealed class VerifyRepositoryMethods
             }
         }
 
-        private static async Task ValidateConnectionAsync(string connectionString)
+        private static async Task ValidateConnectionAsync(string connectionString, CancellationToken cancellationToken)
         {
             await using var connection = new SqlConnection(connectionString);
-            await connection.OpenAsync();
+            await connection.OpenAsync(cancellationToken);
             connection.Close();
         }
 

@@ -1,7 +1,6 @@
 ﻿using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 using CommandLine;
-using Delinq;
 using Delinq.DependencyInjection;
 using Delinq.Options;
 using Delinq.Programs;
