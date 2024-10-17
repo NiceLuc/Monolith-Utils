@@ -210,6 +210,7 @@ public sealed class VerifyRepositoryMethods
         {
             var validators = new List<MethodValidator>
             {
+                new ConfidenceValidator(),
                 new QueryTypeValidator(),
                 new ParameterValidator()
             };
@@ -336,9 +337,33 @@ public sealed class VerifyRepositoryMethods
 
                 ValidateImpl(method, code);
 
-                // if there was a previous status set, and it's different, set to multiple errors
-                if (originalValue != RepositoryMethodStatus.Unknown && method.Status != originalValue) 
+                // Warnings should not override errors
+                if (WasOriginalStatusMoreSevere(method, originalValue))
+                {
+                    method.Status = originalValue;
+                    return;
+                }
+
+                // if there was a previous error status, and it's different, then indicate we have multiple errors
+                if (WasOriginalStatusIndicatingAnError(method, originalValue)) 
                     method.Status = RepositoryMethodStatus.MultipleErrors;
+            }
+
+            private static bool WasOriginalStatusMoreSevere(RepositoryMethod method, RepositoryMethodStatus originalValue)
+            {
+                if (originalValue is RepositoryMethodStatus.Unknown or RepositoryMethodStatus.Warning)
+                    return false;
+
+                // if our current status is a warning, then the original status is more severe
+                return method.Status == RepositoryMethodStatus.Warning;
+            }
+
+            private static bool WasOriginalStatusIndicatingAnError(RepositoryMethod method, RepositoryMethodStatus originalValue)
+            {
+                if (originalValue is RepositoryMethodStatus.Unknown or RepositoryMethodStatus.Warning)
+                    return false;
+
+                return method.Status != originalValue;
             }
 
             protected abstract void ValidateImpl(RepositoryMethod method, string code);
@@ -348,49 +373,40 @@ public sealed class VerifyRepositoryMethods
         {
             protected override void ValidateImpl(RepositoryMethod method, string code)
             {
-                var sproc = method.StoredProcedure;
-
+                var sprocParameters = method.StoredProcedure.Parameters;
                 var addedParameters = GetParametersAdded(method, code);
-                var requiredAddedParameters = addedParameters.Where(p => !p.HasDefault).ToHashSet();
-                var optionalAddedParameters = addedParameters.Where(p => p.HasDefault).ToHashSet();
 
-                var sprocParameters = sproc.Parameters;
-                var requiredParameters = sprocParameters.Where(p => !p.HasDefault).ToHashSet();
-                var optionalParameters = sprocParameters.Where(p => p.HasDefault).ToHashSet();
-
-                if (requiredParameters.Count > requiredAddedParameters.Count)
+                var missing = FindMissingParameters(sprocParameters, addedParameters, true);
+                if (missing.Any())
                 {
-                    method.Errors.Add($"Required Parameters: C#: {requiredAddedParameters.Count}, DB: {requiredParameters.Count} (required)");
-                    method.Status = RepositoryMethodStatus.NotAllParametersAreBeingSet;
+                    var names = string.Join(", ", missing.Select(p => p.Name));
+                    method.Errors.Add($"INFO: Optional parameter(s) not set: {names}");
+                    method.Status = RepositoryMethodStatus.Warning;
                 }
 
-                // todo: finish this logic!!
+                missing = FindMissingParameters(sprocParameters, addedParameters, false);
+                if (missing.Any())
+                {
+                    var names = string.Join(", ", missing.Select(p => p.Name));
+                    method.Errors.Add($"ERROR: Required parameter(s) not set: {names}");
+                    method.Status = RepositoryMethodStatus.NotAllParametersAreBeingSet;
+                }
             }
 
-            private static List<SprocParameter> GetParametersAdded(RepositoryMethod method, string code)
+            private static List<SprocParameter> GetParametersAdded(RepositoryMethod method, string code) =>
+                (from p in method.StoredProcedure.Parameters
+                    let pattern = @$"AddParameter\(""@{p.Name}"""
+                    where Regex.IsMatch(code, pattern, RegexOptions.Multiline | RegexOptions.IgnoreCase)
+                    select p).ToList();
+
+            private static SprocParameter[] FindMissingParameters(
+                IEnumerable<SprocParameter> sprocParameters,
+                IEnumerable<SprocParameter> addedParameters,
+                bool hasDefault)
             {
-                var result = new List<SprocParameter>(method.StoredProcedure.Parameters.Count);
-                foreach (var parameter in method.StoredProcedure.Parameters)
-                {
-                    var pattern = @$"AddParameter\(""@{parameter.Name}""";
-                    if (Regex.IsMatch(code, pattern, RegexOptions.Multiline | RegexOptions.IgnoreCase))
-                    {
-                        result.Add(parameter);
-                        continue;
-                    }
-
-                    if (parameter.HasDefault)
-                    {
-                        method.Errors.Add($"Warning: Does not pass optional @{parameter.Name} parameter to sproc.");
-                        method.Status = RepositoryMethodStatus.Warning;
-                        continue;
-                    }
-
-                    method.Errors.Add($"Does not pass @{parameter.Name} parameter to sproc.");
-                    method.Status = RepositoryMethodStatus.NotAllParametersAreBeingSet;
-                }
-
-                return result;
+                var required = sprocParameters.Where(p => p.HasDefault == hasDefault);
+                var added = addedParameters.Where(p => p.HasDefault == hasDefault);
+                return required.Except(added).ToArray();
             }
         }
 
@@ -404,6 +420,26 @@ public sealed class VerifyRepositoryMethods
 
                 method.Status = RepositoryMethodStatus.InvalidQueryType;
                 method.Errors.Add($"C#: {method.QueryType}, DB: {sproc.QueryType}");
+            }
+        }
+
+        private class ConfidenceValidator : MethodValidator
+        {
+            protected override void ValidateImpl(RepositoryMethod method, string code)
+            {
+                var message = method.StoredProcedure.Confidence switch
+                {
+                    <= 0.7f => "TODO: STORED PROCEDURE REQUIRES MANUAL REVIEW TO DETERMINE QUERY TYPE!",
+                    <= 0.8f => "NOTE: Stored procedure is fairly complex and should be reviewed for query type.",
+                    <= 0.9f => "INFO: Stored procedure may require manual review for query type.",
+                    _ => string.Empty
+                };
+
+                if (string.IsNullOrEmpty(message))
+                    return;
+
+                method.Status = RepositoryMethodStatus.Warning;
+                method.Errors.Add(message);
             }
         }
         #endregion
