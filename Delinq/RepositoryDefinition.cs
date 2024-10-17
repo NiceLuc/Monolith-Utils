@@ -56,7 +56,7 @@ public class SprocDefinition
     public string Name { get; init; }
     public SprocQueryType QueryType { get; set; }
     public List<SprocParameter> Parameters { get; set; } = new();
-    public float Confidence { get; set; }
+    public float Confidence { get; set; } = 1;
 }
 
 public class SprocParameter

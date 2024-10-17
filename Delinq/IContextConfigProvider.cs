@@ -2,5 +2,5 @@
 
 public interface IContextConfigProvider
 {
-    Task<ContextConfig> GetContextConfigAsync(string contextName, string branchName, CancellationToken cancellationToken);
+    Task<ContextConfig> GetContextConfigAsync(string contextName, CancellationToken cancellationToken);
 }

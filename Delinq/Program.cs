@@ -109,8 +109,9 @@ void GenerateVerificationReport(VerifyReportOptions options)
 {
     var request = new VerificationReport.Request
     {
+        ContextName = options.ContextName,
         ValidationFilePath = options.ValidationFilePath,
-        ReportName = options.ReportName
+        ReportFilePath = options.ReportFilePath
     };
 
     SendRequest(request);

@@ -7,7 +7,7 @@ internal class ContextConfigProvider(IEmbeddedResourceProvider resourceProvider,
 {
     private readonly IDictionary<string, ContextConfig> _cache = cache ?? new Dictionary<string, ContextConfig>();
 
-    public async Task<ContextConfig> GetContextConfigAsync(string contextName, string requestBranchName, CancellationToken cancellationToken)
+    public async Task<ContextConfig> GetContextConfigAsync(string contextName, CancellationToken cancellationToken)
     {
         if (_cache.TryGetValue(contextName, out var config))
             return config;

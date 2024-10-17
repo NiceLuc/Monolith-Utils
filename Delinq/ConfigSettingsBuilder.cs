@@ -8,7 +8,8 @@ internal class ConfigSettingsBuilder(IOptions<AppSettings> appSettings, IContext
 
     public async Task<ConfigSettings> BuildAsync(string contextName, string branchName, CancellationToken cancellationToken)
     {
-        var config = await provider.GetContextConfigAsync(contextName, branchName, cancellationToken);
+        var config = await provider.GetContextConfigAsync(contextName, cancellationToken);
+        branchName = string.IsNullOrEmpty(branchName) ? _appSettings.DefaultBranchName : branchName;
 
         // temp directory settings
         var tempDirectory = _appSettings.TempDirectoryTemplate;

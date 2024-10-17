@@ -18,7 +18,7 @@ namespace Delinq.DependencyInjection
             services.AddSingleton<IConfigSettingsBuilder, ConfigSettingsBuilder>();
 
             services.AddSingleton<IDefinitionSerializer<ContextConfig>, DefinitionSerializer<ContextConfig>>();
-            services.AddSingleton<IDefinitionSerializer<RepositoryDefinition>, DefinitionSerializer<RepositoryDefinition>>();
+            services.AddSingleton<IDefinitionSerializer<RepositoryDefinition>, RepositoryDefinitionSerializer>();
             services.AddSingleton<IDefinitionSerializer<ContextDefinition>, DefinitionSerializer<ContextDefinition>>();
 
             services.Configure<ConnectionStrings>(context.Configuration.GetSection("ConnectionStrings"));
