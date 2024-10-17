@@ -18,13 +18,15 @@ public sealed class VerifyRepositoryMethods
         public string ConnectionString { get; set; }
         public string ValidationFilePath { get; set; }
         public string MethodName { get; set; }
+        public bool IsGenerateReport { get; set; }
     }
 
     public class Handler(
         IDefinitionSerializer<RepositoryDefinition> serializer,
         IConfigSettingsBuilder settingsBuilder,
         IOptions<ConnectionStrings> connectionStrings,
-        IFileStorage fileStorage) : IRequestHandler<Request, string>
+        IFileStorage fileStorage,
+        IMediator mediatr) : IRequestHandler<Request, string>
     {
         private readonly ConnectionStrings _connectionStrings = connectionStrings.Value;
 
@@ -52,7 +54,19 @@ public sealed class VerifyRepositoryMethods
             }
 
             await serializer.SerializeAsync(request.ValidationFilePath, definition, cancellationToken);
-            return request.ValidationFilePath;
+
+            if (!request.IsGenerateReport)
+                return request.ValidationFilePath;
+
+            // generate the report
+            var reportRequest = new VerificationReport.Request
+            {
+                ContextName = request.ContextName,
+                ValidationFilePath = request.ValidationFilePath,
+                ReportFilePath = request.ValidationFilePath.Replace(".json", ".xlsx")
+            };
+
+            return await mediatr.Send(reportRequest, cancellationToken);
         }
 
         #region Private Methods

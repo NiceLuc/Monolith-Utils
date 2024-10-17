@@ -99,7 +99,8 @@ void InitializeVerificationFile(VerifyRepositoryMethodOptions options)
         RepositoryFilePath = options.RepositoryFilePath,
         ConnectionString = options.ConnectionString,
         ValidationFilePath = options.ValidationFilePath,
-        MethodName = options.MethodName
+        MethodName = options.MethodName,
+        IsGenerateReport = options.IsGenerateReport
     };
 
     SendRequest(request);

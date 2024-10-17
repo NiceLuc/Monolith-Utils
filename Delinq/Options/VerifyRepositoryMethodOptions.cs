@@ -11,7 +11,7 @@ internal class VerifyRepositoryMethodOptions
     [Option('b', "branch-name", HelpText = "The name of the branch which has the repository file you are validating.")]
     public string BranchName { get; set; }
 
-    [Option('r', "repository-path", HelpText = "Full path to a repository implementation file (note: overrides BranchName argument).")]
+    [Option("repository-path", HelpText = "Full path to a repository implementation file (note: overrides BranchName argument).")]
     public string RepositoryFilePath { get; set; }
 
     [Option('c', "connection-string", HelpText = "The connection string to the database containing the stored procedures.")]
@@ -23,4 +23,6 @@ internal class VerifyRepositoryMethodOptions
     [Option('m', "method", HelpText = "Only validate a single method.")]
     public string MethodName { get; set; }
 
+    [Option('r', "report", Default = false, HelpText = "Generate the verification report.")]
+    public bool IsGenerateReport { get; set; }
 }
