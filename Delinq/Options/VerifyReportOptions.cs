@@ -13,4 +13,7 @@ internal class VerifyReportOptions
 
     [Option('r', "report", HelpText = "File name or path where to save the results in xlsx format.")]
     public string ReportFilePath { get; set; }
+
+    [Option('x', "open-report", Default = false, HelpText = "The report will open after it is generated")]
+    public bool IsOpenReport { get; set; }
 }

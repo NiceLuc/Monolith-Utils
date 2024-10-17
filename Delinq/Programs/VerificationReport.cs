@@ -1,4 +1,4 @@
-﻿using System.Text;
+﻿using System.Diagnostics;
 using ClosedXML.Excel;
 using MediatR;
 
@@ -11,6 +11,7 @@ public sealed class VerificationReport
         public string ContextName { get; set; }
         public string ValidationFilePath { get; set; }
         public string ReportFilePath { get; set; }
+        public bool IsOpenReport { get; set; }
     }
 
     public class Handler(
@@ -64,6 +65,9 @@ public sealed class VerificationReport
 
                 workbook.SaveAs(request.ReportFilePath);
             }
+
+            if (request.IsOpenReport)
+                Process.Start(new ProcessStartInfo(request.ReportFilePath) { UseShellExecute = true });
 
             return request.ReportFilePath;
         }

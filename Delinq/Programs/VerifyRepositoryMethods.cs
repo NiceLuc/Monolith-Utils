@@ -19,6 +19,7 @@ public sealed class VerifyRepositoryMethods
         public string ValidationFilePath { get; set; }
         public string MethodName { get; set; }
         public bool IsGenerateReport { get; set; }
+        public bool IsOpenReport { get; set; }
     }
 
     public class Handler(
@@ -63,6 +64,7 @@ public sealed class VerifyRepositoryMethods
             {
                 ContextName = request.ContextName,
                 ValidationFilePath = request.ValidationFilePath,
+                IsOpenReport = request.IsOpenReport
             };
 
             return await mediatr.Send(reportRequest, cancellationToken);

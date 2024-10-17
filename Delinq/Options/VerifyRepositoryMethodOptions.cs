@@ -25,4 +25,7 @@ internal class VerifyRepositoryMethodOptions
 
     [Option('r', "report", Default = false, HelpText = "Generate the verification report.")]
     public bool IsGenerateReport { get; set; }
+
+    [Option('x', "open-report", Default = false, HelpText = "The report will open after it is generated")]
+    public bool IsOpenReport { get; set; }
 }

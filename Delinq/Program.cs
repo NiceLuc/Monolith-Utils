@@ -100,7 +100,8 @@ void InitializeVerificationFile(VerifyRepositoryMethodOptions options)
         ConnectionString = options.ConnectionString,
         ValidationFilePath = options.ValidationFilePath,
         MethodName = options.MethodName,
-        IsGenerateReport = options.IsGenerateReport
+        IsGenerateReport = options.IsGenerateReport,
+        IsOpenReport = options.IsOpenReport
     };
 
     SendRequest(request);
@@ -112,7 +113,8 @@ void GenerateVerificationReport(VerifyReportOptions options)
     {
         ContextName = options.ContextName,
         ValidationFilePath = options.ValidationFilePath,
-        ReportFilePath = options.ReportFilePath
+        ReportFilePath = options.ReportFilePath,
+        IsOpenReport = options.IsOpenReport
     };
 
     SendRequest(request);
