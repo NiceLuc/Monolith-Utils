@@ -1,0 +1,6 @@
+{
+  "SourceDirectoryPath": "C#\\Library\\inContact.Eventing\\Data\\",
+  "DbmlFileName": "ICCommon.dbml",
+  "DesignerFileName": "ICCommon.designer.cs",
+  "RepositoryFileName": "ICCommon\\ICCommonRepository.cs"
+}

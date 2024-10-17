@@ -1,0 +1,6 @@
+{
+  "SourceDirectoryPath": "C#\\Library\\inContactDAL\\inContactDAL\\",
+  "DbmlFileName": "BusinessUnits.dbml",
+  "DesignerFileName": "BusinessUnits.designer.cs",
+  "RepositoryFileName": "BusinessUnits\\BusinessUnitRepository.cs"
+}

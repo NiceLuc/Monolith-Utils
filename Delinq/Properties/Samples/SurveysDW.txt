@@ -1,4 +1,0 @@
-"commandLineArgs": "init c:\\temp\\Delinq\\SurveyDW\\SurveyDW.dbml"
-"commandLineArgs": "repo c:\\temp\\Delinq\\SurveyDW\\SurveyDW.metadata.settings -o c:\\temp\\Delinq\\SurveyDW\\repo"
-"commandLineArgs": "repo c:\\temp\\Delinq\\SurveyDW\\SurveyDW.metadata.settings -o c:\\temp\\Delinq\\SurveyDW\\repo -m IC_DataRole_CreateBusinessUnitFilter"
-"commandLineArgs": "tests c:\\temp\\Delinq\\SurveyDW\\SurveyDW.metadata.settings -o c:\\temp\\Delinq\\SurveyDW\\tests"

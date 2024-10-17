@@ -12,38 +12,40 @@ public sealed class VerifyRepositoryMethods
 {
     public record Request : IRequest<string>
     {
+        public string ContextName { get; set; }
+        public string BranchName { get; set; }
         public string RepositoryFilePath { get; set; }
         public string ConnectionString { get; set; }
         public string ValidationFilePath { get; set; }
         public string MethodName { get; set; }
+        public bool IsGenerateReport { get; set; }
     }
 
     public class Handler(
         IDefinitionSerializer<RepositoryDefinition> serializer,
+        IConfigSettingsBuilder settingsBuilder,
         IOptions<ConnectionStrings> connectionStrings,
-        IFileStorage fileStorage) : IRequestHandler<Request, string>
+        IFileStorage fileStorage,
+        IMediator mediatr) : IRequestHandler<Request, string>
     {
         private readonly ConnectionStrings _connectionStrings = connectionStrings.Value;
 
         public async Task<string> Handle(Request request, CancellationToken cancellationToken)
         {
-            // if the connection string is a secret, replace it with the actual connection string
-            ResolveConnectionString(request);
-
-            // before doing anything more, ensure we have a valid connection string!
-            await ValidateConnectionAsync(request.ConnectionString);
-
-            var definition = new RepositoryDefinition {FilePath = request.RepositoryFilePath};
+            // configure defaults and support file name overrides
+            await ConfigureRequestAsync(request, cancellationToken);
+            await ValidateRequestAsync(request, cancellationToken);
 
             // read repository file to extract all details using Roslyn (respecting method name filter)
-            var methods = await ExtractRepositoryMethodsAsync(definition, request.MethodName, cancellationToken);
+            var methods = await GetRepositoryMethodsAsync(request.RepositoryFilePath, request.MethodName, cancellationToken);
 
+            var definition = new RepositoryDefinition {FilePath = request.RepositoryFilePath};
             foreach (var method in methods)
             {
-                var repositoryMethod = ExtractRepositoryMethod(method, out var code);
+                var repositoryMethod = CreateRepositoryMethod(method, out var code);
 
-                // read each method and extract the stored procedure details from database
-                await ExtractSprocDetailsAsync(repositoryMethod, request.ConnectionString, cancellationToken);
+                // extract the stored procedure details from database
+                await FillSprocDetailsAsync(repositoryMethod, request.ConnectionString, cancellationToken);
 
                 if (repositoryMethod.Status == RepositoryMethodStatus.Unknown)
                     FinalizeMethodStatus(repositoryMethod, code);
@@ -52,10 +54,47 @@ public sealed class VerifyRepositoryMethods
             }
 
             await serializer.SerializeAsync(request.ValidationFilePath, definition, cancellationToken);
-            return request.ValidationFilePath;
+
+            if (!request.IsGenerateReport)
+                return request.ValidationFilePath;
+
+            // generate the report
+            var reportRequest = new VerificationReport.Request
+            {
+                ContextName = request.ContextName,
+                ValidationFilePath = request.ValidationFilePath,
+                ReportFilePath = request.ValidationFilePath.Replace(".json", ".xlsx")
+            };
+
+            return await mediatr.Send(reportRequest, cancellationToken);
         }
 
         #region Private Methods
+
+        private async Task ConfigureRequestAsync(Request request, CancellationToken cancellationToken)
+        {
+            // get a custom settings object with all file and directory paths resolved from config files
+            var settings = await settingsBuilder.BuildAsync(request.ContextName, request.BranchName, cancellationToken);
+
+            if (string.IsNullOrEmpty(request.RepositoryFilePath))
+                request.RepositoryFilePath = settings.TfsRepositoryFilePath;
+
+            if (string.IsNullOrEmpty(request.ValidationFilePath))
+                request.ValidationFilePath = settings.TempValidationFilePath;
+        }
+
+        private async Task ValidateRequestAsync(Request request, CancellationToken cancellationToken)
+        {
+            // note: repository file must exist
+            if (!File.Exists(request.RepositoryFilePath))
+                throw new FileNotFoundException($"File does not exist: {request.RepositoryFilePath}");
+
+            // if the connection string is a secret, replace it with the actual connection string
+            ResolveConnectionString(request);
+
+            // before doing anything more, ensure we have a valid connection string!
+            await ValidateConnectionAsync(request.ConnectionString, cancellationToken);
+        }
 
         private void ResolveConnectionString(Request request)
         {
@@ -74,17 +113,18 @@ public sealed class VerifyRepositoryMethods
             }
         }
 
-        private static async Task ValidateConnectionAsync(string connectionString)
+        private static async Task ValidateConnectionAsync(string connectionString, CancellationToken cancellationToken)
         {
             await using var connection = new SqlConnection(connectionString);
-            await connection.OpenAsync();
+            await connection.OpenAsync(cancellationToken);
             connection.Close();
         }
 
-        private async Task<IEnumerable<MethodDeclarationSyntax>> ExtractRepositoryMethodsAsync(RepositoryDefinition definition, string? methodName, CancellationToken cancellationToken)
+        private async Task<IEnumerable<MethodDeclarationSyntax>> GetRepositoryMethodsAsync(
+            string repositoryFilePath, string? methodName, CancellationToken cancellationToken)
         {
             // read the repository file
-            var code = await fileStorage.ReadAllTextAsync(definition.FilePath, cancellationToken);
+            var code = await fileStorage.ReadAllTextAsync(repositoryFilePath, cancellationToken);
 
             // get the methods from the code
             var tree = CSharpSyntaxTree.ParseText(code);
@@ -98,7 +138,7 @@ public sealed class VerifyRepositoryMethods
                 : methods;
         }
 
-        private static RepositoryMethod ExtractRepositoryMethod(MethodDeclarationSyntax method, out string code)
+        private static RepositoryMethod CreateRepositoryMethod(MethodDeclarationSyntax method, out string code)
         {
             var parameters = method.ParameterList.Parameters.Select(p => new RepositoryParameter
             {
@@ -130,7 +170,7 @@ public sealed class VerifyRepositoryMethods
             return result;
         }
 
-        private static async Task ExtractSprocDetailsAsync(RepositoryMethod method, string connectionString, CancellationToken cancellationToken)
+        private static async Task FillSprocDetailsAsync(RepositoryMethod method, string connectionString, CancellationToken cancellationToken)
         {
             var sproc = method.StoredProcedure;
             var sprocName = sproc.Name.Replace("dbo.", "");
@@ -142,6 +182,13 @@ public sealed class VerifyRepositoryMethods
                 sproc.QueryType = method.QueryType;
                 return;
             }
+
+            // ignore all comments above the definition
+            var match = Regex.Match(code, @"CREATE\s+PROCEDURE", RegexOptions.IgnoreCase);
+            if (!match.Success)
+                throw new InvalidOperationException("Sproc is missing [CREATE PROCEDURE]: " + sprocName);
+
+            code = code[match.Index..];
 
             var splitIndex = code.IndexOf("BEGIN", StringComparison.Ordinal);
             if (splitIndex < 0)
@@ -155,39 +202,24 @@ public sealed class VerifyRepositoryMethods
             var body = code[splitIndex..];
 
             sproc.Parameters = ExtractSprocParameters(header);
-            sproc.QueryType = GetSprocQueryType(body);
+            sproc.QueryType = GetSprocQueryType(body, out var confidence);
+            sproc.Confidence = confidence;
         }
 
         private static void FinalizeMethodStatus(RepositoryMethod method, string code)
         {
-            var sproc = method.StoredProcedure;
-            if (method.QueryType != sproc.QueryType)
+            var validators = new List<MethodValidator>
             {
-                method.Status = RepositoryMethodStatus.InvalidQueryType;
-                method.Errors.Add($"C#: {method.QueryType}, DB: {sproc.QueryType}");
-            }
+                new ConfidenceValidator(),
+                new QueryTypeValidator(),
+                new ParameterValidator()
+            };
 
-            if (method.Parameters.Count != sproc.Parameters.Count)
-            {
-                method.Status = method.Parameters.Count > sproc.Parameters.Count
-                    ? RepositoryMethodStatus.TooManySprocParameters
-                    : RepositoryMethodStatus.MissingSprocParameters;
-                method.Errors.Add($"C#: {method.Parameters.Count}, DB: {sproc.Parameters.Count}");
-            }
-
-            // validate each sproc parameter
-            foreach (var parameter in sproc.Parameters)
-            {
-                var pattern = @$"AddParameter\(""@{parameter.Name}""";
-                if (Regex.IsMatch(code, pattern, RegexOptions.Multiline | RegexOptions.IgnoreCase))
-                    continue;
-
-                method.Status = RepositoryMethodStatus.NotAllParametersAreBeingSet;
-                method.Errors.Add($"Does not pass @{parameter.Name} parameter to sproc.");
-            }
+            foreach (var validator in validators)
+                validator.Validate(method, code);
 
             // if we've made it here, we have done the best we can to determine the status
-            if (method.Errors.Count == 0)
+            if (method.Status == RepositoryMethodStatus.Unknown)
                 method.Status = RepositoryMethodStatus.OK;
         }
 
@@ -232,7 +264,7 @@ public sealed class VerifyRepositoryMethods
 
         private static List<SprocParameter> ExtractSprocParameters(string code)
         {
-            const string pattern = @"@(?<ParamName>\w+)\s+(?<DataType>[\w\(\)]+)\s*(?<Collation>COLLATE\s+\w+)?\s*(?<Output>OUT|OUTPUT)?\s*(?<ReadOnly>READONLY)?";
+            const string pattern = @"@(?<ParamName>\w+)\s+(?<DataType>[\w\(\)]+)\s*(?<Collation>COLLATE\s+\w+)?\s*(?<Output>OUT|OUTPUT)?\s*(?<ReadOnly>READONLY)?\s*(?<HasDefault>\=)?";
             var results = new List<SprocParameter>();
 
             var regex = new Regex(pattern);
@@ -242,7 +274,8 @@ public sealed class VerifyRepositoryMethods
                 {
                     Name = match.Groups["ParamName"].Value,
                     Type = match.Groups["DataType"].Value,
-                    Modifier = match.Groups["Output"].Value
+                    Modifier = match.Groups["Output"].Value,
+                    HasDefault = match.Groups["HasDefault"].Success
                 };
 
                 results.Add(parameter);
@@ -251,23 +284,164 @@ public sealed class VerifyRepositoryMethods
             return results;
         }
 
-        private static SprocQueryType GetSprocQueryType(string code)
+        private static SprocQueryType GetSprocQueryType(string code, out float confidence)
         {
             // Check for RETURN statements
             var returnRegex = new Regex(@"\bRETURN\b\s+(@|\d|SCOPE_IDENTITY)\d*", RegexOptions.Multiline | RegexOptions.IgnoreCase);
             if (returnRegex.IsMatch(code))
+            {
+                confidence = 1f;
                 return SprocQueryType.ReturnValue;
+            }
+
+            // for both query and non-query, we can calculate confidence
+            confidence = CalculateConfidence(code);
 
             // Check for SELECT statements that return result sets
             // note: regex considers very complex SELECT statements 
             var pattern = @"(?<!INSERT\s+INTO[\s\S]+?\)\s*)(?<!EXISTS\s*\()(?<!\()\bSELECT\b\s+(?!\@|\*\s+INTO|\@\w+\s*=)";
             var selectRegex = new Regex(pattern, RegexOptions.Multiline | RegexOptions.IgnoreCase);
             if (selectRegex.IsMatch(code))
+            {
                 return SprocQueryType.Query;
+            }
 
             return SprocQueryType.NonQuery;
         }
 
+        private static float CalculateConfidence(string code)
+        {
+            const int threshold = 3;
+            const int tooMany = 10;
+
+            var selectCount = Regex.Matches(code, @"\bSELECT\b").Count;
+            if (selectCount <= threshold)
+                return 1f; // 100% confident!! 
+
+            if (selectCount >= tooMany) 
+                return 0; // 0% confidence!!
+
+            // any count above the threshold reduces 10% confidence
+            var notSureLevel = 0.1f * (selectCount - threshold);
+            return 1f - notSureLevel;
+        }
+        #endregion
+
+        #region Private Classes
+
+        private abstract class MethodValidator
+        {
+            public void Validate(RepositoryMethod method, string code)
+            {
+                var originalValue = method.Status;
+
+                ValidateImpl(method, code);
+
+                // Warnings should not override errors
+                if (WasOriginalStatusMoreSevere(method, originalValue))
+                {
+                    method.Status = originalValue;
+                    return;
+                }
+
+                // if there was a previous error status, and it's different, then indicate we have multiple errors
+                if (WasOriginalStatusIndicatingAnError(method, originalValue)) 
+                    method.Status = RepositoryMethodStatus.MultipleErrors;
+            }
+
+            private static bool WasOriginalStatusMoreSevere(RepositoryMethod method, RepositoryMethodStatus originalValue)
+            {
+                if (originalValue is RepositoryMethodStatus.Unknown or RepositoryMethodStatus.Warning)
+                    return false;
+
+                // if our current status is a warning, then the original status is more severe
+                return method.Status == RepositoryMethodStatus.Warning;
+            }
+
+            private static bool WasOriginalStatusIndicatingAnError(RepositoryMethod method, RepositoryMethodStatus originalValue)
+            {
+                if (originalValue is RepositoryMethodStatus.Unknown or RepositoryMethodStatus.Warning)
+                    return false;
+
+                return method.Status != originalValue;
+            }
+
+            protected abstract void ValidateImpl(RepositoryMethod method, string code);
+        }
+
+        private class ParameterValidator : MethodValidator
+        {
+            protected override void ValidateImpl(RepositoryMethod method, string code)
+            {
+                var sprocParameters = method.StoredProcedure.Parameters;
+                var addedParameters = GetParametersAdded(method, code);
+
+                var missing = FindMissingParameters(sprocParameters, addedParameters, true);
+                if (missing.Any())
+                {
+                    var names = string.Join(", ", missing.Select(p => p.Name));
+                    method.Errors.Add($"INFO: Optional parameter(s) not set: {names}");
+                    method.Status = RepositoryMethodStatus.Warning;
+                }
+
+                missing = FindMissingParameters(sprocParameters, addedParameters, false);
+                if (missing.Any())
+                {
+                    var names = string.Join(", ", missing.Select(p => p.Name));
+                    method.Errors.Add($"ERROR: Required parameter(s) not set: {names}");
+                    method.Status = RepositoryMethodStatus.NotAllParametersAreBeingSet;
+                }
+            }
+
+            private static List<SprocParameter> GetParametersAdded(RepositoryMethod method, string code) =>
+                (from p in method.StoredProcedure.Parameters
+                    let pattern = @$"AddParameter\(""@{p.Name}"""
+                    where Regex.IsMatch(code, pattern, RegexOptions.Multiline | RegexOptions.IgnoreCase)
+                    select p).ToList();
+
+            private static SprocParameter[] FindMissingParameters(
+                IEnumerable<SprocParameter> sprocParameters,
+                IEnumerable<SprocParameter> addedParameters,
+                bool hasDefault)
+            {
+                var required = sprocParameters.Where(p => p.HasDefault == hasDefault);
+                var added = addedParameters.Where(p => p.HasDefault == hasDefault);
+                return required.Except(added).ToArray();
+            }
+        }
+
+        private class QueryTypeValidator : MethodValidator
+        {
+            protected override void ValidateImpl(RepositoryMethod method, string code)
+            {
+                var sproc = method.StoredProcedure;
+                if (method.QueryType == sproc.QueryType) 
+                    return;
+
+                method.Status = RepositoryMethodStatus.InvalidQueryType;
+                method.Errors.Add($"C#: {method.QueryType}, DB: {sproc.QueryType}");
+            }
+        }
+
+        private class ConfidenceValidator : MethodValidator
+        {
+            protected override void ValidateImpl(RepositoryMethod method, string code)
+            {
+                var message = method.StoredProcedure.Confidence switch
+                {
+                    <= 0.7f => "TODO: STORED PROCEDURE REQUIRES MANUAL REVIEW TO DETERMINE QUERY TYPE!",
+                    <= 0.8f => "NOTE: Stored procedure is fairly complex and should be reviewed for query type.",
+                    <= 0.9f => "INFO: Stored procedure may require manual review for query type.",
+                    _ => string.Empty
+                };
+
+                if (string.IsNullOrEmpty(message))
+                    return;
+
+                method.Status = RepositoryMethodStatus.Warning;
+                method.Errors.Add(message);
+            }
+        }
         #endregion
     }
 }

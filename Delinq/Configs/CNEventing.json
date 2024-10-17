@@ -1,0 +1,6 @@
+{
+  "SourceDirectoryPath": "C#\\Library\\inContact.Eventing\\Data\\",
+  "DbmlFileName": "CNEventing.dbml",
+  "DesignerFileName": "CNEventing.designer.cs",
+  "RepositoryFileName": "CNEventing\\CNEventingRepository.cs"
+}

@@ -1,0 +1,6 @@
+{
+  "SourceDirectoryPath": "C#\\Library\\HoursOfOperationDAL\\HoursOfOperationDAL\\",
+  "DbmlFileName": "HoursOfOperationManager.dbml",
+  "DesignerFileName": "HoursOfOperationManager.designer.cs",
+  "RepositoryFileName": "Repository\\HoursOfOperationRepository.cs"
+}

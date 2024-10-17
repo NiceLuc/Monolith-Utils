@@ -5,8 +5,7 @@
       "environmentVariables": {
         "ASPNETCORE_ENVIRONMENT": "Development"
       },
-      /* NOTE: Use example arguments from the /Properties/Samples/* files!  */
-      "commandLineArgs": "verify D:\\tfs\\API-CONT\\Code\\C#\\Library\\inContact.Eventing\\Data\\ACEventing\\ACEventingRepository.cs -o c:\\temp\\delinq\\ACEventing\\validation.json"
+      "commandLineArgs": "verify UserManager -b API-CONT -r"
     }
   }
 }

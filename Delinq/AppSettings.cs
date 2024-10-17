@@ -1,9 +1,9 @@
 ﻿namespace Delinq;
 
-public class ProgramSettings
+public class AppSettings
 {
     public string TFSRootTemplate { get; set; }
-    public string[] SourceDirectories { get; set; }
+    public string DefaultBranchName { get; set; }
     public string TempDirectoryTemplate { get; set; }
     public string RepoDirectoryName { get; set; }
     public string TestsDirectoryName { get; set; }

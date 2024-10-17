@@ -1,0 +1,6 @@
+{
+  "SourceDirectoryPath": "C#\\Library\\inContactDAL\\inContactDAL",
+  "DbmlFileName": "UserManager.dbml",
+  "DesignerFileName": "UserManager.designer.cs",
+  "RepositoryFileName": "UserManager\\UserManagerRepository.cs"
+}

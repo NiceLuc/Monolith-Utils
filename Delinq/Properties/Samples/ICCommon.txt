@@ -1,5 +1,0 @@
-"commandLineArgs": "init c:\\temp\\Delinq\\ICCommon\\ICCommon.dbml"
-"commandLineArgs": "repo c:\\temp\\Delinq\\ICCommon\\ICCommon.metadata.settings -o c:\\temp\\Delinq\\ICCommon\\repo"
-"commandLineArgs": "repo c:\\temp\\Delinq\\ICCommon\\ICCommon.metadata.settings -o c:\\temp\\Delinq\\ICCommon\\repo"
-"commandLineArgs": "tests c:\\temp\\Delinq\\ICCommon\\ICCommon.metadata.settings -o c:\\temp\\Delinq\\ICCommon\\tests -m CN_GetAgentSupervisorID"
-"commandLineArgs": "tests c:\\temp\\Delinq\\ICCommon\\ICCommon.metadata.settings -o c:\\temp\\Delinq\\ICCommon\\tests"

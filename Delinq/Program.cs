@@ -1,7 +1,6 @@
 ﻿using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 using CommandLine;
-using Delinq;
 using Delinq.DependencyInjection;
 using Delinq.Options;
 using Delinq.Programs;
@@ -36,17 +35,9 @@ var builder = Host.CreateDefaultBuilder(args)
     })
     .ConfigureServices((context, services) =>
     {
-        services.AddCustomDesignerParsers();
-        services.AddHandlebarsTemplateSupport();
+        services.InitializeDelinqServices(context);
+
         services.AddMediatR(config => config.RegisterServicesFromAssembly(typeof(Program).Assembly));
-
-        // required for various programs
-        services.Configure<ProgramSettings>(context.Configuration.GetSection("AppSettings"));
-        services.AddSingleton<ProgramSettings>();
-
-        // supports user secrets!
-        services.Configure<ConnectionStrings>(context.Configuration.GetSection("ConnectionStrings"));
-        services.AddTransient<ConnectionStrings>();
     });
 
 using var host = builder.Build();
@@ -103,10 +94,13 @@ void InitializeVerificationFile(VerifyRepositoryMethodOptions options)
 {
     var request = new VerifyRepositoryMethods.Request
     {
+        ContextName = options.ContextName,
+        BranchName = options.BranchName,
         RepositoryFilePath = options.RepositoryFilePath,
         ConnectionString = options.ConnectionString,
         ValidationFilePath = options.ValidationFilePath,
-        MethodName = options.MethodName
+        MethodName = options.MethodName,
+        IsGenerateReport = options.IsGenerateReport
     };
 
     SendRequest(request);
@@ -116,8 +110,9 @@ void GenerateVerificationReport(VerifyReportOptions options)
 {
     var request = new VerificationReport.Request
     {
+        ContextName = options.ContextName,
         ValidationFilePath = options.ValidationFilePath,
-        ReportName = options.ReportName
+        ReportFilePath = options.ReportFilePath
     };
 
     SendRequest(request);

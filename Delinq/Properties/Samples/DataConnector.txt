@@ -1,4 +1,0 @@
-"commandLineArgs": "init c:\\temp\\Delinq\\DataConnector\\DataConnector.dbml"
-"commandLineArgs": "repo c:\\temp\\Delinq\\DataConnector\\DataConnector.metadata.settings -o c:\\temp\\Delinq\\DataConnector\\repo"
-"commandLineArgs": "repo c:\\temp\\Delinq\\DataConnector\\DataConnector.metadata.settings -o c:\\temp\\Delinq\\DataConnector\\repo -m IC_DataRole_CreateBusinessUnitFilter"
-"commandLineArgs": "tests c:\\temp\\Delinq\\DataConnector\\DataConnector.metadata.settings -o c:\\temp\\Delinq\\DataConnector\\tests"

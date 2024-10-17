@@ -1,0 +1,6 @@
+{
+  "SourceDirectoryPath": "C#\\Library\\inContact.Eventing\\Data\\",
+  "DbmlFileName": "WFOIntelligenceEventing.dbml",
+  "DesignerFileName": "WFOIntelligenceEventing.designer.cs",
+  "RepositoryFileName": "WFOIntelligenceEventing\\WFOIntelligenceEventingRepository.cs"
+}
