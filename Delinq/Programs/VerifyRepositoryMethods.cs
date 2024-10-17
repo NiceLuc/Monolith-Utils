@@ -63,7 +63,6 @@ public sealed class VerifyRepositoryMethods
             {
                 ContextName = request.ContextName,
                 ValidationFilePath = request.ValidationFilePath,
-                ReportFilePath = request.ValidationFilePath.Replace(".json", ".xlsx")
             };
 
             return await mediatr.Send(reportRequest, cancellationToken);

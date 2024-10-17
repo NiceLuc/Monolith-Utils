@@ -5,7 +5,7 @@
       "environmentVariables": {
         "ASPNETCORE_ENVIRONMENT": "Development"
       },
-      "commandLineArgs": "verify UserManager -b API-CONT -r"
+      "commandLineArgs": "verify WebManager -b API-CONT -r"
     }
   }
 }
