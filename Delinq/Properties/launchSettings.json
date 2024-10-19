@@ -5,7 +5,7 @@
       "environmentVariables": {
         "ASPNETCORE_ENVIRONMENT": "Development"
       },
-      "commandLineArgs": "verify BusinessUnits -b API-CONT -rx"
+      "commandLineArgs": "init CNEventing -b RC -f"
     }
   }
 }

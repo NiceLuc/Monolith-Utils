@@ -58,7 +58,10 @@ void InitializeSettingsFile(InitializeOptions options)
 {
     var request = new Initialize.Request
     {
+        ContextName = options.ContextName,
+        BranchName = options.BranchName,
         DbmlFilePath = options.DbmlFilePath,
+        DesignerFilePath = options.DesignerFilePath,
         SettingsFilePath = options.SettingsFilePath,
         ForceOverwrite = options.ForceOverwrite
     };

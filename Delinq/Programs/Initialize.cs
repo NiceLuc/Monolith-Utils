@@ -7,14 +7,17 @@ public sealed class Initialize
 {
     public class Request : IRequest<string>
     {
+        public string ContextName { get; set; }
+        public string BranchName { get; set; }
+
         public string DbmlFilePath { get; set; }
+        public string DesignerFilePath { get; set; }
         public string SettingsFilePath { get; set; }
         public bool ForceOverwrite { get; set; }
-
-        public string DesignerFilePath => DbmlFilePath.Replace(".dbml", ".designer.cs");
     }
 
     public class Handler(
+        IConfigSettingsBuilder settingsBuilder,
         IEnumerable<IParser<ContextDefinition>> parsers,
         IDefinitionSerializer<ContextDefinition> serializer)
         : IRequestHandler<Request, string>
@@ -23,6 +26,7 @@ public sealed class Initialize
 
         public async Task<string> Handle(Request request, CancellationToken cancellationToken)
         {
+            await ConfigureRequestAsync(request, cancellationToken);
             ValidateRequest(request);
 
             var definition = new ContextDefinition();
@@ -42,14 +46,25 @@ public sealed class Initialize
                 method.HasReturnParameter = DoesMethodRequireReturnParameter(method);
 
             // serialize the definition to a json file
-            var filePath = CalculateFilePath(request, definition);
-
-            await serializer.SerializeAsync(filePath, definition, cancellationToken);
-
-            return filePath;
+            await serializer.SerializeAsync(request.SettingsFilePath, definition, cancellationToken);
+            return request.SettingsFilePath;
         }
 
         #region Private Methods
+
+        private async Task ConfigureRequestAsync(Request request, CancellationToken cancellationToken)
+        {
+            var settings = await settingsBuilder.BuildAsync(request.ContextName, request.BranchName, cancellationToken);
+
+            if (string.IsNullOrEmpty(request.DbmlFilePath))
+                request.DbmlFilePath = settings.TfsDbmlFilePath;
+
+            if (string.IsNullOrEmpty(request.DesignerFilePath))
+                request.DesignerFilePath = settings.TfsDesignerFilePath;
+
+            if (string.IsNullOrEmpty(request.SettingsFilePath))
+                request.SettingsFilePath = settings.TempMetaDataFilePath;
+        }
 
         private static void ValidateRequest(Request request)
         {
@@ -58,10 +73,6 @@ public sealed class Initialize
 
             if (!File.Exists(request.DesignerFilePath))
                 throw new FileNotFoundException($"File not found: {request.DesignerFilePath}");
-
-            // if user specifies settings file path, make sure we don't overwrite it unless they force it
-            if (string.IsNullOrEmpty(request.SettingsFilePath))
-                return;
 
             if (File.Exists(request.SettingsFilePath) && !request.ForceOverwrite)
                 throw new InvalidOperationException($"File already exists: {request.SettingsFilePath} (use -f to overwrite)");
@@ -79,20 +90,6 @@ public sealed class Initialize
             // if there are, we don't need to add a return parameter, as it's handled by a 'ref' parameter
             return method.Parameters.All(p => p.ParameterDirection != "Output");
 
-        }
-
-        private static string CalculateFilePath(Request request, ContextDefinition definition)
-        {
-            if (!string.IsNullOrEmpty(request.SettingsFilePath))
-                return request.SettingsFilePath;
-
-            // otherwise, build it from the definition
-            var directory = Path.GetDirectoryName(request.DbmlFilePath);
-            if (directory is null)
-                throw new InvalidOperationException($"Unable to determine directory for: {request.DbmlFilePath}");
-
-            var fileName = $"{definition.ContextName}.metadata.settings";
-            return Path.Combine(directory, fileName);
         }
 
         #endregion
