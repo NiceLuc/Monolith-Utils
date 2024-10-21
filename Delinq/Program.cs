@@ -1,4 +1,4 @@
-using Microsoft.Extensions.DependencyInjection;
+﻿using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 using CommandLine;
 using Delinq.DependencyInjection;
@@ -86,6 +86,7 @@ void GenerateUnitTestFile(CreateUnitTestsOptions options)
 {
     var request = new CreateUnitTests.Request
     {
+        ContextName = options.ContextName,
         SettingsFilePath = options.SettingsFilePath,
         OutputDirectory = options.OutputDirectory,
         MethodName = options.MethodName

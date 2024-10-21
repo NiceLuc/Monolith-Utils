@@ -8,12 +8,14 @@ public sealed class CreateUnitTests
 {
     public class Request : IRequest<string>
     {
+        public string ContextName { get; init; }
         public string SettingsFilePath { get; set; }
         public string OutputDirectory { get; set; }
         public string MethodName { get; init; }
     }
 
     public class Handler(
+        IConfigSettingsBuilder settingsBuilder,
         IDefinitionSerializer<ContextDefinition> definitionSerializer,
         ITemplateProvider templateProvider,
         ITemplateEngine templateEngine,
@@ -22,16 +24,17 @@ public sealed class CreateUnitTests
     {
         public async Task<string> Handle(Request request, CancellationToken cancellationToken)
         {
-            if (!Directory.Exists(request.OutputDirectory))
-                Directory.CreateDirectory(request.OutputDirectory);
+            await ConfigureRequestAsync(request, cancellationToken);
+            ValidateRequest(request);
 
             var definition = await definitionSerializer.DeserializeAsync(request.SettingsFilePath, cancellationToken);
             if (!string.IsNullOrEmpty(request.MethodName))
                 FilterMethods(definition, request.MethodName);
 
+            await ProcessTemplate("TestUtils.hbs", "TestUtils.cs");
+
             var viewModel = await CreateViewModelAsync(definition, cancellationToken);
             await ProcessTemplate("UnitTests.hbs", "{0}RepositoryTests.cs", viewModel);
-            await ProcessTemplate("TestUtils.hbs", "TestUtils.cs");
 
             return request.OutputDirectory;
 
@@ -46,6 +49,27 @@ public sealed class CreateUnitTests
         }
 
         #region Private Methods
+
+        private async Task ConfigureRequestAsync(Request request, CancellationToken cancellationToken)
+        {
+            var settings = await settingsBuilder.BuildAsync(request.ContextName, string.Empty, cancellationToken);
+
+            if (string.IsNullOrEmpty(request.SettingsFilePath))
+                request.SettingsFilePath = settings.TempMetaDataFilePath;
+
+            if (string.IsNullOrEmpty(request.OutputDirectory))
+                request.OutputDirectory = settings.TempTestDirectoryPath;
+        }
+
+        private static void ValidateRequest(Request request)
+        {
+            if (!File.Exists(request.SettingsFilePath))
+                throw new FileNotFoundException("File does not exist: " + request.SettingsFilePath);
+
+            if (!Directory.Exists(request.OutputDirectory))
+                Directory.CreateDirectory(request.OutputDirectory);
+        }
+
 
         private static void FilterMethods(ContextDefinition definition, string methodName)
         {
