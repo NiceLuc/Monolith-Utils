@@ -5,7 +5,7 @@
       "environmentVariables": {
         "ASPNETCORE_ENVIRONMENT": "Development"
       },
-      "commandLineArgs": "init CNEventing -b RC -f"
+      "commandLineArgs": "repo CNEventing"
     }
   }
 }
