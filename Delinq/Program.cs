@@ -1,4 +1,4 @@
-﻿using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 using CommandLine;
 using Delinq.DependencyInjection;
@@ -73,6 +73,7 @@ void GenerateRepositoryFiles(CreateRepositoryOptions options)
 {
     var request = new CreateRepositoryFiles.Request
     {
+        ContextName = options.ContextName,
         SettingsFilePath = options.SettingsFilePath,
         OutputDirectory = options.OutputDirectory,
         MethodName = options.MethodName
