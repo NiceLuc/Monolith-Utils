@@ -16,6 +16,7 @@ public sealed class VerificationReport
     }
 
     public class Handler(
+        IFileStorage fileStorage,
         IDefinitionSerializer<RepositoryDefinition> serializer,
         IConfigSettingsBuilder settingsBuilder) : IRequestHandler<Request, string>
     {
@@ -87,10 +88,10 @@ public sealed class VerificationReport
                 request.ReportFilePath = settings.TempValidationReportFilePath;
         }
 
-        private static void ValidateRequest(Request request)
+        private void ValidateRequest(Request request)
         {
             // note: repository file must exist
-            if (!File.Exists(request.ValidationFilePath))
+            if (!fileStorage.FileExists(request.ValidationFilePath))
                 throw new FileNotFoundException($"File does not exist: {request.ValidationFilePath}");
 
             if (!request.ReportFilePath.EndsWith(".xlsx"))

@@ -88,7 +88,7 @@ public sealed class VerifyRepositoryMethods
         private async Task ValidateRequestAsync(Request request, CancellationToken cancellationToken)
         {
             // note: repository file must exist
-            if (!File.Exists(request.RepositoryFilePath))
+            if (!fileStorage.FileExists(request.RepositoryFilePath))
                 throw new FileNotFoundException($"File does not exist: {request.RepositoryFilePath}");
 
             // if the connection string is a secret, replace it with the actual connection string
