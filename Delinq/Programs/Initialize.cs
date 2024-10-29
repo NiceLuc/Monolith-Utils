@@ -1,5 +1,6 @@
 ﻿using Delinq.Parsers;
 using MediatR;
+using SharedKernel;
 
 namespace Delinq.Programs;
 

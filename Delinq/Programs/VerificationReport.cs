@@ -1,6 +1,7 @@
 ﻿using System.Diagnostics;
 using ClosedXML.Excel;
 using MediatR;
+using SharedKernel;
 
 namespace Delinq.Programs;
 

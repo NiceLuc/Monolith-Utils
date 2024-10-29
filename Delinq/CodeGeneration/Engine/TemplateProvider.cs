@@ -1,4 +1,6 @@
-﻿namespace Delinq.CodeGeneration.Engine;
+﻿using SharedKernel;
+
+namespace Delinq.CodeGeneration.Engine;
 
 internal class TemplateProvider(IDictionary<string, string>? resourceMap = null) : ITemplateProvider
 {

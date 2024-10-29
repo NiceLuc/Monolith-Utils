@@ -1,6 +1,8 @@
-﻿namespace Delinq;
+﻿using System.Reflection;
 
-internal class EmbeddedResourceProvider(IDictionary<string, string>? resourceMap = null) : IEmbeddedResourceProvider
+namespace SharedKernel;
+
+public class EmbeddedResourceProvider(Assembly assembly, IDictionary<string, string>? resourceMap = null) : IEmbeddedResourceProvider
 {
     private readonly IDictionary<string, string> _resourceMap = resourceMap ?? new Dictionary<string, string>();
 
@@ -12,7 +14,6 @@ internal class EmbeddedResourceProvider(IDictionary<string, string>? resourceMap
         if (_resourceMap.TryGetValue(resourceFileName, out var template))
             return template;
 
-        var assembly = typeof(Program).Assembly;
         var resourceNames = assembly.GetManifestResourceNames();
 
         var filtered = resourceNames.Where(n => n.EndsWith($".{resourceFileName}")).ToArray();

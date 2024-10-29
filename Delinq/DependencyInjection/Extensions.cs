@@ -3,6 +3,7 @@ using Delinq.Parsers;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 using Mustache;
+using SharedKernel;
 
 namespace Delinq.DependencyInjection
 {
@@ -13,7 +14,9 @@ namespace Delinq.DependencyInjection
             services.AddTransient<ScopeTracker>();
             services.AddSingleton<IFileStorage, FileStorage>();
 
-            services.AddSingleton<IEmbeddedResourceProvider, EmbeddedResourceProvider>();
+            services.AddSingleton<IEmbeddedResourceProvider>(_ 
+                => new EmbeddedResourceProvider(typeof(Program).Assembly));
+
             services.AddSingleton<IContextConfigProvider, ContextConfigProvider>();
             services.AddSingleton<IConfigSettingsBuilder, ConfigSettingsBuilder>();
 

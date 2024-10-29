@@ -1,6 +1,7 @@
 ﻿using Delinq.CodeGeneration.Engine;
 using Delinq.CodeGeneration.ViewModels;
 using MediatR;
+using SharedKernel;
 
 namespace Delinq.Programs;
 

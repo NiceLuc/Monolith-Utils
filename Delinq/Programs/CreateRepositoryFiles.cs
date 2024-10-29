@@ -3,6 +3,7 @@ using Delinq.CodeGeneration.ViewModels;
 using DocumentFormat.OpenXml.Math;
 using DocumentFormat.OpenXml.Spreadsheet;
 using MediatR;
+using SharedKernel;
 
 namespace Delinq.Programs;
 

@@ -1,7 +1,7 @@
 ﻿using System.Text.Json;
 using System.Text.Json.Serialization;
 
-namespace Delinq;
+namespace SharedKernel;
 
 public class DefinitionSerializer<T>(IFileStorage fileStorage) : IDefinitionSerializer<T>
 {
