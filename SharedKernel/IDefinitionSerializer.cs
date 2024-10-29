@@ -1,4 +1,4 @@
-﻿namespace Delinq;
+﻿namespace SharedKernel;
 
 public interface IDefinitionSerializer<T>
 {

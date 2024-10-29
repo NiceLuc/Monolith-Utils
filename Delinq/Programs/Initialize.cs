@@ -1,5 +1,6 @@
 ﻿using Delinq.Parsers;
 using MediatR;
+using SharedKernel;
 
 namespace Delinq.Programs;
 
@@ -17,6 +18,7 @@ public sealed class Initialize
     }
 
     public class Handler(
+        IFileStorage fileStorage,
         IConfigSettingsBuilder settingsBuilder,
         IEnumerable<IParser<ContextDefinition>> parsers,
         IDefinitionSerializer<ContextDefinition> serializer)
@@ -32,7 +34,7 @@ public sealed class Initialize
             var definition = new ContextDefinition();
 
             // parse the designer file using the parser implementations created for ContextDefinition
-            using (var reader = File.OpenText(request.DesignerFilePath))
+            using (var reader = fileStorage.GetStreamReader(request.DesignerFilePath))
             {
                 while (await reader.ReadLineAsync(cancellationToken) is { } line)
                 {
@@ -66,15 +68,15 @@ public sealed class Initialize
                 request.SettingsFilePath = settings.TempMetaDataFilePath;
         }
 
-        private static void ValidateRequest(Request request)
+        private void ValidateRequest(Request request)
         {
-            if (!File.Exists(request.DbmlFilePath))
+            if (!fileStorage.FileExists(request.DbmlFilePath))
                 throw new FileNotFoundException($"File not found: {request.DbmlFilePath}");
 
-            if (!File.Exists(request.DesignerFilePath))
+            if (!fileStorage.FileExists(request.DesignerFilePath))
                 throw new FileNotFoundException($"File not found: {request.DesignerFilePath}");
 
-            if (File.Exists(request.SettingsFilePath) && !request.ForceOverwrite)
+            if (fileStorage.FileExists(request.SettingsFilePath) && !request.ForceOverwrite)
                 throw new InvalidOperationException($"File already exists: {request.SettingsFilePath} (use -f to overwrite)");
         }
 

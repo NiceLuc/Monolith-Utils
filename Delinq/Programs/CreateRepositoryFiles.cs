@@ -3,6 +3,7 @@ using Delinq.CodeGeneration.ViewModels;
 using DocumentFormat.OpenXml.Math;
 using DocumentFormat.OpenXml.Spreadsheet;
 using MediatR;
+using SharedKernel;
 
 namespace Delinq.Programs;
 
@@ -69,13 +70,13 @@ public sealed class CreateRepositoryFiles
                 request.OutputDirectory = settings.TempRepositoryDirectoryPath;
         }
 
-        private static void ValidateRequest(Request request)
+        private void ValidateRequest(Request request)
         {
-            if (!File.Exists(request.SettingsFilePath))
+            if (!fileStorage.FileExists(request.SettingsFilePath))
                 throw new FileNotFoundException("File does not exist: " + request.SettingsFilePath);
 
-            if (!Directory.Exists(request.OutputDirectory))
-                Directory.CreateDirectory(request.OutputDirectory);
+            if (!fileStorage.DirectoryExists(request.OutputDirectory))
+                fileStorage.CreateDirectory(request.OutputDirectory);
         }
 
         private static void FilterMethodsAndDTOModels(ContextDefinition definition, string methodName)
