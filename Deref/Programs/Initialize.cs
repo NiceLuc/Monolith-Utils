@@ -1,24 +1,40 @@
 ﻿using MediatR;
 using Microsoft.Extensions.Options;
+using SharedKernel;
 
 namespace Deref.Programs;
 
-internal class Initialize
+public class Initialize
 {
     public class Request : IRequest<string>
     {
         public string BranchName { get; set; }
-        public string SettingsFilePath { get; set; }
+        public string ResultsDirectoryPath { get; set; }
         public bool ForceOverwrite { get; set; }
     }
 
-    public class Handler(IOptions<AppSettings> appSettings) : IRequestHandler<Request, string>
+    public class Handler(
+        IProgramSettingsBuilder settingsBuilder,
+        IFileStorage fileStorage) : IRequestHandler<Request, string>
     {
-        private readonly AppSettings _appSettings = appSettings.Value;
-
         public Task<string> Handle(Request request, CancellationToken cancellationToken)
         {
-            return Task.FromResult($"AppSettings contains {_appSettings.RequiredSolutions.Length} solutions");
+            var settings = settingsBuilder.Build(request.BranchName, request.ResultsDirectoryPath);
+            ValidateRequest(settings, request);
+
+            return Task.FromResult($"AppSettings contains {settings.BuildSolutions.Length} solutions");
+        }
+
+        private void ValidateRequest(ProgramSettings settings, Request request)
+        {
+            if (fileStorage.DirectoryExists(settings.TempDirectory))
+            {
+                if (!request.ForceOverwrite)
+                    throw new InvalidOperationException(
+                        $"Results directory already exists: {settings.TempDirectory} (use -f to overwrite)");
+            }
+            else
+                fileStorage.CreateDirectory(request.ResultsDirectoryPath);
         }
     }
 }

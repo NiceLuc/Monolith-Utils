@@ -10,7 +10,7 @@ public class AppSettings
 
     public class RequiredSolution
     {
-        public string BranchName { get; set; }
+        public string BuildName { get; set; }
         public string SolutionPath { get; set; }
     }
 }

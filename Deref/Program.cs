@@ -38,7 +38,7 @@ void InitializeSettingsFile(InitializeOptions options)
     var request = new Initialize.Request
     {
         BranchName = options.BranchName,
-        SettingsFilePath = options.SettingsFilePath,
+        ResultsDirectoryPath = options.ResultsDirectoryPath,
         ForceOverwrite = options.ForceOverwrite
     };
 
