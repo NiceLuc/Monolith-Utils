@@ -14,7 +14,7 @@ public class DefinitionSerializer<T>(IFileStorage fileStorage) : IDefinitionSeri
 
     public async Task<T> DeserializeAsync(string filePath, CancellationToken cancellationToken)
     {
-        var stream = File.OpenRead(filePath);
+        var stream = fileStorage.GetFileStreamForRead(filePath);
         var options = GetDeserializationOptions();
         var definition = await JsonSerializer.DeserializeAsync<T>(stream, options, cancellationToken);
 
