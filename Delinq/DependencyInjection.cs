@@ -5,17 +5,15 @@ using Microsoft.Extensions.Hosting;
 using Mustache;
 using SharedKernel;
 
-namespace Delinq.DependencyInjection
+namespace Delinq
 {
-    internal static class Extensions
+    internal static class DependencyInjection
     {
-        public static void InitializeDelinqServices(this IServiceCollection services, HostBuilderContext context)
+        public static void AddDelinqServices(this IServiceCollection services, HostBuilderContext context)
         {
             services.AddTransient<ScopeTracker>();
-            services.AddSingleton<IFileStorage, FileStorage>();
 
-            services.AddSingleton<IEmbeddedResourceProvider>(_ 
-                => new EmbeddedResourceProvider(typeof(Program).Assembly));
+            services.AddSharedServices(typeof(DependencyInjection).Assembly);
 
             services.AddSingleton<IContextConfigProvider, ContextConfigProvider>();
             services.AddSingleton<IConfigSettingsBuilder, ConfigSettingsBuilder>();

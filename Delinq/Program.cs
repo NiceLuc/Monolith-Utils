@@ -1,11 +1,11 @@
 ﻿using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 using CommandLine;
-using Delinq.DependencyInjection;
 using Delinq.Options;
 using Delinq.Programs;
 using MediatR;
 using Microsoft.Extensions.Configuration;
+using Delinq;
 
 // TODO: Figure out why the console app is not respecting the launchSettings.json environment variable
 //Environment.SetEnvironmentVariable("ASPNETCORE_ENVIRONMENT", "Development");
@@ -35,9 +35,12 @@ var builder = Host.CreateDefaultBuilder(args)
     })
     .ConfigureServices((context, services) =>
     {
-        services.InitializeDelinqServices(context);
+        services.AddDelinqServices(context);
 
-        services.AddMediatR(config => config.RegisterServicesFromAssembly(typeof(Program).Assembly));
+        services.AddMediatR(config =>
+        {
+            config.RegisterServicesFromAssembly(typeof(Program).Assembly);
+        });
     });
 
 using var host = builder.Build();
