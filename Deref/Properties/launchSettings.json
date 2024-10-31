@@ -2,7 +2,7 @@
   "profiles": {
     "Deref": {
       "commandName": "Project",
-      "commandLineArgs": "init API-CONT -f"
+      "commandLineArgs": "init -b API-CONT -f"
     }
   }
 }

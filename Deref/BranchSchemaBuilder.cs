@@ -1,6 +1,6 @@
 ﻿namespace Deref;
 
-public class BranchSchemaBuilder(string rootPath)
+public class BranchSchemaBuilder()
 {
     private readonly Dictionary<string, string> _projectPathToName = new();
     private readonly Dictionary<string, string> _projectNameToPath = new();
@@ -11,11 +11,8 @@ public class BranchSchemaBuilder(string rootPath)
 
     public ProjectToken AddProject(string path)
     {
-        if (!path.StartsWith(rootPath))
-            path = Path.Combine(rootPath, path);
-
         if (_projectPathToName.TryGetValue(path, out var name))
-            throw new InvalidOperationException($"Project already added: {path}");
+            return new ProjectToken(name, path);
 
         var baseName = Path.GetFileNameWithoutExtension(path);
         name = GetUniqueName(baseName, _projectNameToPath.ContainsKey);
@@ -28,11 +25,8 @@ public class BranchSchemaBuilder(string rootPath)
 
     public SolutionToken AddSolution(string path)
     {
-        if (!path.StartsWith(rootPath))
-            path = Path.Combine(rootPath, path);
-
         if (_solutionPathToName.TryGetValue(path, out var name))
-            throw new InvalidOperationException($"Solution already added: {path}");
+            return new SolutionToken(name, path);
 
         var baseName = Path.GetFileNameWithoutExtension(path);
         name = GetUniqueName(baseName, _solutionProjects.ContainsKey);
@@ -42,19 +36,16 @@ public class BranchSchemaBuilder(string rootPath)
         return new SolutionToken(name, path);
     }
 
-    public void AssignProjectToSolution(SolutionToken solution, string referencedProjectPath)
+    public void AssignProjectToSolution(SolutionToken solution, ProjectToken project)
     {
-        if (!_projectPathToName.TryGetValue(referencedProjectPath, out var projectName))
-            throw new InvalidOperationException($"Solution {solution.Name} project not found: {referencedProjectPath}");
-
         if (!_solutionProjects.TryGetValue(solution.Name, out var projects))
             throw new InvalidOperationException($"List not configured for solution: {solution.Name}");
 
-        if (projects.Contains(projectName))
+        if (projects.Contains(project.Name))
             throw new InvalidOperationException(
-                $"Solution {solution.Name} already references this project: {projectName}");
+                $"Solution {solution.Name} already references this project: {project.Name}");
 
-        projects.Add(projectName);
+        projects.Add(project.Name);
     }
 
     public void AddReference(ProjectToken project, string referencedProjectPath)
@@ -74,19 +65,35 @@ public class BranchSchemaBuilder(string rootPath)
     public BranchSchema Build()
     {
         var projects = _projectNameToPath.Select(pair
-            => new BranchSchema.Project { Name = pair.Key, Path = pair.Value });
+            => new BranchSchema.Project
+            {
+                Name = pair.Key,
+                Path = pair.Value
+            });
 
         var solutions = _solutionPathToName.Select(pair
             => new BranchSchema.Solution
             {
-                Name = pair.Key,
-                Path = pair.Value,
-                ProjectKeys = _solutionProjects[pair.Key]
+                Name = pair.Value,
+                Path = pair.Key,
+                Projects = _solutionProjects[pair.Value]
             });
+
+        /* todo: add references
+        var references = _projectReferences.Select(pair
+            => new BranchSchema.ProjectReference
+            {
+                Name = pair.Key,
+                UsedBy = _projectReferences.Where(p => p.Value.Contains(pair.Key)).Select(p => p.Key).ToList(),
+                Uses = pair.Value
+            });
+        */
 
         return new BranchSchema
         {
-
+            Solutions = solutions.ToList(),
+            Projects = projects.ToList(),
+            // ProjectReferences = references.ToList()
         };
     }
 
@@ -95,7 +102,7 @@ public class BranchSchemaBuilder(string rootPath)
         var offset = 0;
 
         var name = baseName;
-        while (!hasKey(name))
+        while (hasKey(name))
         {
             offset++;
             name = $"{baseName}-{offset}";

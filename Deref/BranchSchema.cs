@@ -34,7 +34,7 @@ public class BranchSchema
         public string Name { get; set; }
         public string Path { get; set; }
 
-        public List<string> ProjectKeys { get; set; }
+        public List<string> Projects { get; set; }
     }
 
     public class ProjectReference
