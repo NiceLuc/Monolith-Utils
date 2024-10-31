@@ -5,7 +5,7 @@
       "environmentVariables": {
         "ASPNETCORE_ENVIRONMENT": "Development"
       },
-      "commandLineArgs": "tests CNEventing"
+      "commandLineArgs": "verify SurveyManager -b API-CONT -rx"
     }
   }
 }

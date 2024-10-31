@@ -214,7 +214,8 @@ public sealed class VerifyRepositoryMethods
             {
                 new ConfidenceValidator(),
                 new QueryTypeValidator(),
-                new ParameterValidator()
+                new ParameterValidator(),
+                new OutputParameterValidator()
             };
 
             foreach (var validator in validators)
@@ -444,6 +445,45 @@ public sealed class VerifyRepositoryMethods
                 method.Errors.Add(message);
             }
         }
+
+        private class OutputParameterValidator : MethodValidator
+        {
+            private static readonly Regex _regex = new(
+                @"AddParameter\(""@(?<name>.+?)"".+ParameterDirection\.(?<direction>.+?)\)",
+                RegexOptions.Multiline);
+
+            private static readonly HashSet<string> _ignoreList = new(
+                ["TotalRows", "RowCount", "TotalRowCount", "RowsReturned"], 
+                StringComparer.OrdinalIgnoreCase);
+
+            protected override void ValidateImpl(RepositoryMethod method, string code)
+            {
+                var matches = _regex.Matches(code);
+                if (matches.Count == 0)
+                    return;
+
+                var items = new List<string>();
+                foreach (Match match in matches)
+                {
+                    if (match.Groups["direction"].Value != "Output")
+                        continue;
+
+                    var parameterName = match.Groups["name"].Value;
+                    if (_ignoreList.Contains(parameterName))
+                        continue;
+
+                    items.Add(parameterName);
+                }
+
+                if (items.Count <= 0)
+                    return;
+
+                var names = string.Join(", ", items);
+                method.Status = RepositoryMethodStatus.Warning;
+                method.Errors.Add($"Note: Output parameter(s) detected: {names}");
+            }
+        }
+
         #endregion
     }
 }
