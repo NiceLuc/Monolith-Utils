@@ -11,6 +11,7 @@ internal static class DependencyInjection
         services.AddSharedServices(typeof(DependencyInjection).Assembly);
 
         services.AddSingleton<IProgramSettingsBuilder, ProgramSettingsBuilder>();
+        services.AddSingleton<DefinitionSerializer<BranchSchema>>();
 
         services.Configure<AppSettings>(context.Configuration.GetSection("AppSettings"));
 

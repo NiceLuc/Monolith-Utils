@@ -11,4 +11,6 @@ public interface IFileStorage
     bool FileExists(string filePath);
     bool DirectoryExists(string directoryPath);
     void CreateDirectory(string directoryPath);
+
+    string[] GetFilePaths(string rootDirectory, string pattern, SearchOption options = SearchOption.AllDirectories);
 }
