@@ -2,10 +2,10 @@
 
 namespace Deref.Options;
 
-[Verb("init")]
+[Verb("init", HelpText = "Setup the solution and project database file.")]
 internal class InitializeOptions
 {
-    [Option('b', "branch-name", HelpText = "The name of the branch which has the solutions you want to analyze.")]
+    [Option('b', "branch", HelpText = "The name of the branch which has the solutions you want to analyze.")]
     public string BranchName { get; set; }
 
     [Option('o', "output", HelpText = "The output directory where the meta data files will be written to (default = '').")]
