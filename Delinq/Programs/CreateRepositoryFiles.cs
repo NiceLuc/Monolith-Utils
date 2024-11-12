@@ -1,7 +1,5 @@
 ﻿using Delinq.CodeGeneration.Engine;
 using Delinq.CodeGeneration.ViewModels;
-using DocumentFormat.OpenXml.Math;
-using DocumentFormat.OpenXml.Spreadsheet;
 using MediatR;
 using SharedKernel;
 
