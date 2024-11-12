@@ -6,20 +6,26 @@ using MediatR;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
+using Serilog;
 
 // TODO: Figure out why the console app is not respecting the launchSettings.json environment variable
 //Environment.SetEnvironmentVariable("ASPNETCORE_ENVIRONMENT", "Development");
-
 var builder = Host.CreateDefaultBuilder(args)
     .ConfigureAppConfiguration((context, config) =>
     {
         // Add appsettings.json settings
         config.AddJsonFile("appsettings.json", optional: true, reloadOnChange: true);
     })
+    .UseSerilog((context, services, configuration) =>
+    {
+        configuration.ReadFrom.Configuration(context.Configuration)
+            .ReadFrom.Services(services)
+            .Enrich.FromLogContext()
+            .WriteTo.Console(outputTemplate: "{Message:lj}{NewLine}{Exception}");
+    })
     .ConfigureServices((context, services) =>
     {
         services.AddDerefServices(context);
-
         services.AddMediatR(config => config.RegisterServicesFromAssembly(typeof(Program).Assembly));
     });
 
