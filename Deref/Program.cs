@@ -34,14 +34,6 @@ var mediator = host.Services.GetRequiredService<IMediator>();
 // -p, --project: The name of the project file you want to parse
 // -r, --report: The name of the report file you want to generate
 // -x, --open: Open the report file after it is generated
-
-// init {{BRANCH_NAME}}
-// find-counts {{BRANCH_NAME}} -p "library.cspoj"
-// package-configs {{BRANCH_NAME}}
-// legacy-csproj {{BRANCH_NAME}}
-// linq-refs {{BRANCH_NAME}}
-// netstandard2 {{BRANCH_NAME}}
-// 
 Parser.Default.ParseArguments<InitializeOptions>(args)
     .WithParsed<InitializeOptions>(InitializeSettingsFile);
 
