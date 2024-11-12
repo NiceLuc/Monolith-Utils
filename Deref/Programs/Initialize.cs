@@ -1,7 +1,5 @@
 ﻿using System.Text.RegularExpressions;
 using MediatR;
-using Microsoft.Extensions.Options;
-using Microsoft.Extensions.Primitives;
 using SharedKernel;
 
 namespace Deref.Programs;
@@ -98,16 +96,17 @@ public class Initialize
                 throw new InvalidOperationException(
                     $"Results directory already exists: {settings.TempDirectory} (use -f to overwrite)");
         }
-
         
         private async Task ScanSolutionFileAsync(string solutionPath, Action<BranchSchema.Solution, string[]> callback, CancellationToken cancellationToken)
         {
-            if (_solutions.ContainsKey(solutionPath))
-                return; // already scanned!
-
             var solution = GetOrAddSolution(solutionPath);
             if (!solution.Exists)
-                return; // cannot scan a file that does not exist
+            {
+                // cannot scan a file that does not exist
+                // but let the caller add build name references
+                callback(solution, []);
+                return;
+            }
 
             var solutionFile = await fileStorage.ReadAllTextAsync(solutionPath, cancellationToken);
             var solutionDirectory = Path.GetDirectoryName(solutionPath)!;
@@ -119,7 +118,7 @@ public class Initialize
                 projectPaths.Add(Path.GetFullPath(projectPath));
             }
 
-            // let the caller add missing projects and manage references
+            // let the caller add build name and project references
             callback(solution, projectPaths.ToArray());
         }
 
@@ -144,10 +143,9 @@ public class Initialize
                 projectPaths.Add(Path.GetFullPath(referencePath));
             }
 
-            // let the caller add missing projects and manage references
+            // let the caller add and manage project references
             callback(project, projectPaths.ToArray());
         }
-
 
         private BranchSchema.Solution GetOrAddSolution(string solutionPath)
         {
