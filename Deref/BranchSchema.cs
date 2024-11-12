@@ -27,12 +27,18 @@ public class BranchSchema
     {
         public string Name { get; set; }
         public string Path { get; set; }
+        public bool Exists { get; set; }
+
+        public List<string> Solutions { get; set; }
+        public List<string> References { get; set; }
+        public List<string> ReferencedBy { get; set; }
     }
 
     public class Solution
     {
         public string Name { get; set; }
         public string Path { get; set; }
+        public bool Exists { get; set; }
 
         public List<string> Projects { get; set; }
     }
