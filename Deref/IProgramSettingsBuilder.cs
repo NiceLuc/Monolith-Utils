@@ -2,5 +2,5 @@
 
 public interface IProgramSettingsBuilder
 {
-    ProgramSettings Build(string branchName, string customTempDirectoryPath);
+    Task<ProgramSettings> BuildAsync(string branchName, string? customTempDirectoryPath, CancellationToken cancellationToken);
 }

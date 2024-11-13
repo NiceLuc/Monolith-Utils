@@ -20,4 +20,7 @@ public class FileStorage : IFileStorage
 
     public string[] GetFilePaths(string rootDirectory, string pattern, SearchOption options = SearchOption.AllDirectories) 
         => Directory.EnumerateFiles(rootDirectory, pattern, options).ToArray();
+
+    public string[] GetDirectoryNames(string rootDirectory) =>
+        Directory.EnumerateDirectories(rootDirectory).Select(d => new DirectoryInfo(d).Name).ToArray();
 }
