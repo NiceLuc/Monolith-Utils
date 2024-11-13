@@ -40,9 +40,10 @@ var mediator = host.Services.GetRequiredService<IMediator>();
 // -p, --project: The name of the project file you want to parse
 // -r, --report: The name of the report file you want to generate
 // -x, --open: Open the report file after it is generated
-Parser.Default.ParseArguments<InitializeOptions, BranchOptions>(args)
+Parser.Default.ParseArguments<InitializeOptions, BranchOptions, ProjectOptions>(args)
     .WithParsed<InitializeOptions>(RunInitProgram)
-    .WithParsed<BranchOptions>(RunBranchProgram);
+    .WithParsed<BranchOptions>(RunBranchProgram)
+    .WithParsed<ProjectOptions>(RunProjectProgram);
 
 return;
 
@@ -64,6 +65,21 @@ void RunBranchProgram(BranchOptions options)
     var request = new Branch.Request
     {
         BranchName = options.BranchName,
+    };
+
+    SendRequest(request);
+}
+
+void RunProjectProgram(ProjectOptions options)
+{
+    var request = new Project.Request
+    {
+        ProjectName = options.ProjectName,
+        IsListReferences = options.IsListReferences,
+        IsListReferencedBy = options.IsListReferencedBy,
+        IsList = options.IsList,
+        ShowListCounts = options.ShowListCounts,
+        ShowListTodos = options.ShowListTodos,
     };
 
     SendRequest(request);

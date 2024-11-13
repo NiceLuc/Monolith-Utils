@@ -17,15 +17,18 @@ public class Initialize
 
     public class Handler(
         IProgramSettingsBuilder settingsBuilder,
-        IDefinitionSerializer<BranchSchema> serializer,
+        IDefinitionSerializer<BranchDatabase> serializer,
         IFileStorage fileStorage) : IRequestHandler<Request, string>
     {
         private static readonly Regex _csProjReferenceRegex = new(@"""(?<relative_path>[\.-\\a-zA-Z\d]+\.csproj)""", RegexOptions.Multiline);
         private static readonly Regex _projectSdkRegex = new(@"<Project Sdk=", RegexOptions.Multiline);
         private static readonly Regex _projectNetStandardRegex = new(@"\<TargetFrameworks\>.*netstandard2\.0.*\<\/TargetFrameworks\>", RegexOptions.Multiline);
 
-        private readonly Dictionary<string, BranchSchema.Solution> _solutions = new();
-        private readonly Dictionary<string, BranchSchema.Project> _projects = new();
+        private readonly HashSet<string> _solutionNames = new();
+        private readonly HashSet<string> _projectNames = new();
+
+        private readonly Dictionary<string, BranchDatabase.Solution> _solutions = new();
+        private readonly Dictionary<string, BranchDatabase.Project> _projects = new();
         private readonly Queue<string> _projectFilesToScan = new();
 
 
@@ -36,6 +39,8 @@ public class Initialize
 
             // reset all lists and dictionaries
             _projectFilesToScan.Clear();
+            _solutionNames.Clear();
+            _projectNames.Clear();
             _solutions.Clear();
             _projects.Clear();
 
@@ -73,7 +78,7 @@ public class Initialize
             }
 
             // persist the results to a json file
-            var data = new BranchSchema
+            var data = new BranchDatabase
             {
                 Solutions = _solutions.Values.ToList(),
                 Projects = _projects.Values.ToList(),
@@ -98,7 +103,7 @@ public class Initialize
                     $"Results directory already exists: {settings.TempDirectory} (use -f to overwrite)");
         }
         
-        private async Task ScanSolutionFileAsync(string solutionPath, Action<BranchSchema.Solution, string[]> callback, CancellationToken cancellationToken)
+        private async Task ScanSolutionFileAsync(string solutionPath, Action<BranchDatabase.Solution, string[]> callback, CancellationToken cancellationToken)
         {
             var solution = GetOrAddSolution(solutionPath);
             if (!solution.Exists)
@@ -123,7 +128,7 @@ public class Initialize
             callback(solution, projectPaths.ToArray());
         }
 
-        private async Task ScanProjectFileAsync(string projectPath, Action<BranchSchema.Project, string[]> callback, CancellationToken cancellationToken)
+        private async Task ScanProjectFileAsync(string projectPath, Action<BranchDatabase.Project, string[]> callback, CancellationToken cancellationToken)
         {
             if (!_projects.TryGetValue(projectPath, out var project))
                 throw new InvalidOperationException($"Project not in dictionary: {projectPath}");
@@ -148,28 +153,30 @@ public class Initialize
             callback(project, projectPaths.ToArray());
         }
 
-        private BranchSchema.Solution GetOrAddSolution(string solutionPath)
+        private BranchDatabase.Solution GetOrAddSolution(string solutionPath)
         {
             if (!_solutions.TryGetValue(solutionPath, out var solution))
             {
                 var solutionName = Path.GetFileNameWithoutExtension(solutionPath);
-                solutionName = GetUniqueName(solutionName, _solutions.ContainsKey);
+                solutionName = GetUniqueName(solutionName, _solutionNames.Contains);
                 var exists = fileStorage.FileExists(solutionPath);
-                solution = new BranchSchema.Solution(solutionName, solutionPath, exists);
+                solution = new BranchDatabase.Solution(solutionName, solutionPath, exists);
+                _solutionNames.Add(solutionName);
                 _solutions.Add(solutionPath, solution);
             }
 
             return solution;
         }
 
-        private BranchSchema.Project GetOrAddProject(string projectPath)
+        private BranchDatabase.Project GetOrAddProject(string projectPath)
         {
             if (!_projects.TryGetValue(projectPath, out var project))
             {
                 var projectName = Path.GetFileNameWithoutExtension(projectPath);
-                projectName = GetUniqueName(projectName, _projects.ContainsKey);
+                projectName = GetUniqueName(projectName, _projectNames.Contains);
                 var exists = fileStorage.FileExists(projectPath);
-                project = new BranchSchema.Project(projectName, projectPath, exists);
+                project = new BranchDatabase.Project(projectName, projectPath, exists);
+                _projectNames.Add(projectName);
                 _projects.Add(projectPath, project);
 
                 // if the file exists, then we must queue the file to be scanned

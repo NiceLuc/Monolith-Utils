@@ -1,6 +1,6 @@
 ﻿namespace Deref;
 
-public class BranchSchema
+public class BranchDatabase
 {
     public List<Project> Projects { get; set; }
     public List<Solution> Solutions { get; set; }

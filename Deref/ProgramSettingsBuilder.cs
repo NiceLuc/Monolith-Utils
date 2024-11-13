@@ -10,6 +10,10 @@ internal class ProgramSettingsBuilder(
 {
     private readonly AppSettings _appSettings = appSettings.Value;
 
+    public Task<ProgramSettings> BuildAsync(CancellationToken cancellationToken) => BuildAsync(string.Empty, cancellationToken);
+
+    public Task<ProgramSettings> BuildAsync(string branchName, CancellationToken cancellationToken) => BuildAsync(branchName, null, cancellationToken);
+
     public async Task<ProgramSettings> BuildAsync(string branchName, string? customTempDirectoryPath, CancellationToken cancellationToken)
     {
         branchName = await ResolveBranchNameAsync(branchName, cancellationToken);
@@ -31,6 +35,7 @@ internal class ProgramSettingsBuilder(
 
         return settings;
     }
+
 
     private async Task<string> ResolveBranchNameAsync(string branchName, CancellationToken cancellationToken)
     {
