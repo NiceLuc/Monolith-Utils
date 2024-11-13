@@ -22,7 +22,7 @@ public class Project
     {
         private static readonly string _separator = new('-', 50);
         private const string _termPattern = "{0,4}"; // right align terms
-        private const string _todoPattern = "        - todo: {0}"; // 8 leading spaces!
+        private const string _todoPattern = "        - {0}"; // 8 leading spaces!
 
         public async Task<string> Handle(Request request, CancellationToken cancellationToken)
         {
@@ -54,6 +54,9 @@ public class Project
                     ShowProjectsList("Referenced by", projects, request);
                 }
 
+                var solutions = database.Solutions.ToDictionary(s => s.Name, StringComparer.InvariantCultureIgnoreCase);
+                logger.LogInformation($"Found in {project.Solutions.Count} solutions:");
+                ShowSolutionsList(project, solutions);
                 return string.Empty;
             }
 
@@ -98,6 +101,19 @@ public class Project
 
             void LogInformation(string fieldName, object fieldValue)
                 => logger.LogInformation($"{fieldName,8}: {fieldValue}");
+        }
+
+        private void ShowSolutionsList(BranchDatabase.Project project, Dictionary<string, BranchDatabase.Solution> solutions)
+        {
+            var maxNameWidth = project.Solutions.Max(s => s.Length) + 2;
+            foreach(var solutionName in project.Solutions)
+            {
+                var solution = solutions[solutionName];
+                var spaces = new string(' ', maxNameWidth - solutionName.Length);
+                logger.LogInformation($"{spaces}{solutionName}: {solution.Path}");
+            }
+
+            logger.LogInformation(_separator);
         }
 
         private void ShowProjectsList(string prefix, BranchDatabase.Project[] projects, Request request)
