@@ -1,7 +1,5 @@
 ﻿using System.Text.RegularExpressions;
 using MediatR;
-using Microsoft.Extensions.DependencyInjection;
-using Serilog;
 using SharedKernel;
 
 namespace Deref.Programs;
@@ -22,7 +20,7 @@ public class Initialize
     {
         private static readonly Regex _csProjReferenceRegex = new(@"""(?<relative_path>[\.-\\a-zA-Z\d]+\.csproj)""", RegexOptions.Multiline);
         private static readonly Regex _projectSdkRegex = new(@"<Project Sdk=", RegexOptions.Multiline);
-        private static readonly Regex _projectNetStandardRegex = new(@"\<TargetFrameworks\>.*netstandard2\.0.*\<\/TargetFrameworks\>", RegexOptions.Multiline);
+        private static readonly Regex _projectNetStandardRegex = new(@"\<TargetFrameworks?\>.*netstandard2\.0.*\<\/TargetFrameworks?\>", RegexOptions.Multiline);
 
         private readonly HashSet<string> _solutionNames = new(StringComparer.InvariantCultureIgnoreCase);
         private readonly HashSet<string> _projectNames = new(StringComparer.InvariantCultureIgnoreCase);
