@@ -27,16 +27,18 @@ public class Project
     {
         public async Task<string> Handle(Request request, CancellationToken cancellationToken)
         {
+            if (!ValidateRequest(request, out var message))
+                return message;
+
+            ConfigureRequest(request);
+
             var settings = await settingsBuilder.BuildAsync(cancellationToken);
             var database = await databaseProvider.GetDatabaseAsync(settings.BranchName, cancellationToken);
-            var lookup = database.Projects.ToDictionary(p => p.Name);
+            var lookup = database.Projects.ToDictionary(p => p.Name, StringComparer.InvariantCultureIgnoreCase);
 
             // single project
             if (!request.IsList)
             {
-                if (string.IsNullOrEmpty(request.ProjectName))
-                    return "Must specify a project name or use the '--list' option";
-
                 if (!lookup.TryGetValue(request.ProjectName, out var project))
                     return "Project not found: " + request.ProjectName;
 
@@ -45,22 +47,18 @@ public class Project
 
                 if (request.IsListReferencedBy)
                 {
-                    logger.LogInformation("Referenced by:");
                     var projects = project.ReferencedBy.Select(p => lookup[p]).ToArray();
+                    logger.LogInformation($"Referenced by {projects.Length} projects: {IncludeCountsHeader(request)}");
                     ShowProjectsList(projects, request);
-                    return $"{projects.Length} projects reference {project.Name}";
                 }
 
                 if (request.IsListReferences)
                 {
-                    logger.LogInformation("References:");
                     var projects = project.References.Select(p => lookup[p]).ToArray();
+                    logger.LogInformation($"References {projects.Length} projects: {IncludeCountsHeader(request)}");
                     ShowProjectsList(projects, request);
-                    return $"{project.Name} references {projects.Length} projects";
                 }
 
-                logger.LogInformation($"References: {project.References.Count} projects");
-                logger.LogInformation($"Referenced by: {project.ReferencedBy.Count} projects");
                 return string.Empty;
             }
 
@@ -68,27 +66,69 @@ public class Project
             if (!string.IsNullOrEmpty(request.ProjectName))
             {
                 // filtered
-                var projects = database.Projects.Where(p => p.Name.Contains(request.ProjectName)).ToArray();
+                var projects = database.Projects.Where(p 
+                    => p.Name.Contains(request.ProjectName, StringComparison.InvariantCultureIgnoreCase)).ToArray();
+                logger.LogInformation($"Search found {projects.Length} projects: {IncludeCountsHeader(request)}");
                 ShowProjectsList(projects, request);
-                return $"Found {projects.Length} project matching '{request.ProjectName}'";
+                return string.Empty;
             }
 
             // all
             var all = database.Projects.ToArray();
+            logger.LogInformation($"Listing {all.Length} projects: {IncludeCountsHeader(request)}");
             ShowProjectsList(all, request);
-            return $"Found {all.Length} projects";
+            return string.Empty;
+        }
+
+        private void ConfigureRequest(Request request)
+        {
+            if (request is {IsList: false, IsListReferences: false, IsListReferencedBy: false})
+            {
+                request.IsListReferences = true;
+                request.IsListReferencedBy = true;
+            }
+        }
+
+        private static bool ValidateRequest(Request request, out string message)
+        {
+            if (!request.IsList && string.IsNullOrEmpty(request.ProjectName))
+            {
+                message = "Must specify a project name or use the '--list' option";
+                return false;
+            }
+
+            message = string.Empty;
+            return true;
+
+        }
+
+        private static string IncludeCountsHeader(Request request)
+        {
+            return (request.ShowListCounts ? "(uses / used by)" : "");
         }
 
         private void ShowProjectDetails(BranchDatabase.Project project)
         {
-            var isGood = project is {IsNetStandard2: true, IsPackageRef: true, IsSdk: true};
-            var status = isGood ? "✔️" : "Needs Work!";
-            logger.LogInformation($"Project: {project.Name} (status: {status})");
-            logger.LogInformation($"Path: {project.Path}");
-            logger.LogInformation($"Exists: {project.Exists}");
-            logger.LogInformation($"Is SDK: {project.IsSdk}");
-            logger.LogInformation($"Is NetStandard2: {project.IsNetStandard2}");
-            logger.LogInformation($"Is PackageRef: {project.IsPackageRef}");
+            var status = !project.Exists
+                ? "Missing"
+                : GetProjectStatus(project)
+                    ? "Done"
+                    : "Needs Work";
+            var glyph = GetProjectGlyph(project);
+            logger.LogInformation($"Project: {project.Name}");
+            logger.LogInformation($"Status: {status} {glyph}");
+
+
+            if (project.Exists)
+            {
+                logger.LogInformation($"Is SDK: {project.IsSdk}");
+                logger.LogInformation($"Is NetStandard2: {project.IsNetStandard2}");
+                logger.LogInformation($"Is PackageRef: {project.IsPackageRef}");
+            }
+            else
+            {
+                logger.LogInformation($"Exists: {project.Exists}");
+            }
             logger.LogInformation("----------");
         }
 
@@ -101,26 +141,50 @@ public class Project
         private void ShowProjectDetailsRow(BranchDatabase.Project project, Request request)
         {
             var stringBuilder = new StringBuilder();
-            stringBuilder.Append($" - {project.Name}");
+            var glyph = GetProjectGlyph(project);
+            stringBuilder.Append($"{glyph} - {project.Name}");
 
-            if (request.ShowListCounts) 
-                stringBuilder.Append($" (uses: {project.References.Count}, used by: {project.ReferencedBy.Count})");
-
-            if (request.ShowListTodos)
+            if (!project.Exists)
             {
-                var todos = new List<string>();
-                if (!project.IsNetStandard2) todos.Add("NETSTANDARD2");
-                if (!project.IsSdk) todos.Add("SDK upgrade");
-                if (!project.IsPackageRef) todos.Add("PackageReferences");
-
-                var todoList = string.Join(", ", todos);
-                if (todoList.Length > 0)
-                    stringBuilder.Append($" (todos: {todoList})");
-                else
-                    stringBuilder.Append(" (✔️)");
+                stringBuilder.Append(" (missing)");
+                logger.LogInformation(stringBuilder.ToString());
+                return;
             }
 
+            if (request.ShowListCounts)
+                stringBuilder.Append($" ({project.References.Count} / {project.ReferencedBy.Count})");
+
             logger.LogInformation(stringBuilder.ToString());
+
+            if (request.ShowListTodos)
+                LogTodos(project);
         }
+
+        private void LogTodos(BranchDatabase.Project project)
+        {
+            const string pattern = "    - todo: {0}";
+
+            if (!project.IsNetStandard2) 
+                logger.LogInformation(string.Format(pattern, "NETSTANDARD2"));
+
+            if (!project.IsSdk) 
+                logger.LogInformation(string.Format(pattern, "SDK upgrade"));
+
+            if (!project.IsPackageRef) 
+                logger.LogInformation(string.Format(pattern, "PackageReferences"));
+
+        }
+
+        private static string GetProjectGlyph(BranchDatabase.Project project)
+        {
+            if (!project.Exists)
+                return "❌";
+
+            var status = GetProjectStatus(project);
+            return status ? "✔️" : "⚠️";
+        }
+
+        private static bool GetProjectStatus(BranchDatabase.Project project) 
+            => project is {IsSdk: true, IsNetStandard2: true, IsPackageRef: true};
     }
 }
