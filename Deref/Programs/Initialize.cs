@@ -1,5 +1,7 @@
 ﻿using System.Text.RegularExpressions;
 using MediatR;
+using Microsoft.Extensions.DependencyInjection;
+using Serilog;
 using SharedKernel;
 
 namespace Deref.Programs;
@@ -15,11 +17,10 @@ public class Initialize
 
     public class Handler(
         IProgramSettingsBuilder settingsBuilder,
-        DefinitionSerializer<BranchSchema> serializer,
+        IDefinitionSerializer<BranchSchema> serializer,
         IFileStorage fileStorage) : IRequestHandler<Request, string>
     {
         private static readonly Regex _csProjReferenceRegex = new(@"""(?<relative_path>[\.-\\a-zA-Z\d]+\.csproj)""", RegexOptions.Multiline);
-
         private static readonly Regex _projectSdkRegex = new(@"<Project Sdk=", RegexOptions.Multiline);
         private static readonly Regex _projectNetStandardRegex = new(@"\<TargetFrameworks\>.*netstandard2\.0.*\<\/TargetFrameworks\>", RegexOptions.Multiline);
 
@@ -30,7 +31,7 @@ public class Initialize
 
         public async Task<string> Handle(Request request, CancellationToken cancellationToken)
         {
-            var settings = settingsBuilder.Build(request.BranchName, request.ResultsDirectoryPath);
+            var settings = await settingsBuilder.BuildAsync(request.BranchName, request.ResultsDirectoryPath, cancellationToken);
             ValidateRequest(settings, request);
 
             // reset all lists and dictionaries

@@ -13,4 +13,5 @@ public interface IFileStorage
     void CreateDirectory(string directoryPath);
 
     string[] GetFilePaths(string rootDirectory, string pattern, SearchOption options = SearchOption.AllDirectories);
+    string[] GetDirectoryNames(string rootDirectory);
 }
