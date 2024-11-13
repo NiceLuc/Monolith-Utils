@@ -25,6 +25,8 @@ public class Project
         IProgramSettingsBuilder settingsBuilder,
         IBranchDatabaseProvider databaseProvider) : IRequestHandler<Request, string>
     {
+        private const string _todoPattern = "    - todo: {0}";
+
         public async Task<string> Handle(Request request, CancellationToken cancellationToken)
         {
             if (!ValidateRequest(request, out var message))
@@ -65,7 +67,6 @@ public class Project
             // filtered
             if (!string.IsNullOrEmpty(request.ProjectName))
             {
-                // filtered
                 var projects = database.Projects.Where(p 
                     => p.Name.Contains(request.ProjectName, StringComparison.InvariantCultureIgnoreCase)).ToArray();
                 logger.LogInformation($"Search found {projects.Length} projects: {IncludeCountsHeader(request)}");
@@ -78,33 +79,6 @@ public class Project
             logger.LogInformation($"Listing {all.Length} projects: {IncludeCountsHeader(request)}");
             ShowProjectsList(all, request);
             return string.Empty;
-        }
-
-        private void ConfigureRequest(Request request)
-        {
-            if (request is {IsList: false, IsListReferences: false, IsListReferencedBy: false})
-            {
-                request.IsListReferences = true;
-                request.IsListReferencedBy = true;
-            }
-        }
-
-        private static bool ValidateRequest(Request request, out string message)
-        {
-            if (!request.IsList && string.IsNullOrEmpty(request.ProjectName))
-            {
-                message = "Must specify a project name or use the '--list' option";
-                return false;
-            }
-
-            message = string.Empty;
-            return true;
-
-        }
-
-        private static string IncludeCountsHeader(Request request)
-        {
-            return (request.ShowListCounts ? "(uses / used by)" : "");
         }
 
         private void ShowProjectDetails(BranchDatabase.Project project)
@@ -157,23 +131,43 @@ public class Project
             logger.LogInformation(stringBuilder.ToString());
 
             if (request.ShowListTodos)
-                LogTodos(project);
+            {
+                if (!project.IsNetStandard2)
+                    logger.LogInformation(string.Format(_todoPattern, "NETSTANDARD2"));
+
+                if (!project.IsSdk)
+                    logger.LogInformation(string.Format(_todoPattern, "SDK upgrade"));
+
+                if (!project.IsPackageRef)
+                    logger.LogInformation(string.Format(_todoPattern, "PackageReferences"));
+            }
         }
 
-        private void LogTodos(BranchDatabase.Project project)
+
+        private static bool ValidateRequest(Request request, out string message)
         {
-            const string pattern = "    - todo: {0}";
+            if (!request.IsList && string.IsNullOrEmpty(request.ProjectName))
+            {
+                message = "Must specify a project name or use the '--list' option";
+                return false;
+            }
 
-            if (!project.IsNetStandard2) 
-                logger.LogInformation(string.Format(pattern, "NETSTANDARD2"));
-
-            if (!project.IsSdk) 
-                logger.LogInformation(string.Format(pattern, "SDK upgrade"));
-
-            if (!project.IsPackageRef) 
-                logger.LogInformation(string.Format(pattern, "PackageReferences"));
+            message = string.Empty;
+            return true;
 
         }
+
+        private static void ConfigureRequest(Request request)
+        {
+            if (request is {IsList: false, IsListReferences: false, IsListReferencedBy: false})
+            {
+                request.IsListReferences = true;
+                request.IsListReferencedBy = true;
+            }
+        }
+
+        private static string IncludeCountsHeader(Request request) 
+            => request.ShowListCounts ? "(uses / used by)" : "";
 
         private static string GetProjectGlyph(BranchDatabase.Project project)
         {
