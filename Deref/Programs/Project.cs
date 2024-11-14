@@ -54,8 +54,9 @@ public class Project
                     ShowProjectsList("Referenced by", projects, request);
                 }
 
+                // always show solutions
                 var solutions = database.Solutions.ToDictionary(s => s.Name, StringComparer.InvariantCultureIgnoreCase);
-                logger.LogInformation($"Found in {project.Solutions.Count} solutions:");
+                logger.LogInformation($"Found in {project.Solutions.Count} solution(s):");
                 ShowSolutionsList(project, solutions);
                 return string.Empty;
             }

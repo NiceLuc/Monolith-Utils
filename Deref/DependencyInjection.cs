@@ -1,4 +1,5 @@
-﻿using Microsoft.Extensions.DependencyInjection;
+﻿using CommandLine;
+using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 using SharedKernel;
 
@@ -15,6 +16,14 @@ internal static class DependencyInjection
 
         services.AddSingleton<IDefinitionSerializer<BranchDatabase>, DefinitionSerializer<BranchDatabase>>();
         services.AddSingleton<IDefinitionSerializer<ProgramConfig>, DefinitionSerializer<ProgramConfig>>();
+
+        services.AddSingleton(_ => new Parser(config =>
+        {
+            config.CaseInsensitiveEnumValues = true;
+            config.HelpWriter = Console.Out;
+            config.AutoHelp = true;
+            config.AutoVersion = true;
+        }));
 
         services.Configure<AppSettings>(context.Configuration.GetSection("AppSettings"));
 

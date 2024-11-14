@@ -30,6 +30,7 @@ var builder = Host.CreateDefaultBuilder(args)
     });
 
 using var host = builder.Build();
+var parser = host.Services.GetRequiredService<Parser>();
 var mediator = host.Services.GetRequiredService<IMediator>();
 
 // parse the command line arguments and call appropriate handler
@@ -40,7 +41,7 @@ var mediator = host.Services.GetRequiredService<IMediator>();
 // -p, --project: The name of the project file you want to parse
 // -r, --report: The name of the report file you want to generate
 // -x, --open: Open the report file after it is generated
-Parser.Default.ParseArguments<InitializeOptions, BranchOptions, ProjectOptions>(args)
+parser.ParseArguments<InitializeOptions, BranchOptions, ProjectOptions>(args)
     .WithParsed<InitializeOptions>(RunInitProgram)
     .WithParsed<BranchOptions>(RunBranchProgram)
     .WithParsed<ProjectOptions>(RunProjectProgram);
