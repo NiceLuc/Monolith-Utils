@@ -1,5 +1,6 @@
 ﻿using System.Text.RegularExpressions;
 using MediatR;
+using Microsoft.Extensions.Logging;
 using SharedKernel;
 
 namespace Deref.Programs;
@@ -13,22 +14,64 @@ public class Initialize
         public bool ForceOverwrite { get; set; }
     }
 
+    public enum ProjectTypes { Sdk, Old, Directory, Wix }
+
+    private class SolutionReference
+    {
+        public ProjectTypes ProjectType { get; set; }
+        public string ProjectPath { get; set; }
+    }
+
     public class Handler(
+        ILogger<Handler> logger,
         IProgramSettingsBuilder settingsBuilder,
         IDefinitionSerializer<BranchDatabase> serializer,
         IFileStorage fileStorage) : IRequestHandler<Request, string>
     {
-        private static readonly Regex _csProjReferenceRegex = new(@"""(?<relative_path>[\.-\\a-zA-Z\d]+\.csproj)""", RegexOptions.Multiline);
-        private static readonly Regex _projectSdkRegex = new(@"<Project Sdk=", RegexOptions.Multiline);
-        private static readonly Regex _projectNetStandardRegex = new(@"\<TargetFrameworks?\>.*netstandard2\.0.*\<\/TargetFrameworks?\>", RegexOptions.Multiline);
+        /*
+         * Solution Patterns:
+             * sdk style guid: 9A19103F-16F7-4668-BE54-9A1E7A4F7556
+             * old style guid: FAE04EC0-301F-11D3-BF4B-00C04F79EFBC
+             * directory guid: 2150E333-8FDC-42A3-9474-1A3956D46DE8
+             * wix project guid: 930C7802-8A8C-48F9-8165-68863BCCD9DD
+
+         * Project Patterns:
+         *      assembly name: <AssemblyName>{{name}}</AssemblyName>
+         *      sdk style: <Project Sdk="Microsoft.NET.Sdk">
+         *      framework: <TargetFramework>netstandard2.0</TargetFramework>
+         *      references: <ProjectReference Include="{{project file path}}" />
+
+         * WixProj Patterns:
+         *      wsx file: <Compile Include="{{wix file path}}" />
+         *      project file: <ProjectReference Include="{{project file path}}" />
+         *
+         * Wxs Patterns:
+         *      binary file: <File Source="$(var.API.TargetDir)inContact.Caching.dll" />
+         */
+        private static readonly Regex _slnProjectsRegex = new(@"Project\(""\{(?<project_type>.+?)\}""\).+?""(?<project_name>.+?)"".+?""(?<project_path>.+?\.(cs|wix)proj)"".+?""\{(?<project_guid>.+?)\}""", RegexOptions.Multiline);
+
+        private static readonly Regex _csProjReferenceRegex = new(@"ProjectReference Include=""(?<project_path>.+?)""", RegexOptions.Multiline);
+        private static readonly Regex _csProjSdkRegex = new(@"<Project Sdk=", RegexOptions.Multiline);
+        private static readonly Regex _csProjNetStandardRegex = new(@"\<TargetFrameworks?\>.*netstandard2\.0.*\<\/TargetFrameworks?\>", RegexOptions.Multiline);
+
+        private readonly Dictionary<string, ProjectTypes> _projectTypes = new()
+        {
+            { "9A19103F-16F7-4668-BE54-9A1E7A4F7556", ProjectTypes.Sdk },
+            { "FAE04EC0-301F-11D3-BF4B-00C04F79EFBC", ProjectTypes.Old },
+            { "2150E333-8FDC-42A3-9474-1A3956D46DE8", ProjectTypes.Directory },
+            { "930C7802-8A8C-48F9-8165-68863BCCD9DD", ProjectTypes.Wix }
+        };
 
         private readonly HashSet<string> _solutionNames = new(StringComparer.InvariantCultureIgnoreCase);
         private readonly HashSet<string> _projectNames = new(StringComparer.InvariantCultureIgnoreCase);
+        //private readonly HashSet<string> _wixProjNames = new(StringComparer.InvariantCultureIgnoreCase);
 
         private readonly Dictionary<string, BranchDatabase.Solution> _solutions = new();
         private readonly Dictionary<string, BranchDatabase.Project> _projects = new();
-        private readonly Queue<string> _projectFilesToScan = new();
+        //private readonly Dictionary<string, BranchDatabase.WixProj> _wixProjects = new();
 
+        private readonly Queue<string> _projectFilesToScan = new();
+        //private readonly Queue<string> _wixProjFilesToScan = new();
 
         public async Task<string> Handle(Request request, CancellationToken cancellationToken)
         {
@@ -45,15 +88,38 @@ public class Initialize
             // scan all solution files and queue all project files for scanning
             foreach (var build in settings.BuildSolutions)
             {
-                await ScanSolutionFileAsync(build.SolutionPath, (solution, projectPaths) =>
+                await ScanSolutionFileAsync(build.SolutionPath, (solution, references) =>
                 {
                     solution.Builds.Add(build.BuildName);
 
-                    foreach (var projectPath in projectPaths)
+                    foreach (var reference in references.Where(r => r.ProjectType != ProjectTypes.Directory))
                     {
-                        var project = GetOrAddProject(projectPath);
-                        project.Solutions.Add(solution.Name);
-                        solution.Projects.Add(project.Name);
+                        // validate type here
+                        if (reference.ProjectType == ProjectTypes.Wix)
+                        {
+                            // todo: scan for project references and wxs files to scan
+                            // todo: loop through all project references and add wix name
+                            // todo: queue wixproj files to scan
+                            /*
+                            var wixProj = GetOrAddWixProj(reference.ProjectPath, isHarvested: false);
+                                            -> _wixProjFilesToScan.Enqueue(reference.ProjectPath);
+                            wixProj.Solutions.Add(solution.Name);
+                            solution.WixProjects.Add(wixProj.Name);
+                             */
+                            logger.LogWarning("TODO: " + reference.ProjectPath);
+                            continue;
+                        }
+
+                        if (reference.ProjectType == ProjectTypes.Old || reference.ProjectType == ProjectTypes.Sdk)
+                        {
+                            var project = GetOrAddProject(reference.ProjectPath);
+                            project.Solutions.Add(solution.Name);
+                            solution.Projects.Add(project.Name);
+                            continue;
+                        }
+
+                        throw new InvalidOperationException($"Solution reference not supported: {reference.ProjectType}");
+
                     }
                 }, cancellationToken);
 
@@ -101,7 +167,7 @@ public class Initialize
                     $"Results directory already exists: {settings.TempDirectory} (use -f to overwrite)");
         }
         
-        private async Task ScanSolutionFileAsync(string solutionPath, Action<BranchDatabase.Solution, string[]> callback, CancellationToken cancellationToken)
+        private async Task ScanSolutionFileAsync(string solutionPath, Action<BranchDatabase.Solution, SolutionReference[]> callback, CancellationToken cancellationToken)
         {
             var solution = GetOrAddSolution(solutionPath);
             if (!solution.Exists)
@@ -115,15 +181,29 @@ public class Initialize
             var solutionFile = await fileStorage.ReadAllTextAsync(solutionPath, cancellationToken);
             var solutionDirectory = Path.GetDirectoryName(solutionPath)!;
 
-            var projectPaths = new List<string>();
-            foreach (Match match in _csProjReferenceRegex.Matches(solutionFile))
+            var solutionItems = new List<SolutionReference>();
+            foreach (Match match in _slnProjectsRegex.Matches(solutionFile))
             {
-                var projectPath = Path.Combine(solutionDirectory, match.Groups["relative_path"].Value);
-                projectPaths.Add(Path.GetFullPath(projectPath));
+                var guid = match.Groups["project_type"].Value;
+                if (!_projectTypes.TryGetValue(guid, out var type))
+                {
+                    logger.LogWarning("Project type not supported: " + match.Groups["project_path"].Value);
+                    continue;
+                }
+
+                var relativePath = Path.Combine(solutionDirectory, match.Groups["project_path"].Value);
+                var projectPath = Path.GetFullPath(relativePath);
+                var reference = new SolutionReference
+                {
+                    ProjectType = type,
+                    ProjectPath = projectPath
+                };
+
+                solutionItems.Add(reference);
             }
 
             // let the caller add build name and project references
-            callback(solution, projectPaths.ToArray());
+            callback(solution, solutionItems.ToArray());
         }
 
         private async Task ScanProjectFileAsync(string projectPath, Action<BranchDatabase.Project, string[]> callback, CancellationToken cancellationToken)
@@ -131,25 +211,28 @@ public class Initialize
             if (!_projects.TryGetValue(projectPath, out var project))
                 throw new InvalidOperationException($"Project not in dictionary: {projectPath}");
 
-            var projectFile = await fileStorage.ReadAllTextAsync(projectPath, cancellationToken);
-
-            project.IsSdk = _projectSdkRegex.IsMatch(projectFile);
-            project.IsNetStandard2 = _projectNetStandardRegex.IsMatch(projectFile);
+            var projectXml = await fileStorage.ReadAllTextAsync(projectPath, cancellationToken);
+            project.AssemblyName = GetAssemblyName(projectPath, projectXml);
+            project.PdbFileName = GetPdbFileName(project.AssemblyName);
+            project.IsSdk = _csProjSdkRegex.IsMatch(projectXml);
+            project.IsNetStandard2 = _csProjNetStandardRegex.IsMatch(projectXml);
 
             var projectDirectory = Path.GetDirectoryName(projectPath)!;
             var packagesConfig = Path.Combine(projectDirectory, "packages.config");
             project.IsPackageRef = !fileStorage.FileExists(packagesConfig);
 
             var projectPaths = new List<string>();
-            foreach (Match match in _csProjReferenceRegex.Matches(projectFile))
+            foreach (Match match in _csProjReferenceRegex.Matches(projectXml))
             {
-                var referencePath = Path.Combine(projectDirectory, match.Groups["relative_path"].Value);
-                projectPaths.Add(Path.GetFullPath(referencePath));
+                var relativePath = Path.Combine(projectDirectory, match.Groups["project_path"].Value);
+                var referencePath = Path.GetFullPath(relativePath);
+                projectPaths.Add(referencePath);
             }
 
             // let the caller add and manage project references
             callback(project, projectPaths.ToArray());
         }
+
 
         private BranchDatabase.Solution GetOrAddSolution(string solutionPath)
         {
@@ -198,6 +281,38 @@ public class Initialize
             }
 
             return name;
+        }
+
+        private static string GetAssemblyName(string projectFilePath, string projectXml)
+        {
+            // Define regex patterns
+            const string assemblyNamePattern = @"<AssemblyName>(.*?)<\/AssemblyName>";
+            const string outputTypePattern = @"<OutputType>(.*?)<\/OutputType>";
+
+            // Match AssemblyName
+            var assemblyNameMatch = Regex.Match(projectXml, assemblyNamePattern, RegexOptions.IgnoreCase);
+            var assemblyName = assemblyNameMatch.Success
+                ? assemblyNameMatch.Groups[1].Value
+                : Path.GetFileNameWithoutExtension(projectFilePath);
+
+            // Match OutputType
+            var outputTypeMatch = Regex.Match(projectXml, outputTypePattern, RegexOptions.IgnoreCase);
+            var outputType = outputTypeMatch.Success ? outputTypeMatch.Groups[1].Value : "Library";
+
+            // Determine the file extension
+            var extension = outputType.Equals("Exe", StringComparison.OrdinalIgnoreCase) ? ".exe" : ".dll";
+
+            // Return the assembly name with the correct extension
+            return $"{assemblyName}{extension}";
+        }
+
+        private static string GetPdbFileName(string assemblyName)
+        {
+            var lastIndex = assemblyName.LastIndexOf('.');
+            if (lastIndex < 0)
+                return assemblyName + ".pdb";
+
+            return assemblyName[..lastIndex] + ".pdb";
         }
     }
 }

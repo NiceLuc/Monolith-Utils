@@ -9,6 +9,8 @@ public class BranchDatabase
 
     public record Project(string Name, string Path, bool Exists) : SchemaRecord(Name, Path, Exists)
     {
+        public string AssemblyName { get; set; }
+        public string PdbFileName { get; set; }
         public bool IsSdk { get; set; }
         public bool IsNetStandard2 { get; set; }
         public bool IsPackageRef { get; set; }
