@@ -14,14 +14,6 @@ public class Initialize
         public bool ForceOverwrite { get; set; }
     }
 
-    public enum ProjectTypes { Sdk, Old, Directory, Wix }
-
-    private class SolutionReference
-    {
-        public ProjectTypes ProjectType { get; set; }
-        public string ProjectPath { get; set; }
-    }
-
     public class Handler(
         ILogger<Handler> logger,
         IProgramSettingsBuilder settingsBuilder,
@@ -29,12 +21,6 @@ public class Initialize
         IFileStorage fileStorage) : IRequestHandler<Request, string>
     {
         /*
-         * Solution Patterns:
-             * sdk style guid: 9A19103F-16F7-4668-BE54-9A1E7A4F7556
-             * old style guid: FAE04EC0-301F-11D3-BF4B-00C04F79EFBC
-             * directory guid: 2150E333-8FDC-42A3-9474-1A3956D46DE8
-             * wix project guid: 930C7802-8A8C-48F9-8165-68863BCCD9DD
-
          * Project Patterns:
          *      assembly name: <AssemblyName>{{name}}</AssemblyName>
          *      sdk style: <Project Sdk="Microsoft.NET.Sdk">
@@ -54,24 +40,27 @@ public class Initialize
         private static readonly Regex _csProjSdkRegex = new(@"<Project Sdk=", RegexOptions.Multiline);
         private static readonly Regex _csProjNetStandardRegex = new(@"\<TargetFrameworks?\>.*netstandard2\.0.*\<\/TargetFrameworks?\>", RegexOptions.Multiline);
 
+        private static readonly Regex _wixProjReferenceRegex = new(@"<Compile Include=""(?<wix_path>.+?\.wxs)""", RegexOptions.Multiline);
+        private static readonly Regex _wxsAssemblyNameRegex = new(@"File.+?Source=""\$\(.+?\)(?<assembly_name>.+?\.dll)""", RegexOptions.Multiline);
+
         private readonly Dictionary<string, ProjectTypes> _projectTypes = new()
         {
             { "9A19103F-16F7-4668-BE54-9A1E7A4F7556", ProjectTypes.Sdk },
             { "FAE04EC0-301F-11D3-BF4B-00C04F79EFBC", ProjectTypes.Old },
-            { "2150E333-8FDC-42A3-9474-1A3956D46DE8", ProjectTypes.Directory },
             { "930C7802-8A8C-48F9-8165-68863BCCD9DD", ProjectTypes.Wix }
         };
 
         private readonly HashSet<string> _solutionNames = new(StringComparer.InvariantCultureIgnoreCase);
         private readonly HashSet<string> _projectNames = new(StringComparer.InvariantCultureIgnoreCase);
-        //private readonly HashSet<string> _wixProjNames = new(StringComparer.InvariantCultureIgnoreCase);
+        private readonly HashSet<string> _wixProjNames = new(StringComparer.InvariantCultureIgnoreCase);
 
-        private readonly Dictionary<string, BranchDatabase.Solution> _solutions = new();
-        private readonly Dictionary<string, BranchDatabase.Project> _projects = new();
-        //private readonly Dictionary<string, BranchDatabase.WixProj> _wixProjects = new();
+        private readonly Dictionary<string, BranchDatabase.Solution> _solutions = new(StringComparer.InvariantCultureIgnoreCase);
+        private readonly Dictionary<string, BranchDatabase.Project> _projects = new(StringComparer.InvariantCultureIgnoreCase);
+        private readonly Dictionary<string, BranchDatabase.WixProj> _wixProjects = new(StringComparer.InvariantCultureIgnoreCase);
 
         private readonly Queue<string> _projectFilesToScan = new();
-        //private readonly Queue<string> _wixProjFilesToScan = new();
+        private readonly Queue<string> _wixProjFilesToScan = new();
+
 
         public async Task<string> Handle(Request request, CancellationToken cancellationToken)
         {
@@ -80,10 +69,15 @@ public class Initialize
 
             // reset all lists and dictionaries
             _projectFilesToScan.Clear();
+            _wixProjFilesToScan.Clear();
+
             _solutionNames.Clear();
             _projectNames.Clear();
+            _wixProjNames.Clear();
+
             _solutions.Clear();
             _projects.Clear();
+            _wixProjects.Clear();
 
             // scan all solution files and queue all project files for scanning
             foreach (var build in settings.BuildSolutions)
@@ -92,21 +86,14 @@ public class Initialize
                 {
                     solution.Builds.Add(build.BuildName);
 
-                    foreach (var reference in references.Where(r => r.ProjectType != ProjectTypes.Directory))
+                    foreach (var reference in references)
                     {
                         // validate type here
                         if (reference.ProjectType == ProjectTypes.Wix)
                         {
-                            // todo: scan for project references and wxs files to scan
-                            // todo: loop through all project references and add wix name
-                            // todo: queue wixproj files to scan
-                            /*
-                            var wixProj = GetOrAddWixProj(reference.ProjectPath, isHarvested: false);
-                                            -> _wixProjFilesToScan.Enqueue(reference.ProjectPath);
+                            var wixProj = GetOrAddWixProj(reference.ProjectPath);
                             wixProj.Solutions.Add(solution.Name);
                             solution.WixProjects.Add(wixProj.Name);
-                             */
-                            logger.LogWarning("TODO: " + reference.ProjectPath);
                             continue;
                         }
 
@@ -141,11 +128,47 @@ public class Initialize
                 }, cancellationToken);
             }
 
+            // scan each wix project file one by one.
+            // note: we provide the assembly  names to scan our wxs files for harvested binaries
+            var assemblyNames = _projects.Values
+                .Where(p => p.Exists) // file must exist!
+                .Where(p => !p.Path.Contains("Test", StringComparison.OrdinalIgnoreCase)) // don't want test projects
+                .ToDictionary(p => p.AssemblyName, p => p.Name);
+
+            while (_wixProjFilesToScan.Count > 0)
+            {
+                var wixProjectPath = _wixProjFilesToScan.Dequeue();
+
+                await ScanWixProjectFileAsync(wixProjectPath, assemblyNames, (wixProject, references) =>
+                {
+                    foreach (var reference in references)
+                    {
+                        if (!_projects.TryGetValue(reference.ProjectName, out var project))
+                        {
+                            logger.LogWarning("Wix project reference not found: " + reference);
+                            continue;
+                        }
+
+                        // add a reference to the project from the wix entry
+                        var wixReference = new BranchDatabase.WixProjectReference(project.Name, reference.IsHarvested);
+                        wixProject.ProjectReferences.Add(wixReference);
+
+                        // add a reference to the wix entry from the project
+                        var projectReference = new BranchDatabase.WixProjectReference(wixProject.Name, reference.IsHarvested);
+                        project.WixProjects.Add(projectReference);
+                    }
+                }, cancellationToken);
+            }
+
+            // todo: scan for project references and wxs files to scan
+            // todo: loop through all project references and add wix name
+
             // persist the results to a json file
             var data = new BranchDatabase
             {
                 Solutions = _solutions.Values.ToList(),
                 Projects = _projects.Values.ToList(),
+                WixProjects = _wixProjects.Values.ToList()
             };
 
             var filePath = Path.Combine(settings.TempDirectory, "db.json");
@@ -193,12 +216,7 @@ public class Initialize
 
                 var relativePath = Path.Combine(solutionDirectory, match.Groups["project_path"].Value);
                 var projectPath = Path.GetFullPath(relativePath);
-                var reference = new SolutionReference
-                {
-                    ProjectType = type,
-                    ProjectPath = projectPath
-                };
-
+                var reference = new SolutionReference(type, projectPath);
                 solutionItems.Add(reference);
             }
 
@@ -231,6 +249,75 @@ public class Initialize
 
             // let the caller add and manage project references
             callback(project, projectPaths.ToArray());
+        }
+
+        private async Task ScanWixProjectFileAsync(string wixProjectFilePath, Dictionary<string, string> assemblyNames,
+            Action<BranchDatabase.WixProj, WixReference[]> callback, CancellationToken cancellationToken)
+        {
+            if (!_wixProjects.TryGetValue(wixProjectFilePath, out var wixProject))
+                throw new InvalidOperationException($"Wix project not in dictionary: {wixProjectFilePath}");
+
+            var wixProjXml = await fileStorage.ReadAllTextAsync(wixProjectFilePath, cancellationToken);
+            wixProject.IsSdk = _csProjSdkRegex.IsMatch(wixProjXml);
+
+            var projectDirectory = Path.GetDirectoryName(wixProjectFilePath)!;
+            var packagesConfig = Path.Combine(projectDirectory, "packages.config");
+            wixProject.IsPackageRef = !fileStorage.FileExists(packagesConfig);
+
+            var references = new List<WixReference>();
+
+            // capture all referenced projects in the wix project file
+            foreach (Match match in _csProjReferenceRegex.Matches(wixProjXml))
+            {
+                var relativePath = Path.Combine(projectDirectory, match.Groups["project_path"].Value);
+                var projectPath = Path.GetFullPath(relativePath);
+                if (!_projects.TryGetValue(projectPath, out var project))
+                {
+                    logger.LogError($"Wix project reference not found: {projectPath}");
+                    continue;
+                }
+
+                var reference = new WixReference(project.Name, false);
+                references.Add(reference);
+            }
+
+            // find all harvested projects associated with this wix project file
+            var wxsFilePaths = new List<string>();
+            if (wixProject.IsSdk)
+            {
+                wxsFilePaths.AddRange(fileStorage.GetFilePaths(projectDirectory, "*.wxs"));
+            }
+            else
+            {
+                foreach (Match match in _wixProjReferenceRegex.Matches(wixProjXml))
+                {
+                    var relativePath = Path.Combine(projectDirectory, match.Groups["wix_path"].Value);
+                    var wxsPath = Path.GetFullPath(relativePath);
+                    wxsFilePaths.Add(wxsPath);
+                }
+            }
+
+            foreach (var wxsFilePath in wxsFilePaths)
+            {
+                var wxsXml = await fileStorage.ReadAllTextAsync(wxsFilePath, cancellationToken);
+                foreach (Match match in _wxsAssemblyNameRegex.Matches(wxsXml))
+                {
+                    var assemblyName = match.Groups["assembly_name"].Value;
+                    var assemblyNameIndex = assemblyName.LastIndexOf("\\", StringComparison.OrdinalIgnoreCase);
+                    if (assemblyNameIndex >= 0)
+                        assemblyName = assemblyName[(assemblyNameIndex + 1)..];
+
+                    // this is not a project reference, but a harvested binary reference
+                    if (!assemblyNames.TryGetValue(assemblyName, out var projectName))
+                        continue;
+
+                    var reference = new WixReference(projectName, true);
+                    references.Add(reference);
+                }
+            }
+
+            // let the caller add and manage project references
+            callback(wixProject, references.ToArray());
         }
 
 
@@ -268,6 +355,27 @@ public class Initialize
 
             return project;
         }
+
+        private BranchDatabase.WixProj GetOrAddWixProj(string projectPath)
+        {
+            if (!_wixProjects.TryGetValue(projectPath, out var project))
+            {
+                var projectName = Path.GetFileNameWithoutExtension(projectPath);
+                projectName = GetUniqueName(projectName, _wixProjNames.Contains);
+                var exists = fileStorage.FileExists(projectPath);
+                project = new BranchDatabase.WixProj(projectName, projectPath, exists);
+                _wixProjNames.Add(projectName);
+                _wixProjects.Add(projectPath, project);
+
+                // if the file exists, then we must queue the file to be scanned
+                // later for any references it may have to wxs files and other cs projects
+                if (exists)
+                    _wixProjFilesToScan.Enqueue(projectPath);
+            }
+
+            return project;
+        }
+
 
         private static string GetUniqueName(string baseName, Func<string, bool> hasKey)
         {
@@ -315,4 +423,8 @@ public class Initialize
             return assemblyName[..lastIndex] + ".pdb";
         }
     }
+
+    private enum ProjectTypes { Sdk, Old, Wix }
+    private record SolutionReference(ProjectTypes ProjectType, string ProjectPath);
+    private record WixReference(string ProjectName, bool IsHarvested);
 }
