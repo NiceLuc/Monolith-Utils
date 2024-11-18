@@ -10,6 +10,7 @@ using Serilog;
 
 // TODO: Figure out why the console app is not respecting the launchSettings.json environment variable
 //Environment.SetEnvironmentVariable("ASPNETCORE_ENVIRONMENT", "Development");
+Environment.CurrentDirectory = AppContext.BaseDirectory;
 var builder = Host.CreateDefaultBuilder(args)
     .ConfigureAppConfiguration((context, config) =>
     {
