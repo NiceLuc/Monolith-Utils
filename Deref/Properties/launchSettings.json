@@ -2,7 +2,7 @@
   "profiles": {
     "Deref": {
       "commandName": "Project",
-      "commandLineArgs": "init -fb MAIN"
+      "commandLineArgs": "wix"
     }
   }
 }

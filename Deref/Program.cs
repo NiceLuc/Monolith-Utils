@@ -42,10 +42,11 @@ var mediator = host.Services.GetRequiredService<IMediator>();
 // -p, --project: The name of the project file you want to parse
 // -r, --report: The name of the report file you want to generate
 // -x, --open: Open the report file after it is generated
-parser.ParseArguments<InitializeOptions, BranchOptions, ProjectOptions>(args)
+parser.ParseArguments<InitializeOptions, BranchOptions, ProjectOptions, WixOptions>(args)
     .WithParsed<InitializeOptions>(RunInitProgram)
     .WithParsed<BranchOptions>(RunBranchProgram)
-    .WithParsed<ProjectOptions>(RunProjectProgram);
+    .WithParsed<ProjectOptions>(RunProjectProgram)
+    .WithParsed<WixOptions>(RunWixProgram);
 
 return;
 
@@ -84,6 +85,12 @@ void RunProjectProgram(ProjectOptions options)
         ShowListTodos = options.ShowListTodos,
     };
 
+    SendRequest(request);
+}
+
+void RunWixProgram(WixOptions options)
+{
+    var request = new Wix.Request();
     SendRequest(request);
 }
 
