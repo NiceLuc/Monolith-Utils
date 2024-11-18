@@ -22,4 +22,7 @@ internal class ProjectOptions
 
     [Option('t', "todos", HelpText = "List current features needed for each project.")]
     public bool ShowListTodos { get; set; }
+
+    [Option("recursive", HelpText = "Return a unique list of all references referenced for any project.")]
+    public bool IsRecursive { get; set; }
 }

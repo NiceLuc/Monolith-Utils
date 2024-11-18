@@ -1,3 +1,54 @@
+﻿# Monolith Utils Setup
+
+## Download latest Monolith-Utils github repository.
+
+* Github Desktop download: [Download GitHub Desktop](https://desktop.github.com/download/)
+* Compile the project and make sure it builds (✅).
+* Ensure the **deref/appsettings.json** file points to correct paths!
+	* After changes, be sure to compile again!
+
+## Setup Command Line Environment:
+
+Our tool is **100% command line**, and **VERY powerful**! 
+
+Before continuing, it's best to have a command-line accessible text editor.
+If you don't already have one, consider using **Visual Studio Code**
+* Download latest [Visual Studio Code](https://code.visualstudio.com/download)
+	
+## Open Command Line
+Open up a linux-based command line tool (Github has one or you can use WSL).
+ 
+```shell
+touch ~/.bashrc && code ~/.bashrc
+```
+
+In your `.bashrc` file, add the following lines to the bottom of your file:
+* If you are using WSL, be sure to put `/mnt` before all file paths.
+
+```shell
+alias deref="/c/…/Monolith-Utils/Deref/bin/debug/net8.0/deref.exe"
+```
+
+**Save and close.**
+
+Back at your command line, type the following:
+
+```shell	
+source ~/.bashrc
+
+deref --help
+```
+
+Should see output.
+
+# Using Monolith Utils
+
+-----
+
+There are 2 main libraries that are versioned in this repository:
+* `delinq` - Used to convert LINQ queries to Repository pattern.
+* `deref` - Used to understand all solutions and projects in a monolith directory structure.
+
 # Delinq CLI - Linq Conversion Tool
 
 This app will parse a LINQ designer file and extract the necessary data that it needs to recreate the queries to a backing "Repository" approach. This will allow the queries to be run against a database without the need for the LINQ designer file.
@@ -93,6 +144,22 @@ Reads the json file generated from the `verify` results and generates a report o
 
 ```powershell
 $> delinq report "c:\temp\Verification.json"
+```
+
+-----
+# Deref CLI - Monolith Solution and Project Analyzer
+
+For now, we don't have a lot of information, as it's evolving very fast. 
+
+For now, simply use the following:
+
+```shell
+deref --help
+deref branch --help
+deref init --help
+deref project --help
+deref solution --help
+deref wix --help
 ```
 
 ## For More Information

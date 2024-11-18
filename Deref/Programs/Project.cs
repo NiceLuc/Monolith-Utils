@@ -14,6 +14,7 @@ public class Project
         public bool IsListReferencedBy { get; set; }
         public bool ShowListCounts { get; set; }
         public bool ShowListTodos { get; set; }
+        public bool IsRecursive { get; set; }
     }
 
     public class Handler(ILogger<Handler> logger,
@@ -44,13 +45,13 @@ public class Project
 
                 if (request.IsListReferences)
                 {
-                    var projects = project.References.Select(p => lookup[p]).ToArray();
+                    var projects = GetProjectsReferencing(project, lookup, request.IsRecursive);
                     ShowProjectsList("References", projects, request);
                 }
 
                 if (request.IsListReferencedBy)
                 {
-                    var projects = project.ReferencedBy.Select(p => lookup[p]).ToArray();
+                    var projects = GetProjectsReferencedBy(project, lookup, request.IsRecursive);
                     ShowProjectsList("Referenced by", projects, request);
                 }
 
@@ -125,9 +126,9 @@ public class Project
             }
             else
             {
-                logger.LogInformation($"{prefix} {projects.Length} projects: {IncludeCountsHeader(request)}");
+                logger.LogInformation($"{prefix} {projects.Length} projects{(request.IsRecursive ? " (RECURSIVELY)" : "")}: {IncludeCountsHeader(request)}");
 
-                foreach (var project in projects) 
+                foreach (var project in projects.OrderBy(p => p.Name)) 
                     ShowProjectDetailsRow(project, request);
             }
 
@@ -177,6 +178,56 @@ public class Project
             message = string.Empty;
             return true;
 
+        }
+
+        private static BranchDatabase.Project[] GetProjectsReferencedBy(BranchDatabase.Project project, Dictionary<string, BranchDatabase.Project> lookup, bool isRecursive)
+        {
+            if (!isRecursive)
+                return project.ReferencedBy.Select(p => lookup[p]).ToArray();
+
+            var result = new Dictionary<string, BranchDatabase.Project>();
+            CaptureProjectNames(project);
+            return result.Values.ToArray();
+
+            void CaptureProjectNames(BranchDatabase.Project current)
+            {
+                foreach(var name in current.ReferencedBy)
+                {
+                    if (result.ContainsKey(name))
+                        continue;
+
+                    var next = lookup[name];
+                    result.Add(name, next);
+
+                    // note: recursion!
+                    CaptureProjectNames(next);
+                }
+            }
+        }
+
+        private static BranchDatabase.Project[] GetProjectsReferencing(BranchDatabase.Project project, Dictionary<string, BranchDatabase.Project> lookup, bool isRecursive)
+        {
+            if (!isRecursive)
+                return project.References.Select(p => lookup[p]).ToArray();
+
+            var result = new Dictionary<string, BranchDatabase.Project>();
+            CaptureProjectNames(project);
+            return result.Values.ToArray();
+
+            void CaptureProjectNames(BranchDatabase.Project current)
+            {
+                foreach(var name in current.References)
+                {
+                    if (result.ContainsKey(name))
+                        continue;
+
+                    var next = lookup[name];
+                    result.Add(name, next);
+
+                    // note: recursion!
+                    CaptureProjectNames(next);
+                }
+            }
         }
 
         private static string IncludeCountsHeader(Request request) 

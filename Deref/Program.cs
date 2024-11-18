@@ -83,6 +83,7 @@ void RunProjectProgram(ProjectOptions options)
         IsList = options.IsList,
         ShowListCounts = options.ShowListCounts,
         ShowListTodos = options.ShowListTodos,
+        IsRecursive = options.IsRecursive
     };
 
     SendRequest(request);
