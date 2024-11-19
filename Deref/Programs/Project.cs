@@ -12,6 +12,7 @@ public class Project
         public bool IsList { get; set; }
         public bool IsListReferences { get; set; }
         public bool IsListReferencedBy { get; set; }
+        public bool IsListWixProjects { get; set; }
         public bool ShowListCounts { get; set; }
         public bool ShowListTodos { get; set; }
         public bool IsRecursive { get; set; }
@@ -53,6 +54,12 @@ public class Project
                 {
                     var projects = GetProjectsReferencedBy(project, lookup, request.IsRecursive);
                     ShowProjectsList("Referenced by", projects, request);
+                }
+
+                if (request.IsListWixProjects)
+                {
+                    var wixLookup = database.WixProjects.ToDictionary(w => w.Name, StringComparer.InvariantCultureIgnoreCase);
+                    ShowWixProjectList(project.WixProjects, wixLookup);
                 }
 
                 // always show solutions
@@ -135,6 +142,39 @@ public class Project
             logger.LogInformation(_separator);
         }
 
+        private void ShowWixProjectList(List<BranchDatabase.WixProjectReference> wixProjects, Dictionary<string, BranchDatabase.WixProj> lookup)
+        {
+            if (wixProjects.Count == 0)
+            {
+                logger.LogInformation($"Not referenced in any wix projects");
+            }
+            else
+            {
+                logger.LogInformation($"Found in {wixProjects.Count} wix projects: (note: * = IsHarvested)");
+                var names = wixProjects
+                    .Select(w => w.ProjectName)
+                    .Distinct()
+                    .ToDictionary(w => w, StringComparer.InvariantCultureIgnoreCase);
+
+                foreach (var wixProject in wixProjects.Where(w => w.IsHarvested))
+                {
+                    var name = names[wixProject.ProjectName];
+                    names[wixProject.ProjectName] = "(*) " + name;
+                }
+
+                var maxWidth = names.Values.Max(n => n.Length) + 2;
+                foreach (var reference in wixProjects.DistinctBy(w => w.ProjectName).OrderBy(w => w.ProjectName))
+                {
+                    var wixProject = lookup[reference.ProjectName];
+                    var name = names[reference.ProjectName];
+                    var spaces = new string(' ', maxWidth - name.Length);
+                    logger.LogInformation($"{spaces}{name}: {wixProject.Path}");
+                }
+            }
+
+            logger.LogInformation(_separator);
+        }
+
         private void ShowProjectDetailsRow(BranchDatabase.Project project, Request request)
         {
             var stringBuilder = new StringBuilder();
@@ -180,7 +220,8 @@ public class Project
 
         }
 
-        private static BranchDatabase.Project[] GetProjectsReferencedBy(BranchDatabase.Project project, Dictionary<string, BranchDatabase.Project> lookup, bool isRecursive)
+        private static BranchDatabase.Project[] GetProjectsReferencedBy(BranchDatabase.Project project,
+            Dictionary<string, BranchDatabase.Project> lookup, bool isRecursive)
         {
             if (!isRecursive)
                 return project.ReferencedBy.Select(p => lookup[p]).ToArray();
@@ -191,7 +232,7 @@ public class Project
 
             void CaptureProjectNames(BranchDatabase.Project current)
             {
-                foreach(var name in current.ReferencedBy)
+                foreach (var name in current.ReferencedBy)
                 {
                     if (result.ContainsKey(name))
                         continue;
@@ -199,13 +240,13 @@ public class Project
                     var next = lookup[name];
                     result.Add(name, next);
 
-                    // note: recursion!
-                    CaptureProjectNames(next);
+                    CaptureProjectNames(next); // note: recursion!
                 }
             }
         }
 
-        private static BranchDatabase.Project[] GetProjectsReferencing(BranchDatabase.Project project, Dictionary<string, BranchDatabase.Project> lookup, bool isRecursive)
+        private static BranchDatabase.Project[] GetProjectsReferencing(BranchDatabase.Project project,
+            Dictionary<string, BranchDatabase.Project> lookup, bool isRecursive)
         {
             if (!isRecursive)
                 return project.References.Select(p => lookup[p]).ToArray();
@@ -216,7 +257,7 @@ public class Project
 
             void CaptureProjectNames(BranchDatabase.Project current)
             {
-                foreach(var name in current.References)
+                foreach (var name in current.References)
                 {
                     if (result.ContainsKey(name))
                         continue;
@@ -224,8 +265,7 @@ public class Project
                     var next = lookup[name];
                     result.Add(name, next);
 
-                    // note: recursion!
-                    CaptureProjectNames(next);
+                    CaptureProjectNames(next); // note: recursion!
                 }
             }
         }

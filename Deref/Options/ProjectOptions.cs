@@ -17,6 +17,9 @@ internal class ProjectOptions
     [Option('b', "referenced-by", SetName = "one", HelpText = "List all projects that reference a specific project.")]
     public bool IsListReferencedBy { get; set; }
 
+    [Option('w', "wix-projects", SetName = "one", HelpText = "List all wix projects that reference a specific project.")]
+    public bool IsListWixProjects { get; set; }
+
     [Option('c', "counts", HelpText = "List using and used by counts for each project.")]
     public bool ShowListCounts { get; set; }
 

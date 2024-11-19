@@ -80,6 +80,7 @@ void RunProjectProgram(ProjectOptions options)
         ProjectName = options.ProjectName,
         IsListReferences = options.IsListReferences,
         IsListReferencedBy = options.IsListReferencedBy,
+        IsListWixProjects = options.IsListWixProjects,
         IsList = options.IsList,
         ShowListCounts = options.ShowListCounts,
         ShowListTodos = options.ShowListTodos,
