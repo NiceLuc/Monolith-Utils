@@ -2,7 +2,7 @@
   "profiles": {
     "Deref": {
       "commandName": "Project",
-      "commandLineArgs": "wix"
+      "commandLineArgs": "project common -w"
     }
   }
 }

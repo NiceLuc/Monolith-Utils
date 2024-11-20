@@ -26,6 +26,7 @@ public class Project
         private const string _termPattern = "{0,4}"; // right align terms
         private const string _todoPattern = "        - {0}"; // 8 leading spaces!
 
+
         public async Task<string> Handle(Request request, CancellationToken cancellationToken)
         {
             if (!ValidateRequest(request, out var message))
@@ -84,6 +85,20 @@ public class Project
             return string.Empty;
         }
 
+
+        private static bool ValidateRequest(Request request, out string message)
+        {
+            if (!request.IsList && string.IsNullOrEmpty(request.ProjectName))
+            {
+                message = "Must specify a project name or use the '--list' option";
+                return false;
+            }
+
+            message = string.Empty;
+            return true;
+
+        }
+
         private void ShowProjectDetails(BranchDatabase.Project project)
         {
             var status = project.Exists
@@ -125,6 +140,47 @@ public class Project
             logger.LogInformation(_separator);
         }
 
+        private void ShowWixProjectList(List<BranchDatabase.WixProjectReference> wixProjects, Dictionary<string, BranchDatabase.WixProj> lookup)
+        {
+            if (wixProjects.Count == 0)
+            {
+                logger.LogInformation($"Not referenced in any wix projects");
+            }
+            else
+            {
+                var names = wixProjects
+                    .Where(w => !w.IsHarvested)
+                    .Select(w => w.ProjectName)
+                    .ToDictionary(w => w, StringComparer.InvariantCultureIgnoreCase);
+
+                foreach (var wixProject in wixProjects.Where(w => w.IsHarvested))
+                {
+                    if (names.TryGetValue(wixProject.ProjectName, out var found))
+                    {
+                        found = "(**) " + found;
+                        names[wixProject.ProjectName] = found;
+                    }
+                    else
+                    {
+                        names.Add(wixProject.ProjectName, "(*) " + wixProject.ProjectName);
+                    }
+                }
+
+                logger.LogInformation($"Found in {wixProjects.Count} wix projects: (note: * = IsHarvested)");
+
+                var maxWidth = names.Values.Max(n => n.Length) + 2;
+                foreach (var reference in wixProjects.DistinctBy(w => w.ProjectName).OrderBy(w => w.ProjectName))
+                {
+                    var wixProject = lookup[reference.ProjectName];
+                    var name = names[reference.ProjectName];
+                    var spaces = new string(' ', maxWidth - name.Length);
+                    logger.LogInformation($"{spaces}{name}: {wixProject.Path}");
+                }
+            }
+
+            logger.LogInformation(_separator);
+        }
+
         private void ShowProjectsList(string prefix, BranchDatabase.Project[] projects, Request request)
         {
             if (projects.Length == 0)
@@ -137,39 +193,6 @@ public class Project
 
                 foreach (var project in projects.OrderBy(p => p.Name)) 
                     ShowProjectDetailsRow(project, request);
-            }
-
-            logger.LogInformation(_separator);
-        }
-
-        private void ShowWixProjectList(List<BranchDatabase.WixProjectReference> wixProjects, Dictionary<string, BranchDatabase.WixProj> lookup)
-        {
-            if (wixProjects.Count == 0)
-            {
-                logger.LogInformation($"Not referenced in any wix projects");
-            }
-            else
-            {
-                logger.LogInformation($"Found in {wixProjects.Count} wix projects: (note: * = IsHarvested)");
-                var names = wixProjects
-                    .Select(w => w.ProjectName)
-                    .Distinct()
-                    .ToDictionary(w => w, StringComparer.InvariantCultureIgnoreCase);
-
-                foreach (var wixProject in wixProjects.Where(w => w.IsHarvested))
-                {
-                    var name = names[wixProject.ProjectName];
-                    names[wixProject.ProjectName] = "(*) " + name;
-                }
-
-                var maxWidth = names.Values.Max(n => n.Length) + 2;
-                foreach (var reference in wixProjects.DistinctBy(w => w.ProjectName).OrderBy(w => w.ProjectName))
-                {
-                    var wixProject = lookup[reference.ProjectName];
-                    var name = names[reference.ProjectName];
-                    var spaces = new string(' ', maxWidth - name.Length);
-                    logger.LogInformation($"{spaces}{name}: {wixProject.Path}");
-                }
             }
 
             logger.LogInformation(_separator);
@@ -206,19 +229,6 @@ public class Project
             }
         }
 
-
-        private static bool ValidateRequest(Request request, out string message)
-        {
-            if (!request.IsList && string.IsNullOrEmpty(request.ProjectName))
-            {
-                message = "Must specify a project name or use the '--list' option";
-                return false;
-            }
-
-            message = string.Empty;
-            return true;
-
-        }
 
         private static BranchDatabase.Project[] GetProjectsReferencedBy(BranchDatabase.Project project,
             Dictionary<string, BranchDatabase.Project> lookup, bool isRecursive)

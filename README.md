@@ -3,6 +3,7 @@
 ## Download latest Monolith-Utils github repository.
 
 * Github Desktop download: [Download GitHub Desktop](https://desktop.github.com/download/)
+* Capture HTTPS link and download the repository using Github Desktop
 * Compile the project and make sure it builds (✅).
 * Ensure the **deref/appsettings.json** file points to correct paths!
 	* After changes, be sure to compile again!
