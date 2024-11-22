@@ -1,4 +1,5 @@
 ﻿using System.Text;
+using Deref.Options;
 using MediatR;
 using Microsoft.Extensions.Logging;
 
@@ -6,15 +7,36 @@ namespace Deref.Programs;
 
 public class Project
 {
-    public class Request : IRequest<string>
+    public class Request : IBranchDatabaseQueryRequest
     {
-        public string? ProjectName { get; set; }
+        public FilterType BranchFilter { get; set; }
+
+        // use request to show a list of projects or details about a specific project
         public bool IsList { get; set; }
+
+        // IsList: false - show lists of dependencies related to this project
         public bool IsListReferences { get; set; }
         public bool IsListReferencedBy { get; set; }
         public bool IsListWixProjects { get; set; }
+        public bool IsListBuildDefinitions { get; set; }
+
+        // IsList: any
+
+        /// <summary>
+        /// - IsList: true - (Optional) This is used as a "search filter" against the project's [Name].
+        /// - IsList: false - (Required) This is used as an "identifier" of a project.
+        /// </summary>
+        public string? ProjectName { get; set; }
+
+        // These options apply to IsList as well as each dependency list.
         public bool ShowListCounts { get; set; }
         public bool ShowListTodos { get; set; }
+
+        public string? SearchTerm { get; set; }
+        public bool IsExcludeTests { get; set; }
+        public bool IsIncludeAll { get; set; }
+        public bool IsIncludeOnlyRequired { get; set; }
+        public bool IsIncludeOnlyNonRequired { get; set; }
         public bool IsRecursive { get; set; }
     }
 
@@ -25,7 +47,6 @@ public class Project
         private static readonly string _separator = new('-', 50);
         private const string _termPattern = "{0,4}"; // right align terms
         private const string _todoPattern = "        - {0}"; // 8 leading spaces!
-
 
         public async Task<string> Handle(Request request, CancellationToken cancellationToken)
         {
@@ -47,13 +68,13 @@ public class Project
 
                 if (request.IsListReferences)
                 {
-                    var projects = GetProjectsReferencing(project, lookup, request.IsRecursive);
+                    var projects = GetProjectsReferencing(project, lookup, request);
                     ShowProjectsList("References", projects, request);
                 }
 
                 if (request.IsListReferencedBy)
                 {
-                    var projects = GetProjectsReferencedBy(project, lookup, request.IsRecursive);
+                    var projects = GetProjectsReferencedBy(project, lookup, request);
                     ShowProjectsList("Referenced by", projects, request);
                 }
 
@@ -85,6 +106,7 @@ public class Project
             return string.Empty;
         }
 
+        #region Private Methods
 
         private static bool ValidateRequest(Request request, out string message)
         {
@@ -96,7 +118,6 @@ public class Project
 
             message = string.Empty;
             return true;
-
         }
 
         private void ShowProjectDetails(BranchDatabase.Project project)
@@ -231,9 +252,9 @@ public class Project
 
 
         private static BranchDatabase.Project[] GetProjectsReferencedBy(BranchDatabase.Project project,
-            Dictionary<string, BranchDatabase.Project> lookup, bool isRecursive)
+            Dictionary<string, BranchDatabase.Project> lookup, IBranchDatabaseQueryRequest options)
         {
-            if (!isRecursive)
+            if (!options.IsRecursive)
                 return project.ReferencedBy.Select(p => lookup[p]).ToArray();
 
             var result = new Dictionary<string, BranchDatabase.Project>();
@@ -256,9 +277,9 @@ public class Project
         }
 
         private static BranchDatabase.Project[] GetProjectsReferencing(BranchDatabase.Project project,
-            Dictionary<string, BranchDatabase.Project> lookup, bool isRecursive)
+            Dictionary<string, BranchDatabase.Project> lookup, IBranchDatabaseQueryRequest options)
         {
-            if (!isRecursive)
+            if (!options.IsRecursive)
                 return project.References.Select(p => lookup[p]).ToArray();
 
             var result = new Dictionary<string, BranchDatabase.Project>();
@@ -305,5 +326,7 @@ public class Project
             if (todos.Count == 0) todos.Add("None");
             return todos.ToArray();
         }
+
+        #endregion
     }
 }
