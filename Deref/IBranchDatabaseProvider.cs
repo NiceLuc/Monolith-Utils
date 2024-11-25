@@ -1,4 +1,6 @@
-﻿namespace Deref;
+﻿using Deref.Data;
+
+namespace Deref;
 
 public interface IBranchDatabaseProvider
 {

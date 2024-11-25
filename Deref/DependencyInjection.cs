@@ -1,4 +1,5 @@
 ﻿using CommandLine;
+using Deref.Data;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 using SharedKernel;

@@ -1,5 +1,5 @@
 ﻿using System.Text;
-using Deref.Options;
+using Deref.Data;
 using MediatR;
 using Microsoft.Extensions.Logging;
 
@@ -122,7 +122,7 @@ public class Project
             return true;
         }
 
-        private void ShowProjectDetails(BranchDatabase.Project project)
+        private void ShowProjectDetails(ProjectRecord project)
         {
             var status = project.Exists
                 ? GetProjectStatus(project) ? "Done" : "Needs Work"
@@ -150,7 +150,7 @@ public class Project
                 => logger.LogInformation($"{fieldName,8}: {fieldValue}");
         }
 
-        private void ShowSolutionsList(BranchDatabase.Project project, Dictionary<string, BranchDatabase.Solution> solutions)
+        private void ShowSolutionsList(ProjectRecord project, Dictionary<string, SolutionRecord> solutions)
         {
             var maxNameWidth = project.Solutions.Max(s => s.Length) + 2;
             foreach(var solutionName in project.Solutions)
@@ -163,7 +163,7 @@ public class Project
             logger.LogInformation(_separator);
         }
 
-        private void ShowWixProjectList(List<BranchDatabase.WixProjectReference> wixProjects, Dictionary<string, BranchDatabase.WixProj> lookup)
+        private void ShowWixProjectList(List<WixProjectReference> wixProjects, Dictionary<string, WixProjectRecord> lookup)
         {
             if (wixProjects.Count == 0)
             {
@@ -220,7 +220,7 @@ public class Project
             logger.LogInformation(_separator);
         }
 
-        private void ShowProjectsList(string prefix, BranchDatabase.Project[] projects, IQueryRequest request)
+        private void ShowProjectsList(string prefix, ProjectRecord[] projects, IQueryRequest request)
         {
             if (projects.Length == 0)
             {
@@ -237,7 +237,7 @@ public class Project
             logger.LogInformation(_separator);
         }
 
-        private void ShowProjectDetailsRow(BranchDatabase.Project project, IQueryRequest request)
+        private void ShowProjectDetailsRow(ProjectRecord project, IQueryRequest request)
         {
             var stringBuilder = new StringBuilder();
             var glyph = GetProjectStatusTerm(project);
@@ -269,17 +269,17 @@ public class Project
         }
 
 
-        private static BranchDatabase.Project[] GetProjectsReferencedBy(BranchDatabase.Project project,
-            Dictionary<string, BranchDatabase.Project> lookup, IQueryRequest options)
+        private static ProjectRecord[] GetProjectsReferencedBy(ProjectRecord project,
+            Dictionary<string, ProjectRecord> lookup, IQueryRequest options)
         {
             if (!options.IsRecursive)
                 return project.ReferencedBy.Select(p => lookup[p]).ToArray();
 
-            var result = new Dictionary<string, BranchDatabase.Project>();
+            var result = new Dictionary<string, ProjectRecord>();
             CaptureProjectNames(project);
             return result.Values.ToArray();
 
-            void CaptureProjectNames(BranchDatabase.Project current)
+            void CaptureProjectNames(ProjectRecord current)
             {
                 foreach (var name in current.ReferencedBy)
                 {
@@ -294,17 +294,17 @@ public class Project
             }
         }
 
-        private static BranchDatabase.Project[] GetProjectsReferencing(BranchDatabase.Project project,
-            Dictionary<string, BranchDatabase.Project> lookup, IQueryRequest options)
+        private static ProjectRecord[] GetProjectsReferencing(ProjectRecord project,
+            Dictionary<string, ProjectRecord> lookup, IQueryRequest options)
         {
             if (!options.IsRecursive)
                 return project.References.Select(p => lookup[p]).ToArray();
 
-            var result = new Dictionary<string, BranchDatabase.Project>();
+            var result = new Dictionary<string, ProjectRecord>();
             CaptureProjectNames(project);
             return result.Values.ToArray();
 
-            void CaptureProjectNames(BranchDatabase.Project current)
+            void CaptureProjectNames(ProjectRecord current)
             {
                 foreach (var name in current.References)
                 {
@@ -322,7 +322,7 @@ public class Project
         private static string IncludeCountsHeader(IQueryRequest request) 
             => request.ShowListCounts ? "(uses / used by)" : "";
 
-        private static string GetProjectStatusTerm(BranchDatabase.Project project)
+        private static string GetProjectStatusTerm(ProjectRecord project)
         {
             if (!project.Exists)
                 return string.Format(_termPattern, "x");
@@ -332,10 +332,10 @@ public class Project
             return string.Format(_termPattern, term);
         }
 
-        private static bool GetProjectStatus(BranchDatabase.Project project) 
+        private static bool GetProjectStatus(ProjectRecord project) 
             => project is {IsSdk: true, IsNetStandard2: true, IsPackageRef: true};
 
-        private static string[] GetTodos(BranchDatabase.Project project)
+        private static string[] GetTodos(ProjectRecord project)
         {
             var todos = new List<string>();
             if (!project.IsPackageRef) todos.Add("PackageRef");
