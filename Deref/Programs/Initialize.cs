@@ -22,7 +22,7 @@ public class Initialize
     {
         private static readonly Regex _slnProjectsRegex = new(@"Project\(""\{(?<project_type>.+?)\}""\).+?""(?<project_name>.+?)"".+?""(?<project_path>.+?\.(cs|wix)proj)"".+?""\{(?<project_guid>.+?)\}""", RegexOptions.Multiline);
 
-        private static readonly Regex _csProjReferenceRegex = new(@"ProjectReference Include=""(?<project_path>.+?\.csproj)""", RegexOptions.Multiline);
+        private static readonly Regex _csProjReferenceRegex = new(@"ProjectReference Include=""(?<project_path>.+?\.[cs|db|sql]proj)""", RegexOptions.Multiline);
         private static readonly Regex _csProjSdkRegex = new(@"<Project Sdk=", RegexOptions.Multiline);
         private static readonly Regex _csProjNetStandardRegex = new(@"\<TargetFrameworks?\>.*netstandard2\.0.*\<\/TargetFrameworks?\>", RegexOptions.Multiline);
 
@@ -55,18 +55,7 @@ public class Initialize
             var settings = await settingsBuilder.BuildAsync(request.BranchName, request.ResultsDirectoryPath, cancellationToken);
             ValidateRequest(settings, request);
 
-            // reset all lists and dictionaries
-            _wixProjFilesToPreScan.Clear();
-            _projectFilesToScan.Clear();
-            _wixProjFilesToScan.Clear();
-
-            _solutionNames.Clear();
-            _projectNames.Clear();
-            _wixProjNames.Clear();
-
-            _solutions.Clear();
-            _projects.Clear();
-            _wixProjects.Clear();
+            ResetLists();
 
             // scan all solution files and queue all project files for scanning
             foreach (var build in settings.BuildSolutions)
@@ -194,6 +183,21 @@ public class Initialize
             var filePath = Path.Combine(settings.TempDirectory, "db.json");
             await serializer.SerializeAsync(filePath, data, cancellationToken);
             return filePath;
+        }
+
+        private void ResetLists()
+        {
+            _wixProjFilesToPreScan.Clear();
+            _projectFilesToScan.Clear();
+            _wixProjFilesToScan.Clear();
+
+            _solutionNames.Clear();
+            _projectNames.Clear();
+            _wixProjNames.Clear();
+
+            _solutions.Clear();
+            _projects.Clear();
+            _wixProjects.Clear();
         }
 
 
