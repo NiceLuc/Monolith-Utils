@@ -5,7 +5,7 @@ namespace Deref.Options;
 [Verb("project", HelpText = "Analyze details about projects in the monolith")]
 internal class ProjectOptions : IListDisplayOptions, IListOptions
 {
-    [Value(0, Required = false, HelpText = "The name of the branch which has the solutions you want to analyze.")]
+    [Value(0, Required = false, HelpText = "The name of the project that you want to analyze. (Note: Used as a 'contains' when using --list options)")]
     public string? ProjectName { get; set; }
 
     [Option('l', "list", SetName = "all", HelpText = "List all projects required for our build definitions.")]
@@ -20,7 +20,7 @@ internal class ProjectOptions : IListDisplayOptions, IListOptions
     [Option('w', "wix-projects", SetName = "one", HelpText = "List all wix projects that reference a specific project.")]
     public bool IsListWixProjects { get; set; }
 
-    [Option('d', "build-definitions", SetName = "one", HelpText = "List all wix projects that reference a specific project.")]
+    [Option('d', "build-definitions", SetName = "one", HelpText = "List all build definitions that reference a specific project.")]
     public bool IsListBuildDefinitions { get; set; }
 
     #region IListOptions implementation
