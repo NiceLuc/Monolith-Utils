@@ -81,10 +81,19 @@ public class Project
                 var solutions = database.Solutions.ToDictionary(s => s.Name, StringComparer.InvariantCultureIgnoreCase);
                 logger.LogInformation($"Found in {project.Solutions.Count} solution(s):");
                 ShowSolutionsList(project, solutions);
+
+                if (request.IsListBuildDefinitions)
+                {
+                    var projectSolutions = project.Solutions.Select(s => solutions[s]);
+                    var buildDefinitions = projectSolutions.SelectMany(s => s.Builds)
+                        .Distinct().OrderBy(b => b).ToArray();
+
+                    ShowBuildDefinitionList(buildDefinitions);
+                }
                 return string.Empty;
             }
 
-            // filtered
+            // list by a string filter
             if (!string.IsNullOrEmpty(request.ProjectName))
             {
                 var projects = database.Projects.Where(p 
@@ -93,7 +102,7 @@ public class Project
                 return string.Empty;
             }
 
-            // all
+            // list all
             var all = database.Projects.ToArray();
             ShowProjectsList("Listing", all, request);
             return string.Empty;
@@ -190,6 +199,22 @@ public class Project
                     var spaces = new string(' ', maxWidth - name.Length);
                     logger.LogInformation($"{spaces}{name}: {wixProject.Path}");
                 }
+            }
+
+            logger.LogInformation(_separator);
+        }
+
+        private void ShowBuildDefinitionList(string[] buildDefinitions)
+        {
+            if (buildDefinitions.Length == 0)
+            {
+                logger.LogInformation($"Not referenced in any build definitions");
+            }
+            else
+            {
+                logger.LogInformation($"Found in {buildDefinitions.Length} build definition(s):");
+                foreach (var buildRef in buildDefinitions)
+                    logger.LogInformation($"  {buildRef}");
             }
 
             logger.LogInformation(_separator);
