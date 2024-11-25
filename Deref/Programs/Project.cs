@@ -7,20 +7,10 @@ namespace Deref.Programs;
 
 public class Project
 {
-    public class Request : IBranchDatabaseQueryRequest
+    public class Request : IQueryRequest
     {
-        public FilterType BranchFilter { get; set; }
-
         // use request to show a list of projects or details about a specific project
         public bool IsList { get; set; }
-
-        // IsList: false - show lists of dependencies related to this project
-        public bool IsListReferences { get; set; }
-        public bool IsListReferencedBy { get; set; }
-        public bool IsListWixProjects { get; set; }
-        public bool IsListBuildDefinitions { get; set; }
-
-        // IsList: any
 
         /// <summary>
         /// - IsList: true - (Optional) This is used as a "search filter" against the project's [Name].
@@ -28,16 +18,19 @@ public class Project
         /// </summary>
         public string? ProjectName { get; set; }
 
-        // These options apply to IsList as well as each dependency list.
-        public bool ShowListCounts { get; set; }
-        public bool ShowListTodos { get; set; }
+        // IsList: false - show lists of dependencies related to this project
+        public bool IsListReferences { get; set; }
+        public bool IsListReferencedBy { get; set; }
+        public bool IsListWixProjects { get; set; }
+        public bool IsListBuildDefinitions { get; set; }
 
+        // These options apply to IsList as well as each dependency list.
+        public FilterType BranchFilter { get; set; }
         public string? SearchTerm { get; set; }
         public bool IsExcludeTests { get; set; }
-        public bool IsIncludeAll { get; set; }
-        public bool IsIncludeOnlyRequired { get; set; }
-        public bool IsIncludeOnlyNonRequired { get; set; }
         public bool IsRecursive { get; set; }
+        public bool ShowListCounts { get; set; }
+        public bool ShowListTodos { get; set; }
     }
 
     public class Handler(ILogger<Handler> logger,
@@ -202,7 +195,7 @@ public class Project
             logger.LogInformation(_separator);
         }
 
-        private void ShowProjectsList(string prefix, BranchDatabase.Project[] projects, Request request)
+        private void ShowProjectsList(string prefix, BranchDatabase.Project[] projects, IQueryRequest request)
         {
             if (projects.Length == 0)
             {
@@ -219,7 +212,7 @@ public class Project
             logger.LogInformation(_separator);
         }
 
-        private void ShowProjectDetailsRow(BranchDatabase.Project project, Request request)
+        private void ShowProjectDetailsRow(BranchDatabase.Project project, IQueryRequest request)
         {
             var stringBuilder = new StringBuilder();
             var glyph = GetProjectStatusTerm(project);
@@ -252,7 +245,7 @@ public class Project
 
 
         private static BranchDatabase.Project[] GetProjectsReferencedBy(BranchDatabase.Project project,
-            Dictionary<string, BranchDatabase.Project> lookup, IBranchDatabaseQueryRequest options)
+            Dictionary<string, BranchDatabase.Project> lookup, IQueryRequest options)
         {
             if (!options.IsRecursive)
                 return project.ReferencedBy.Select(p => lookup[p]).ToArray();
@@ -277,7 +270,7 @@ public class Project
         }
 
         private static BranchDatabase.Project[] GetProjectsReferencing(BranchDatabase.Project project,
-            Dictionary<string, BranchDatabase.Project> lookup, IBranchDatabaseQueryRequest options)
+            Dictionary<string, BranchDatabase.Project> lookup, IQueryRequest options)
         {
             if (!options.IsRecursive)
                 return project.References.Select(p => lookup[p]).ToArray();
@@ -301,7 +294,7 @@ public class Project
             }
         }
 
-        private static string IncludeCountsHeader(Request request) 
+        private static string IncludeCountsHeader(IQueryRequest request) 
             => request.ShowListCounts ? "(uses / used by)" : "";
 
         private static string GetProjectStatusTerm(BranchDatabase.Project project)
