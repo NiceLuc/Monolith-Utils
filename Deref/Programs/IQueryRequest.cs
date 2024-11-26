@@ -1,4 +1,5 @@
-﻿using MediatR;
+﻿using Deref.Data;
+using MediatR;
 
 namespace Deref.Programs;
 

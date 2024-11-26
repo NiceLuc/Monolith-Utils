@@ -23,7 +23,7 @@ public class Initialize
     {
         private static readonly Regex _slnProjectsRegex = new(@"Project\(""\{(?<project_type>.+?)\}""\).+?""(?<project_name>.+?)"".+?""(?<project_path>.+?\.(cs|wix)proj)"".+?""\{(?<project_guid>.+?)\}""", RegexOptions.Multiline);
 
-        private static readonly Regex _csProjReferenceRegex = new(@"ProjectReference Include=""(?<project_path>.+?\.[cs|db|sql]proj)""", RegexOptions.Multiline);
+        private static readonly Regex _csProjReferenceRegex = new(@"ProjectReference Include=""(?<project_path>.+?\.(cs|db|sql)proj)""", RegexOptions.Multiline);
         private static readonly Regex _csProjSdkRegex = new(@"<Project Sdk=", RegexOptions.Multiline);
         private static readonly Regex _csProjNetStandardRegex = new(@"\<TargetFrameworks?\>.*netstandard2\.0.*\<\/TargetFrameworks?\>", RegexOptions.Multiline);
 

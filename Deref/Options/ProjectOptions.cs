@@ -20,6 +20,9 @@ internal class ProjectOptions : IListDisplayOptions, IListOptions
     [Option('w', "wix-projects", SetName = "one", HelpText = "List all wix projects that reference a specific project.")]
     public bool IsListWixProjects { get; set; }
 
+    [Option('s', "solutions", SetName = "one", HelpText = "List all solutions that reference a specific project.")]
+    public bool IsListSolutions { get; set; }
+
     [Option('d', "build-definitions", SetName = "one", HelpText = "List all build definitions that reference a specific project.")]
     public bool IsListBuildDefinitions { get; set; }
 

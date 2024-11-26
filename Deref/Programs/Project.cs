@@ -22,6 +22,7 @@ public class Project
         public bool IsListReferences { get; set; }
         public bool IsListReferencedBy { get; set; }
         public bool IsListWixProjects { get; set; }
+        public bool IsListSolutions { get; set; }
         public bool IsListBuildDefinitions { get; set; }
 
         // These options apply to IsList as well as each dependency list.
@@ -48,6 +49,8 @@ public class Project
 
             var settings = await settingsBuilder.BuildAsync(cancellationToken);
             var database = await databaseProvider.GetDatabaseAsync(settings.BranchName, cancellationToken);
+            var options = request.ToQueryOptions();
+
             var lookup = database.Projects.ToDictionary(p => p.Name, StringComparer.InvariantCultureIgnoreCase);
 
             // single project
@@ -56,19 +59,24 @@ public class Project
                 if (!lookup.TryGetValue(request.ProjectName!, out var project))
                     return "Project not found: " + request.ProjectName;
 
+                var solutions = database.Solutions.ToDictionary(s => s.Name, StringComparer.InvariantCultureIgnoreCase);
+                var projectSolutions = project.Solutions.Select(s => solutions[s]);
+                var buildDefinitions = projectSolutions.SelectMany(s => s.Builds)
+                    .Distinct().OrderBy(b => b).ToArray();
+
                 // show header
-                ShowProjectDetails(project);
+                ShowProjectDetails(project, options);
 
                 if (request.IsListReferences)
                 {
-                    var projects = GetProjectsReferencing(project, lookup, request);
-                    ShowProjectsList("References", projects, request);
+                    var references = GetProjectsReferencing(project, lookup, request);
+                    ShowProjectsList("References", references, request);
                 }
 
                 if (request.IsListReferencedBy)
                 {
-                    var projects = GetProjectsReferencedBy(project, lookup, request);
-                    ShowProjectsList("Referenced by", projects, request);
+                    var referencedBy = GetProjectsReferencedBy(project, lookup, request);
+                    ShowProjectsList("Referenced by", referencedBy, request);
                 }
 
                 if (request.IsListWixProjects)
@@ -77,19 +85,15 @@ public class Project
                     ShowWixProjectList(project.WixProjects, wixLookup);
                 }
 
-                // always show solutions
-                var solutions = database.Solutions.ToDictionary(s => s.Name, StringComparer.InvariantCultureIgnoreCase);
-                logger.LogInformation($"Found in {project.Solutions.Count} solution(s):");
-                ShowSolutionsList(project, solutions);
-
-                if (request.IsListBuildDefinitions)
+                if (request.IsListSolutions)
                 {
-                    var projectSolutions = project.Solutions.Select(s => solutions[s]);
-                    var buildDefinitions = projectSolutions.SelectMany(s => s.Builds)
-                        .Distinct().OrderBy(b => b).ToArray();
-
-                    ShowBuildDefinitionList(buildDefinitions);
+                    logger.LogInformation($"Found in {project.Solutions.Count} solution(s):");
+                    ShowSolutionsList(project, solutions);
                 }
+
+                if (request.IsListBuildDefinitions) 
+                    ShowBuildDefinitionList(buildDefinitions);
+
                 return string.Empty;
             }
 
@@ -122,7 +126,7 @@ public class Project
             return true;
         }
 
-        private void ShowProjectDetails(ProjectRecord project)
+        private void ShowProjectDetails(ProjectRecord project, QueryOptions options)
         {
             var status = project.Exists
                 ? GetProjectStatus(project) ? "Done" : "Needs Work"
@@ -131,7 +135,7 @@ public class Project
             logger.LogInformation(_separator);
             LogInformation("Project", project.Name);
             LogInformation("Path", project.Path);
-            LogInformation("Status",status);
+            LogInformation("Status", status);
 
             if (project.Exists)
             {
@@ -142,12 +146,15 @@ public class Project
             {
                 LogInformation("Exists", project.Exists);
             }
+            LogInformation("References", $"{project.References.Count} project(s)");
+            LogInformation("Referenced by", $"{project.ReferencedBy.Count} project(s)");
+            LogInformation("Solutions", project.Solutions.Count);
 
             logger.LogInformation(_separator);
             return;
 
             void LogInformation(string fieldName, object fieldValue)
-                => logger.LogInformation($"{fieldName,8}: {fieldValue}");
+                => logger.LogInformation($"{fieldName,15}: {fieldValue}");
         }
 
         private void ShowSolutionsList(ProjectRecord project, Dictionary<string, SolutionRecord> solutions)

@@ -1,4 +1,5 @@
 ﻿using Deref.Data;
+using Deref.Programs;
 using SharedKernel;
 
 namespace Deref;
@@ -17,5 +18,21 @@ public class BranchDatabaseProvider(
             throw new FileNotFoundException($"File not found: {dbFilePath}");
 
         return await schemaSerializer.DeserializeAsync(dbFilePath, cancellationToken);
+    }
+}
+
+internal static class BranchDatabaseExtensions
+{
+    internal static QueryOptions ToQueryOptions(this IQueryRequest request)
+    {
+        return new QueryOptions
+        {
+            BranchFilter = request.BranchFilter,
+            SearchTerm = request.SearchTerm,
+            IsExcludeTests = request.IsExcludeTests,
+            IsRecursive = request.IsRecursive,
+            ShowListCounts = request.ShowListCounts,
+            ShowListTodos = request.ShowListTodos
+        };
     }
 }
