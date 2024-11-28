@@ -1,6 +1,7 @@
 ﻿namespace Deref.Data;
 
-public record WixProjectRecord(string Name, string Path, bool Exists) : SchemaRecord(Name, Path, Exists)
+public record WixProjectRecord(string Name, string Path, bool IsRequired, bool DoesExist) 
+    : SchemaRecord(Name, Path, IsRequired, DoesExist)
 {
     public bool IsSdk { get; set; }
     public bool IsPackageRef { get; set; }

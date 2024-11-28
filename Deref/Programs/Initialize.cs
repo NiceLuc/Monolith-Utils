@@ -61,7 +61,7 @@ public class Initialize
             // scan all solution files and queue all project files for scanning
             foreach (var build in settings.BuildSolutions)
             {
-                await ScanSolutionFileAsync(build.SolutionPath, (solution, references) =>
+                await ScanSolutionFileAsync(build.SolutionPath, true, (solution, references) =>
                 {
                     solution.Builds.Add(build.BuildName);
 
@@ -72,7 +72,7 @@ public class Initialize
                             // we only want to look for other wix projects at first
                             // our final scan comes after all projects are scanned
                             // in order to lookup assembly name references!
-                            var wixProj = GetOrAddWixProj(reference.ProjectPath, true);
+                            var wixProj = GetOrAddWixProj(reference.ProjectPath, true, true);
                             wixProj.Solutions.Add(solution.Name);
                             solution.WixProjects.Add(wixProj.Name);
                             continue;
@@ -80,7 +80,7 @@ public class Initialize
 
                         if (reference.ProjectType == ProjectTypes.Csharp)
                         {
-                            var project = GetOrAddProject(reference.ProjectPath);
+                            var project = GetOrAddProject(reference.ProjectPath, true);
                             project.Solutions.Add(solution.Name);
                             solution.Projects.Add(project.Name);
                             continue;
@@ -103,7 +103,7 @@ public class Initialize
                     {
                         if (reference.ProjectType == ProjectTypes.Wix)
                         {
-                            var wixRef = GetOrAddWixProj(reference.ProjectPath, true);
+                            var wixRef = GetOrAddWixProj(reference.ProjectPath, true, true);
                             wixProject.References.Add(wixRef.Name);
                             wixRef.ReferencedBy.Add(wixProject.Name);
                             continue;
@@ -113,7 +113,7 @@ public class Initialize
                         {
                             // we just want to add the project to our list to be scanned
                             // we don't set any references yet
-                            GetOrAddProject(reference.ProjectPath);
+                            GetOrAddProject(reference.ProjectPath, true);
                             continue;
                         }
 
@@ -131,7 +131,7 @@ public class Initialize
                 {
                     foreach (var referencePath in referencePaths)
                     {
-                        var reference = GetOrAddProject(referencePath);
+                        var reference = GetOrAddProject(referencePath, true);
                         project.References.Add(reference.Name);
                         reference.ReferencedBy.Add(project.Name);
                     }
@@ -141,7 +141,7 @@ public class Initialize
             // scan each wix project file one by one.
             // note: we provide the assembly  names to scan our wxs files for harvested binaries
             var assemblyNames = _projects.Values
-                .Where(p => p.Exists) // file must exist!
+                .Where(p => p.DoesExist) // file must exist!
                 .Where(p => !p.Path.Contains("Test", StringComparison.OrdinalIgnoreCase)) // don't want test projects
                 .ToDictionary(p => p.AssemblyName, p => p.Name);
 
@@ -215,10 +215,11 @@ public class Initialize
                     $"Results directory already exists: {settings.TempDirectory} (use -f to overwrite)");
         }
 
-        private async Task ScanSolutionFileAsync(string solutionPath, Action<SolutionRecord, ProjectReference[]> callback, CancellationToken cancellationToken)
+        private async Task ScanSolutionFileAsync(string solutionPath, bool isRequired,
+            Action<SolutionRecord, ProjectReference[]> callback, CancellationToken cancellationToken)
         {
-            var solution = GetOrAddSolution(solutionPath);
-            if (!solution.Exists)
+            var solution = GetOrAddSolution(solutionPath, isRequired);
+            if (!solution.DoesExist)
             {
                 // cannot scan a file that does not exist
                 // but let the caller add build name references
@@ -379,14 +380,14 @@ public class Initialize
         }
 
 
-        private SolutionRecord GetOrAddSolution(string solutionPath)
+        private SolutionRecord GetOrAddSolution(string solutionPath, bool isRequired)
         {
             if (!_solutions.TryGetValue(solutionPath, out var solution))
             {
                 var solutionName = Path.GetFileNameWithoutExtension(solutionPath);
                 solutionName = GetUniqueName(solutionName, _solutionNames.Contains);
                 var exists = fileStorage.FileExists(solutionPath);
-                solution = new SolutionRecord(solutionName, solutionPath, exists);
+                solution = new SolutionRecord(solutionName, solutionPath, isRequired, exists);
                 _solutionNames.Add(solutionName);
                 _solutions.Add(solutionPath, solution);
             }
@@ -394,14 +395,14 @@ public class Initialize
             return solution;
         }
 
-        private ProjectRecord GetOrAddProject(string projectPath)
+        private ProjectRecord GetOrAddProject(string projectPath, bool isRequired)
         {
             if (!_projects.TryGetValue(projectPath, out var project))
             {
                 var projectName = Path.GetFileNameWithoutExtension(projectPath);
                 projectName = GetUniqueName(projectName, _projectNames.Contains);
                 var exists = fileStorage.FileExists(projectPath);
-                project = new ProjectRecord(projectName, projectPath, exists);
+                project = new ProjectRecord(projectName, projectPath, isRequired, exists);
                 _projectNames.Add(projectName);
                 _projects.Add(projectPath, project);
 
@@ -414,14 +415,14 @@ public class Initialize
             return project;
         }
 
-        private WixProjectRecord GetOrAddWixProj(string projectPath, bool isPreScan)
+        private WixProjectRecord GetOrAddWixProj(string projectPath, bool isRequired, bool isPreScan)
         {
             if (!_wixProjects.TryGetValue(projectPath, out var project))
             {
                 var projectName = Path.GetFileNameWithoutExtension(projectPath);
                 projectName = GetUniqueName(projectName, _wixProjNames.Contains);
                 var exists = fileStorage.FileExists(projectPath);
-                project = new WixProjectRecord(projectName, projectPath, exists);
+                project = new WixProjectRecord(projectName, projectPath, isRequired, exists);
                 _wixProjNames.Add(projectName);
                 _wixProjects.Add(projectPath, project);
 
