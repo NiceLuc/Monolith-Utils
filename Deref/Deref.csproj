@@ -18,6 +18,9 @@
   </ItemGroup>
 
   <ItemGroup>
+    <ProjectReference Include="..\MonoUtils.Domain\MonoUtils.Domain.csproj" />
+    <ProjectReference Include="..\MonoUtils.Infrastructure\MonoUtils.Infrastructure.csproj" />
+    <ProjectReference Include="..\MonoUtils.UseCases\MonoUtils.UseCases.csproj" />
     <ProjectReference Include="..\SharedKernel\SharedKernel.csproj" />
   </ItemGroup>
 

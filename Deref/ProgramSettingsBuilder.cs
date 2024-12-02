@@ -1,5 +1,5 @@
 ﻿using Microsoft.Extensions.Options;
-using Deref.Data;
+using MonoUtils.Domain.Data;
 using SharedKernel;
 
 namespace Deref;

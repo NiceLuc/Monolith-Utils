@@ -1,12 +1,12 @@
 ﻿using CommandLine;
 using Deref;
-using Deref.Data;
 using Deref.Options;
 using Deref.Programs;
 using MediatR;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
+using MonoUtils.Domain.Data;
 using Serilog;
 
 // TODO: Figure out why the console app is not respecting the launchSettings.json environment variable
