@@ -128,7 +128,7 @@ public class Project
 
         private void ShowProjectDetails(ProjectRecord project, QueryOptions options)
         {
-            var status = project.Exists
+            var status = project.DoesExist
                 ? GetProjectStatus(project) ? "Done" : "Needs Work"
                 : "Missing";
 
@@ -137,14 +137,14 @@ public class Project
             LogInformation("Path", project.Path);
             LogInformation("Status", status);
 
-            if (project.Exists)
+            if (project.DoesExist)
             {
                 var todos = GetTodos(project);
                 LogInformation("Todos", string.Join(", ", todos));
             }
             else
             {
-                LogInformation("Exists", project.Exists);
+                LogInformation("Exists", project.DoesExist);
             }
             LogInformation("References", $"{project.References.Count} project(s)");
             LogInformation("Referenced by", $"{project.ReferencedBy.Count} project(s)");
@@ -250,7 +250,7 @@ public class Project
             var glyph = GetProjectStatusTerm(project);
             stringBuilder.Append($" {glyph} - {project.Name}");
 
-            if (!project.Exists)
+            if (!project.DoesExist)
             {
                 stringBuilder.Append(" (missing)");
                 logger.LogInformation(stringBuilder.ToString());
@@ -331,7 +331,7 @@ public class Project
 
         private static string GetProjectStatusTerm(ProjectRecord project)
         {
-            if (!project.Exists)
+            if (!project.DoesExist)
                 return string.Format(_termPattern, "x");
 
             var status = GetProjectStatus(project);
