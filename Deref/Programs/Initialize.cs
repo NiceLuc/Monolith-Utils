@@ -89,7 +89,6 @@ public class Initialize
                         throw new InvalidOperationException($"Solution reference not supported: {reference.ProjectType}");
                     }
                 }, cancellationToken);
-
             }
 
             // pre-scan all wix project files for nested wix project references 
@@ -288,7 +287,7 @@ public class Initialize
             if (!_projects.TryGetValue(projectPath, out var project))
                 throw new InvalidOperationException($"Project not in dictionary: {projectPath}");
 
-            var projectXml = await fileStorage.ReadAllTextAsync(projectPath, cancellationToken);
+            var projectXml = await fileStorage.ReadAllTextAsync(projectPath, cancellationToken); // todo: ignore comments!!
             project.AssemblyName = GetAssemblyName(projectPath, projectXml);
             project.PdbFileName = GetPdbFileName(project.AssemblyName);
             project.IsSdk = _csProjSdkRegex.IsMatch(projectXml);
