@@ -1,7 +1,7 @@
 ﻿using Delinq.CodeGeneration.Engine;
 using Delinq.CodeGeneration.ViewModels;
 using MediatR;
-using SharedKernel;
+using MonoUtils.Domain;
 
 namespace Delinq.Programs;
 

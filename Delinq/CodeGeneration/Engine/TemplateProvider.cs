@@ -1,4 +1,4 @@
-﻿using SharedKernel;
+﻿using MonoUtils.Infrastructure;
 
 namespace Delinq.CodeGeneration.Engine;
 

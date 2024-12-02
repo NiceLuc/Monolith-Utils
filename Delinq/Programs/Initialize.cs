@@ -1,6 +1,6 @@
 ﻿using Delinq.Parsers;
 using MediatR;
-using SharedKernel;
+using MonoUtils.Domain;
 
 namespace Delinq.Programs;
 

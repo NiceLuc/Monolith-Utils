@@ -1,7 +1,7 @@
 ﻿using MediatR;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
-using SharedKernel;
+using MonoUtils.Domain;
 
 namespace Deref.Programs;
 

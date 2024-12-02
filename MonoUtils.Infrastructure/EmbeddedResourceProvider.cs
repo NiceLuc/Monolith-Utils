@@ -1,6 +1,7 @@
 ﻿using System.Reflection;
+using MonoUtils.Domain;
 
-namespace SharedKernel;
+namespace MonoUtils.Infrastructure;
 
 public class EmbeddedResourceProvider(Assembly assembly, IDictionary<string, string>? resourceMap = null) : IEmbeddedResourceProvider
 {

@@ -1,8 +1,9 @@
 ﻿using CommandLine;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
+using MonoUtils.Domain;
 using MonoUtils.Domain.Data;
-using SharedKernel;
+using MonoUtils.Infrastructure;
 
 namespace Deref;
 

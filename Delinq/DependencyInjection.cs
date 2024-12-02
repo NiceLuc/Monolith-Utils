@@ -2,8 +2,9 @@
 using Delinq.Parsers;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
+using MonoUtils.Domain;
+using MonoUtils.Infrastructure;
 using Mustache;
-using SharedKernel;
 
 namespace Delinq;
 

@@ -1,7 +1,8 @@
 ﻿using System.Reflection;
 using Microsoft.Extensions.DependencyInjection;
+using MonoUtils.Domain;
 
-namespace SharedKernel;
+namespace MonoUtils.Infrastructure;
 
 public static class DependencyInjection
 {

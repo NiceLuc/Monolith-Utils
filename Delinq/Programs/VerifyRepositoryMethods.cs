@@ -5,7 +5,7 @@ using MediatR;
 using Microsoft.CodeAnalysis.CSharp;
 using Microsoft.CodeAnalysis.CSharp.Syntax;
 using Microsoft.Extensions.Options;
-using SharedKernel;
+using MonoUtils.Domain;
 
 namespace Delinq.Programs;
 

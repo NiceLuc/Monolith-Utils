@@ -1,4 +1,6 @@
-﻿namespace SharedKernel;
+﻿using MonoUtils.Domain;
+
+namespace MonoUtils.Infrastructure;
 
 public class FileStorage : IFileStorage
 {
