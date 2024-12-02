@@ -7,7 +7,7 @@ using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 using MonoUtils.Domain.Data;
-using Serilog;
+using MonoUtils.Infrastructure;
 
 // TODO: Figure out why the console app is not respecting the launchSettings.json environment variable
 //Environment.SetEnvironmentVariable("ASPNETCORE_ENVIRONMENT", "Development");
@@ -18,13 +18,7 @@ var builder = Host.CreateDefaultBuilder(args)
         // Add appsettings.json settings
         config.AddJsonFile("appsettings.json", optional: true, reloadOnChange: true);
     })
-    .UseSerilog((context, services, configuration) =>
-    {
-        configuration.ReadFrom.Configuration(context.Configuration)
-            .ReadFrom.Services(services)
-            .Enrich.FromLogContext()
-            .WriteTo.Console(outputTemplate: "{Message:lj}{NewLine}{Exception}");
-    })
+    .ConfigureInfrastructureLogging()
     .ConfigureServices((context, services) =>
     {
         services.AddDerefServices(context);
