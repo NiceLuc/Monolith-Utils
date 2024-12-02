@@ -1,4 +1,5 @@
 ﻿using System.Text;
+using Deref.Data;
 using MediatR;
 using Microsoft.Extensions.Logging;
 
@@ -6,16 +7,31 @@ namespace Deref.Programs;
 
 public class Project
 {
-    public class Request : IRequest<string>
+    public class Request : IQueryRequest
     {
-        public string? ProjectName { get; set; }
+        // use request to show a list of projects or details about a specific project
         public bool IsList { get; set; }
+
+        /// <summary>
+        /// - IsList: true - (Optional) This is used as a "search filter" against the project's [Name].
+        /// - IsList: false - (Required) This is used as an "identifier" of a project.
+        /// </summary>
+        public string? ProjectName { get; set; }
+
+        // IsList: false - show lists of dependencies related to this project
         public bool IsListReferences { get; set; }
         public bool IsListReferencedBy { get; set; }
         public bool IsListWixProjects { get; set; }
+        public bool IsListSolutions { get; set; }
+        public bool IsListBuildDefinitions { get; set; }
+
+        // These options apply to IsList as well as each dependency list.
+        public FilterType BranchFilter { get; set; }
+        public string? SearchTerm { get; set; }
+        public bool IsExcludeTests { get; set; }
+        public bool IsRecursive { get; set; }
         public bool ShowListCounts { get; set; }
         public bool ShowListTodos { get; set; }
-        public bool IsRecursive { get; set; }
     }
 
     public class Handler(ILogger<Handler> logger,
@@ -26,7 +42,6 @@ public class Project
         private const string _termPattern = "{0,4}"; // right align terms
         private const string _todoPattern = "        - {0}"; // 8 leading spaces!
 
-
         public async Task<string> Handle(Request request, CancellationToken cancellationToken)
         {
             if (!ValidateRequest(request, out var message))
@@ -34,6 +49,8 @@ public class Project
 
             var settings = await settingsBuilder.BuildAsync(cancellationToken);
             var database = await databaseProvider.GetDatabaseAsync(settings.BranchName, cancellationToken);
+            var options = request.ToQueryOptions();
+
             var lookup = database.Projects.ToDictionary(p => p.Name, StringComparer.InvariantCultureIgnoreCase);
 
             // single project
@@ -42,19 +59,24 @@ public class Project
                 if (!lookup.TryGetValue(request.ProjectName!, out var project))
                     return "Project not found: " + request.ProjectName;
 
+                var solutions = database.Solutions.ToDictionary(s => s.Name, StringComparer.InvariantCultureIgnoreCase);
+                var projectSolutions = project.Solutions.Select(s => solutions[s]);
+                var buildDefinitions = projectSolutions.SelectMany(s => s.Builds)
+                    .Distinct().OrderBy(b => b).ToArray();
+
                 // show header
-                ShowProjectDetails(project);
+                ShowProjectDetails(project, options);
 
                 if (request.IsListReferences)
                 {
-                    var projects = GetProjectsReferencing(project, lookup, request.IsRecursive);
-                    ShowProjectsList("References", projects, request);
+                    var references = GetProjectsReferencing(project, lookup, request);
+                    ShowProjectsList("References", references, request);
                 }
 
                 if (request.IsListReferencedBy)
                 {
-                    var projects = GetProjectsReferencedBy(project, lookup, request.IsRecursive);
-                    ShowProjectsList("Referenced by", projects, request);
+                    var referencedBy = GetProjectsReferencedBy(project, lookup, request);
+                    ShowProjectsList("Referenced by", referencedBy, request);
                 }
 
                 if (request.IsListWixProjects)
@@ -63,14 +85,19 @@ public class Project
                     ShowWixProjectList(project.WixProjects, wixLookup);
                 }
 
-                // always show solutions
-                var solutions = database.Solutions.ToDictionary(s => s.Name, StringComparer.InvariantCultureIgnoreCase);
-                logger.LogInformation($"Found in {project.Solutions.Count} solution(s):");
-                ShowSolutionsList(project, solutions);
+                if (request.IsListSolutions)
+                {
+                    logger.LogInformation($"Found in {project.Solutions.Count} solution(s):");
+                    ShowSolutionsList(project, solutions);
+                }
+
+                if (request.IsListBuildDefinitions) 
+                    ShowBuildDefinitionList(buildDefinitions);
+
                 return string.Empty;
             }
 
-            // filtered
+            // list by a string filter
             if (!string.IsNullOrEmpty(request.ProjectName))
             {
                 var projects = database.Projects.Where(p 
@@ -79,12 +106,13 @@ public class Project
                 return string.Empty;
             }
 
-            // all
+            // list all
             var all = database.Projects.ToArray();
             ShowProjectsList("Listing", all, request);
             return string.Empty;
         }
 
+        #region Private Methods
 
         private static bool ValidateRequest(Request request, out string message)
         {
@@ -96,10 +124,9 @@ public class Project
 
             message = string.Empty;
             return true;
-
         }
 
-        private void ShowProjectDetails(BranchDatabase.Project project)
+        private void ShowProjectDetails(ProjectRecord project, QueryOptions options)
         {
             var status = project.Exists
                 ? GetProjectStatus(project) ? "Done" : "Needs Work"
@@ -108,7 +135,7 @@ public class Project
             logger.LogInformation(_separator);
             LogInformation("Project", project.Name);
             LogInformation("Path", project.Path);
-            LogInformation("Status",status);
+            LogInformation("Status", status);
 
             if (project.Exists)
             {
@@ -119,15 +146,18 @@ public class Project
             {
                 LogInformation("Exists", project.Exists);
             }
+            LogInformation("References", $"{project.References.Count} project(s)");
+            LogInformation("Referenced by", $"{project.ReferencedBy.Count} project(s)");
+            LogInformation("Solutions", project.Solutions.Count);
 
             logger.LogInformation(_separator);
             return;
 
             void LogInformation(string fieldName, object fieldValue)
-                => logger.LogInformation($"{fieldName,8}: {fieldValue}");
+                => logger.LogInformation($"{fieldName,15}: {fieldValue}");
         }
 
-        private void ShowSolutionsList(BranchDatabase.Project project, Dictionary<string, BranchDatabase.Solution> solutions)
+        private void ShowSolutionsList(ProjectRecord project, Dictionary<string, SolutionRecord> solutions)
         {
             var maxNameWidth = project.Solutions.Max(s => s.Length) + 2;
             foreach(var solutionName in project.Solutions)
@@ -140,7 +170,7 @@ public class Project
             logger.LogInformation(_separator);
         }
 
-        private void ShowWixProjectList(List<BranchDatabase.WixProjectReference> wixProjects, Dictionary<string, BranchDatabase.WixProj> lookup)
+        private void ShowWixProjectList(List<WixProjectReference> wixProjects, Dictionary<string, WixProjectRecord> lookup)
         {
             if (wixProjects.Count == 0)
             {
@@ -181,7 +211,23 @@ public class Project
             logger.LogInformation(_separator);
         }
 
-        private void ShowProjectsList(string prefix, BranchDatabase.Project[] projects, Request request)
+        private void ShowBuildDefinitionList(string[] buildDefinitions)
+        {
+            if (buildDefinitions.Length == 0)
+            {
+                logger.LogInformation($"Not referenced in any build definitions");
+            }
+            else
+            {
+                logger.LogInformation($"Found in {buildDefinitions.Length} build definition(s):");
+                foreach (var buildRef in buildDefinitions)
+                    logger.LogInformation($"  {buildRef}");
+            }
+
+            logger.LogInformation(_separator);
+        }
+
+        private void ShowProjectsList(string prefix, ProjectRecord[] projects, IQueryRequest request)
         {
             if (projects.Length == 0)
             {
@@ -198,7 +244,7 @@ public class Project
             logger.LogInformation(_separator);
         }
 
-        private void ShowProjectDetailsRow(BranchDatabase.Project project, Request request)
+        private void ShowProjectDetailsRow(ProjectRecord project, IQueryRequest request)
         {
             var stringBuilder = new StringBuilder();
             var glyph = GetProjectStatusTerm(project);
@@ -230,17 +276,17 @@ public class Project
         }
 
 
-        private static BranchDatabase.Project[] GetProjectsReferencedBy(BranchDatabase.Project project,
-            Dictionary<string, BranchDatabase.Project> lookup, bool isRecursive)
+        private static ProjectRecord[] GetProjectsReferencedBy(ProjectRecord project,
+            Dictionary<string, ProjectRecord> lookup, IQueryRequest options)
         {
-            if (!isRecursive)
+            if (!options.IsRecursive)
                 return project.ReferencedBy.Select(p => lookup[p]).ToArray();
 
-            var result = new Dictionary<string, BranchDatabase.Project>();
+            var result = new Dictionary<string, ProjectRecord>();
             CaptureProjectNames(project);
             return result.Values.ToArray();
 
-            void CaptureProjectNames(BranchDatabase.Project current)
+            void CaptureProjectNames(ProjectRecord current)
             {
                 foreach (var name in current.ReferencedBy)
                 {
@@ -255,17 +301,17 @@ public class Project
             }
         }
 
-        private static BranchDatabase.Project[] GetProjectsReferencing(BranchDatabase.Project project,
-            Dictionary<string, BranchDatabase.Project> lookup, bool isRecursive)
+        private static ProjectRecord[] GetProjectsReferencing(ProjectRecord project,
+            Dictionary<string, ProjectRecord> lookup, IQueryRequest options)
         {
-            if (!isRecursive)
+            if (!options.IsRecursive)
                 return project.References.Select(p => lookup[p]).ToArray();
 
-            var result = new Dictionary<string, BranchDatabase.Project>();
+            var result = new Dictionary<string, ProjectRecord>();
             CaptureProjectNames(project);
             return result.Values.ToArray();
 
-            void CaptureProjectNames(BranchDatabase.Project current)
+            void CaptureProjectNames(ProjectRecord current)
             {
                 foreach (var name in current.References)
                 {
@@ -280,10 +326,10 @@ public class Project
             }
         }
 
-        private static string IncludeCountsHeader(Request request) 
+        private static string IncludeCountsHeader(IQueryRequest request) 
             => request.ShowListCounts ? "(uses / used by)" : "";
 
-        private static string GetProjectStatusTerm(BranchDatabase.Project project)
+        private static string GetProjectStatusTerm(ProjectRecord project)
         {
             if (!project.Exists)
                 return string.Format(_termPattern, "x");
@@ -293,10 +339,10 @@ public class Project
             return string.Format(_termPattern, term);
         }
 
-        private static bool GetProjectStatus(BranchDatabase.Project project) 
+        private static bool GetProjectStatus(ProjectRecord project) 
             => project is {IsSdk: true, IsNetStandard2: true, IsPackageRef: true};
 
-        private static string[] GetTodos(BranchDatabase.Project project)
+        private static string[] GetTodos(ProjectRecord project)
         {
             var todos = new List<string>();
             if (!project.IsPackageRef) todos.Add("PackageRef");
@@ -305,5 +351,7 @@ public class Project
             if (todos.Count == 0) todos.Add("None");
             return todos.ToArray();
         }
+
+        #endregion
     }
 }

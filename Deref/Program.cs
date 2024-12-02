@@ -1,5 +1,6 @@
 ﻿using CommandLine;
 using Deref;
+using Deref.Data;
 using Deref.Options;
 using Deref.Programs;
 using MediatR;
@@ -77,14 +78,19 @@ void RunProjectProgram(ProjectOptions options)
 {
     var request = new Project.Request
     {
+        BranchFilter = ConvertToResultFilter(options),
         ProjectName = options.ProjectName,
         IsListReferences = options.IsListReferences,
         IsListReferencedBy = options.IsListReferencedBy,
         IsListWixProjects = options.IsListWixProjects,
+        IsListSolutions = options.IsListSolutions,
+        IsListBuildDefinitions = options.IsListBuildDefinitions,
         IsList = options.IsList,
+        SearchTerm = options.SearchTerm,
         ShowListCounts = options.ShowListCounts,
         ShowListTodos = options.ShowListTodos,
-        IsRecursive = options.IsRecursive
+        IsRecursive = options.IsRecursive,
+        IsExcludeTests = options.IsExcludeTests,
     };
 
     SendRequest(request);
@@ -94,6 +100,20 @@ void RunWixProgram(WixOptions options)
 {
     var request = new Wix.Request();
     SendRequest(request);
+}
+
+FilterType ConvertToResultFilter(IListOptions options)
+{
+    return FilterType.OnlyRequired;
+    /*
+    return options switch
+    {
+        {IsIncludeAll: true} => FilterType.All,
+        {IsIncludeOnlyRequired: true} => FilterType.OnlyRequired,
+        {IsIncludeOnlyNonRequired: true} => FilterType.OnlyNonRequired,
+        _ => FilterType.OnlyRequired // meaningful default!
+    };
+*/
 }
 
 void SendRequest<TRequest>(TRequest request) where TRequest : IRequest<string>

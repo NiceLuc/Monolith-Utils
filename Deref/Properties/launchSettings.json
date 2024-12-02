@@ -2,7 +2,10 @@
   "profiles": {
     "Deref": {
       "commandName": "Project",
-      "commandLineArgs": "project common -w"
+      /*
+      "commandLineArgs": "init -f"
+      */
+      "commandLineArgs": "project common"
     }
   }
 }
