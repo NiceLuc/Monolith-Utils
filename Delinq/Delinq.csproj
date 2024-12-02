@@ -125,7 +125,6 @@
 
   <ItemGroup>
     <ProjectReference Include="..\MonoUtils.Infrastructure\MonoUtils.Infrastructure.csproj" />
-    <ProjectReference Include="..\SharedKernel\SharedKernel.csproj" />
   </ItemGroup>
 
   <ItemGroup>

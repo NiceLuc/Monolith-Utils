@@ -1,4 +1,4 @@
-﻿namespace Delinq.CodeGeneration.Engine;
+﻿namespace MonoUtils.Domain;
 
 public interface ITemplateEngine
 {

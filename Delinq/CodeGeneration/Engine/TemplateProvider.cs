@@ -1,4 +1,5 @@
-﻿using MonoUtils.Infrastructure;
+﻿using MonoUtils.Domain;
+using MonoUtils.Infrastructure;
 
 namespace Delinq.CodeGeneration.Engine;
 
