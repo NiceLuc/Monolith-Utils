@@ -3,10 +3,11 @@ using Microsoft.Extensions.Hosting;
 using CommandLine;
 using Delinq.Options;
 using Delinq.Programs;
-using MediatR;
 using Microsoft.Extensions.Configuration;
 using MonoUtils.Infrastructure;
+using MonoUtils.UseCases;
 using Delinq;
+using MediatR;
 
 // TODO: Figure out why the console app is not respecting the launchSettings.json environment variable
 //Environment.SetEnvironmentVariable("ASPNETCORE_ENVIRONMENT", "Development");
@@ -34,25 +35,23 @@ var builder = Host.CreateDefaultBuilder(args)
         // TODO: if (context.HostingEnvironment.IsDevelopment())
             config.AddUserSecrets<Program>();
     })
+    .ConfigureInfrastructureLogging()
     .ConfigureServices((context, services) =>
     {
         var assembly = typeof(Program).Assembly;
+
         services
             .AddInfrastructure(assembly)
-            //.AddUseCases(assembly)
+            .AddUseCases(assembly)
             .AddDelinqServices(context);
-
-        services.AddMediatR(config =>
-        {
-            config.RegisterServicesFromAssembly(assembly);
-        });
     });
 
 using var host = builder.Build();
+var parser = host.Services.GetRequiredService<Parser>();
 var mediator = host.Services.GetRequiredService<IMediator>();
 
 // parse the command line arguments and call appropriate handler
-Parser.Default.ParseArguments<InitializeOptions, CreateRepositoryOptions, CreateUnitTestsOptions, VerifyRepositoryMethodOptions, VerifyReportOptions>(args)
+parser.ParseArguments<InitializeOptions, CreateRepositoryOptions, CreateUnitTestsOptions, VerifyRepositoryMethodOptions, VerifyReportOptions>(args)
     .WithParsed<InitializeOptions>(InitializeSettingsFile)
     .WithParsed<CreateRepositoryOptions>(GenerateRepositoryFiles)
     .WithParsed<CreateUnitTestsOptions>(GenerateUnitTestFile)

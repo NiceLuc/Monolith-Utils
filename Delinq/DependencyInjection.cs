@@ -1,9 +1,9 @@
-﻿using Delinq.Parsers;
+﻿using CommandLine;
+using Delinq.Parsers;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 using MonoUtils.Domain;
 using MonoUtils.Infrastructure;
-using Mustache;
 
 namespace Delinq;
 
@@ -11,8 +11,6 @@ internal static class DependencyInjection
 {
     public static IServiceCollection AddDelinqServices(this IServiceCollection services, HostBuilderContext context)
     {
-        services.AddTransient<ScopeTracker>();
-
         services.AddSingleton<IContextConfigProvider, ContextConfigProvider>();
         services.AddSingleton<IConfigSettingsBuilder, ConfigSettingsBuilder>();
 
@@ -34,8 +32,13 @@ internal static class DependencyInjection
         services.AddSingleton<IParser<MethodDefinition>, ParametersParser>();
         services.AddSingleton<IParser<DTOClassDefinition>, DTOPropertyParser>();
 
-        // handlebars template support
-        services.AddSingleton<FormatCompiler>();
+        services.AddSingleton(_ => new Parser(config =>
+        {
+            config.CaseInsensitiveEnumValues = true;
+            config.HelpWriter = Console.Out;
+            config.AutoHelp = true;
+            config.AutoVersion = true;
+        }));
 
         return services;
     }

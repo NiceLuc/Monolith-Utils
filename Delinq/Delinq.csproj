@@ -125,6 +125,7 @@
 
   <ItemGroup>
     <ProjectReference Include="..\MonoUtils.Infrastructure\MonoUtils.Infrastructure.csproj" />
+    <ProjectReference Include="..\MonoUtils.UseCases\MonoUtils.UseCases.csproj" />
   </ItemGroup>
 
   <ItemGroup>
