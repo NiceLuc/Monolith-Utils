@@ -5,6 +5,7 @@ using Delinq.Options;
 using Delinq.Programs;
 using MediatR;
 using Microsoft.Extensions.Configuration;
+using MonoUtils.Infrastructure;
 using Delinq;
 
 // TODO: Figure out why the console app is not respecting the launchSettings.json environment variable
@@ -35,11 +36,15 @@ var builder = Host.CreateDefaultBuilder(args)
     })
     .ConfigureServices((context, services) =>
     {
-        services.AddDelinqServices(context);
+        var assembly = typeof(Program).Assembly;
+        services
+            .AddInfrastructure(assembly)
+            //.AddUseCases(assembly)
+            .AddDelinqServices(context);
 
         services.AddMediatR(config =>
         {
-            config.RegisterServicesFromAssembly(typeof(Program).Assembly);
+            config.RegisterServicesFromAssembly(assembly);
         });
     });
 

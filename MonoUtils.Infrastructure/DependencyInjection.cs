@@ -15,15 +15,17 @@ public static class DependencyInjection
                 .ReadFrom.Services(services)
                 .Enrich.FromLogContext()
                 .WriteTo.Console(outputTemplate: "{Message:lj}{NewLine}{Exception}");
-
         });
 
-    public static IServiceCollection AddSharedServices(this IServiceCollection services, Assembly assembly)
+    public static IServiceCollection AddInfrastructure(this IServiceCollection services, Assembly assembly)
     {
         services.AddSingleton<IFileStorage, FileStorage>();
 
         services.AddSingleton<IEmbeddedResourceProvider>(_
             => new EmbeddedResourceProvider(assembly));
+
+        services.AddSingleton<ITemplateEngine, HandlebarsTemplateEngine>();
+
         return services;
     }
 }

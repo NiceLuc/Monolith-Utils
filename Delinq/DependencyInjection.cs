@@ -1,5 +1,4 @@
-﻿using Delinq.CodeGeneration.Engine;
-using Delinq.Parsers;
+﻿using Delinq.Parsers;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 using MonoUtils.Domain;
@@ -10,18 +9,16 @@ namespace Delinq;
 
 internal static class DependencyInjection
 {
-    public static void AddDelinqServices(this IServiceCollection services, HostBuilderContext context)
+    public static IServiceCollection AddDelinqServices(this IServiceCollection services, HostBuilderContext context)
     {
         services.AddTransient<ScopeTracker>();
-
-        services.AddSharedServices(typeof(DependencyInjection).Assembly);
 
         services.AddSingleton<IContextConfigProvider, ContextConfigProvider>();
         services.AddSingleton<IConfigSettingsBuilder, ConfigSettingsBuilder>();
 
         services.AddSingleton<IDefinitionSerializer<ContextConfig>, DefinitionSerializer<ContextConfig>>();
-        services.AddSingleton<IDefinitionSerializer<RepositoryDefinition>, RepositoryDefinitionSerializer>();
         services.AddSingleton<IDefinitionSerializer<ContextDefinition>, DefinitionSerializer<ContextDefinition>>();
+        services.AddSingleton<IDefinitionSerializer<RepositoryDefinition>, RepositoryDefinitionSerializer>();
 
         services.Configure<ConnectionStrings>(context.Configuration.GetSection("ConnectionStrings"));
         services.Configure<AppSettings>(context.Configuration.GetSection("AppSettings"));
@@ -39,7 +36,7 @@ internal static class DependencyInjection
 
         // handlebars template support
         services.AddSingleton<FormatCompiler>();
-        services.AddSingleton<ITemplateProvider, TemplateProvider>();
-        services.AddSingleton<ITemplateEngine, HandlebarsTemplateEngine>();
+
+        return services;
     }
 }

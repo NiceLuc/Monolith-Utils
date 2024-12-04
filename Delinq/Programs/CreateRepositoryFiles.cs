@@ -17,7 +17,7 @@ public sealed class CreateRepositoryFiles
     public class Handler(
         IConfigSettingsBuilder settingsBuilder,
         IDefinitionSerializer<ContextDefinition> definitionSerializer,
-        ITemplateProvider templateProvider,
+        IEmbeddedResourceProvider templateProvider,
         ITemplateEngine templateEngine,
         IFileStorage fileStorage) 
         : IRequestHandler<Request, string>
@@ -46,7 +46,7 @@ public sealed class CreateRepositoryFiles
 
             async Task ProcessTemplate(string resourceName, string fileNameFormat, object? data = null)
             {
-                var template = await templateProvider.GetTemplateAsync(resourceName, cancellationToken);
+                var template = await templateProvider.GetResourceAsStringAsync(resourceName, cancellationToken);
                 var generatedCode = templateEngine.ProcessTemplate(template, data ?? definition);
                 var fileName = string.Format(fileNameFormat, definition.ContextName);
                 var filePath = Path.Combine(request.OutputDirectory, fileName);
@@ -100,7 +100,7 @@ public sealed class CreateRepositoryFiles
                 var methodViewModel = CreateMethodViewModel(method, model);
 
                 var resourceFileName = GetResourceFileName(methodViewModel, data);
-                var template = await templateProvider.GetTemplateAsync(resourceFileName, cancellationToken);
+                var template = await templateProvider.GetResourceAsStringAsync(resourceFileName, cancellationToken);
                 var code = templateEngine.ProcessTemplate(template, methodViewModel);
 
                 viewModel.Methods.Add(code);
