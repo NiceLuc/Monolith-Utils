@@ -1,8 +1,8 @@
 ﻿using System.Text.RegularExpressions;
-using Deref.Data;
 using MediatR;
 using Microsoft.Extensions.Logging;
-using SharedKernel;
+using MonoUtils.Domain;
+using MonoUtils.Domain.Data;
 
 namespace Deref.Programs;
 
@@ -11,7 +11,6 @@ public class Initialize
     public class Request : IRequest<string>
     {
         public string BranchName { get; set; }
-        public string ResultsDirectoryPath { get; set; }
         public bool ForceOverwrite { get; set; }
     }
 
@@ -53,13 +52,13 @@ public class Initialize
 
         public async Task<string> Handle(Request request, CancellationToken cancellationToken)
         {
-            var settings = await settingsBuilder.BuildAsync(request.BranchName, request.ResultsDirectoryPath, cancellationToken);
+            var settings = await settingsBuilder.BuildAsync(request.BranchName, cancellationToken);
             ValidateRequest(settings, request);
 
             ResetLists();
 
             // scan all solution files and queue all project files for scanning
-            foreach (var build in settings.BuildSolutions)
+            foreach (var build in settings.RequiredBuildSolutions)
             {
                 await ScanSolutionFileAsync(build.SolutionPath, true, (solution, references) =>
                 {
@@ -180,7 +179,7 @@ public class Initialize
                 WixProjects = _wixProjects.Values.ToList()
             };
 
-            var filePath = Path.Combine(settings.TempDirectory, "db.json");
+            var filePath = Path.Combine(settings.TempRootDirectory, "db.json");
             await serializer.SerializeAsync(filePath, data, cancellationToken);
             return filePath;
         }
@@ -203,15 +202,15 @@ public class Initialize
 
         private void ValidateRequest(ProgramSettings settings, Request request)
         {
-            if (!fileStorage.DirectoryExists(settings.TempDirectory))
+            if (!fileStorage.DirectoryExists(settings.TempRootDirectory))
             {
-                fileStorage.CreateDirectory(settings.TempDirectory);
+                fileStorage.CreateDirectory(settings.TempRootDirectory);
                 return;
             }
 
             if (!request.ForceOverwrite)
                 throw new InvalidOperationException(
-                    $"Results directory already exists: {settings.TempDirectory} (use -f to overwrite)");
+                    $"Results directory already exists: {settings.TempRootDirectory} (use -f to overwrite)");
         }
 
         private async Task ScanSolutionFileAsync(string solutionPath, bool isRequired,

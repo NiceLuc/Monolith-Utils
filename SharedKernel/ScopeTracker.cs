@@ -1,6 +1,6 @@
-﻿namespace Delinq.Parsers;
+﻿namespace SharedKernel;
 
-internal class ScopeTracker(string startToken = "{", string endToken = "}")
+public class ScopeTracker(string startToken = "{", string endToken = "}")
 {
     private int _counter;
     private bool _isNewScope = true;

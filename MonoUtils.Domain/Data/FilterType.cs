@@ -1,4 +1,4 @@
-﻿namespace Deref.Data;
+﻿namespace MonoUtils.Domain.Data;
 
 /// <summary>
 /// When querying our database for assets, we can filter the results by the type of asset.

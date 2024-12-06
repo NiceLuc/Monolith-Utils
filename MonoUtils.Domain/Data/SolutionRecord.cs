@@ -1,4 +1,4 @@
-﻿namespace Deref.Data;
+﻿namespace MonoUtils.Domain.Data;
 
 public record SolutionRecord(string Name, string Path, bool IsRequired, bool DoesExist) 
     : SchemaRecord(Name, Path, IsRequired, DoesExist)

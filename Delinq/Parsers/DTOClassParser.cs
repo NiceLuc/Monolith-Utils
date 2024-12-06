@@ -1,4 +1,5 @@
 ﻿using System.Text.RegularExpressions;
+using SharedKernel;
 
 namespace Delinq.Parsers;
 
@@ -34,5 +35,4 @@ internal class DTOClassParser(IParser<DTOClassDefinition> propertyParser, ScopeT
 
         definition.DTOModels.Add(typeDefinition);
     }
-
 }

@@ -14,11 +14,12 @@
     <PackageReference Include="Serilog" Version="4.1.0" />
     <PackageReference Include="Serilog.Extensions.Hosting" Version="8.0.0" />
     <PackageReference Include="Serilog.Settings.Configuration" Version="8.0.4" />
-    <PackageReference Include="Serilog.Sinks.Console" Version="6.0.0" />
   </ItemGroup>
 
   <ItemGroup>
-    <ProjectReference Include="..\SharedKernel\SharedKernel.csproj" />
+    <ProjectReference Include="..\MonoUtils.Domain\MonoUtils.Domain.csproj" />
+    <ProjectReference Include="..\MonoUtils.Infrastructure\MonoUtils.Infrastructure.csproj" />
+    <ProjectReference Include="..\MonoUtils.UseCases\MonoUtils.UseCases.csproj" />
   </ItemGroup>
 
   <ItemGroup>

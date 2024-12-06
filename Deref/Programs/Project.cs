@@ -1,7 +1,7 @@
 ﻿using System.Text;
-using Deref.Data;
 using MediatR;
 using Microsoft.Extensions.Logging;
+using MonoUtils.Domain.Data;
 
 namespace Deref.Programs;
 

@@ -1,7 +1,6 @@
-﻿using Delinq.CodeGeneration.Engine;
-using Delinq.CodeGeneration.ViewModels;
+﻿using Delinq.CodeGeneration.ViewModels;
 using MediatR;
-using SharedKernel;
+using MonoUtils.Domain;
 
 namespace Delinq.Programs;
 
@@ -18,7 +17,7 @@ public sealed class CreateUnitTests
     public class Handler(
         IConfigSettingsBuilder settingsBuilder,
         IDefinitionSerializer<ContextDefinition> definitionSerializer,
-        ITemplateProvider templateProvider,
+        IEmbeddedResourceProvider templateProvider,
         ITemplateEngine templateEngine,
         IFileStorage fileStorage)
         : IRequestHandler<Request, string>
@@ -41,7 +40,7 @@ public sealed class CreateUnitTests
 
             async Task ProcessTemplate(string resourceName, string fileNameFormat, object? data = null)
             {
-                var template = await templateProvider.GetTemplateAsync(resourceName, cancellationToken);
+                var template = await templateProvider.GetResourceAsStringAsync(resourceName, cancellationToken);
                 var generatedCode = templateEngine.ProcessTemplate(template, data ?? definition);
                 var fileName = string.Format(fileNameFormat, definition.ContextName);
                 var filePath = Path.Combine(request.OutputDirectory, fileName);
@@ -92,7 +91,7 @@ public sealed class CreateUnitTests
                 var methodViewModel = CreateMethodViewModel(method, definition);
 
                 var resourceFileName = GetResourceFileName(methodViewModel, definition);
-                var template = await templateProvider.GetTemplateAsync(resourceFileName, cancellationToken);
+                var template = await templateProvider.GetResourceAsStringAsync(resourceFileName, cancellationToken);
                 var code = templateEngine.ProcessTemplate(template, methodViewModel);
 
                 viewModel.Methods.Add(code);

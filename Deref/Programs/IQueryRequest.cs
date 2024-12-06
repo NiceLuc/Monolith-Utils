@@ -1,5 +1,5 @@
-﻿using Deref.Data;
-using MediatR;
+﻿using MediatR;
+using MonoUtils.Domain.Data;
 
 namespace Deref.Programs;
 

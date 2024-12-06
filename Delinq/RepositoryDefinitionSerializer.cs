@@ -1,6 +1,7 @@
 ﻿using System.Text.Json;
 using System.Text.Json.Serialization;
-using SharedKernel;
+using MonoUtils.Domain;
+using MonoUtils.Infrastructure;
 
 namespace Delinq;
 

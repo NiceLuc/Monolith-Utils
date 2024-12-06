@@ -124,7 +124,8 @@
   </ItemGroup>
 
   <ItemGroup>
-    <ProjectReference Include="..\SharedKernel\SharedKernel.csproj" />
+    <ProjectReference Include="..\MonoUtils.Infrastructure\MonoUtils.Infrastructure.csproj" />
+    <ProjectReference Include="..\MonoUtils.UseCases\MonoUtils.UseCases.csproj" />
   </ItemGroup>
 
   <ItemGroup>

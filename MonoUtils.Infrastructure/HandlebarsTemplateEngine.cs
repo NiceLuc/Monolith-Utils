@@ -1,8 +1,9 @@
-﻿using Mustache;
+﻿using MonoUtils.Domain;
+using Mustache;
 
-namespace Delinq.CodeGeneration.Engine;
+namespace MonoUtils.Infrastructure;
 
-internal class HandlebarsTemplateEngine(FormatCompiler compiler) : ITemplateEngine
+public class HandlebarsTemplateEngine(FormatCompiler compiler) : ITemplateEngine
 {
     public string ProcessTemplate(string template, object data)
     {

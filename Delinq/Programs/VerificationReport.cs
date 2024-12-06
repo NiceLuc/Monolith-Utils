@@ -1,7 +1,7 @@
 ﻿using System.Diagnostics;
 using ClosedXML.Excel;
 using MediatR;
-using SharedKernel;
+using MonoUtils.Domain;
 
 namespace Delinq.Programs;
 

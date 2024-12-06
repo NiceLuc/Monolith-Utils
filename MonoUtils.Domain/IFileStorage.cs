@@ -1,4 +1,4 @@
-﻿namespace SharedKernel;
+﻿namespace MonoUtils.Domain;
 
 public interface IFileStorage
 {

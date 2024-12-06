@@ -1,4 +1,4 @@
-﻿namespace Deref.Data;
+﻿namespace MonoUtils.Domain.Data;
 
 public class QueryOptions
 {

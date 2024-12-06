@@ -1,26 +1,22 @@
-﻿using Delinq.CodeGeneration.Engine;
+﻿using CommandLine;
 using Delinq.Parsers;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
-using Mustache;
-using SharedKernel;
+using MonoUtils.Domain;
+using MonoUtils.Infrastructure;
 
 namespace Delinq;
 
 internal static class DependencyInjection
 {
-    public static void AddDelinqServices(this IServiceCollection services, HostBuilderContext context)
+    public static IServiceCollection AddDelinqServices(this IServiceCollection services, HostBuilderContext context)
     {
-        services.AddTransient<ScopeTracker>();
-
-        services.AddSharedServices(typeof(DependencyInjection).Assembly);
-
         services.AddSingleton<IContextConfigProvider, ContextConfigProvider>();
         services.AddSingleton<IConfigSettingsBuilder, ConfigSettingsBuilder>();
 
         services.AddSingleton<IDefinitionSerializer<ContextConfig>, DefinitionSerializer<ContextConfig>>();
-        services.AddSingleton<IDefinitionSerializer<RepositoryDefinition>, RepositoryDefinitionSerializer>();
         services.AddSingleton<IDefinitionSerializer<ContextDefinition>, DefinitionSerializer<ContextDefinition>>();
+        services.AddSingleton<IDefinitionSerializer<RepositoryDefinition>, RepositoryDefinitionSerializer>();
 
         services.Configure<ConnectionStrings>(context.Configuration.GetSection("ConnectionStrings"));
         services.Configure<AppSettings>(context.Configuration.GetSection("AppSettings"));
@@ -36,9 +32,14 @@ internal static class DependencyInjection
         services.AddSingleton<IParser<MethodDefinition>, ParametersParser>();
         services.AddSingleton<IParser<DTOClassDefinition>, DTOPropertyParser>();
 
-        // handlebars template support
-        services.AddSingleton<FormatCompiler>();
-        services.AddSingleton<ITemplateProvider, TemplateProvider>();
-        services.AddSingleton<ITemplateEngine, HandlebarsTemplateEngine>();
+        services.AddSingleton(_ => new Parser(config =>
+        {
+            config.CaseInsensitiveEnumValues = true;
+            config.HelpWriter = Console.Out;
+            config.AutoHelp = true;
+            config.AutoVersion = true;
+        }));
+
+        return services;
     }
 }

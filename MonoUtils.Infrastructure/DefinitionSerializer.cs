@@ -1,7 +1,8 @@
 ﻿using System.Text.Json;
 using System.Text.Json.Serialization;
+using MonoUtils.Domain;
 
-namespace SharedKernel;
+namespace MonoUtils.Infrastructure;
 
 public class DefinitionSerializer<T>(IFileStorage fileStorage) : IDefinitionSerializer<T>
 {

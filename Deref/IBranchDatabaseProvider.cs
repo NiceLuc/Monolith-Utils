@@ -1,4 +1,4 @@
-﻿using Deref.Data;
+﻿using MonoUtils.Domain.Data;
 
 namespace Deref;
 

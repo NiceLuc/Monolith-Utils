@@ -1,8 +1,9 @@
 ﻿using CommandLine;
-using Deref.Data;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
-using SharedKernel;
+using MonoUtils.Domain;
+using MonoUtils.Domain.Data;
+using MonoUtils.Infrastructure;
 
 namespace Deref;
 
@@ -10,8 +11,6 @@ internal static class DependencyInjection
 {
     public static IServiceCollection AddDerefServices(this IServiceCollection services, HostBuilderContext context)
     {
-        services.AddSharedServices(typeof(DependencyInjection).Assembly);
-
         services.AddSingleton<IProgramSettingsBuilder, ProgramSettingsBuilder>();
         services.AddSingleton<IBranchDatabaseProvider, BranchDatabaseProvider>();
 
