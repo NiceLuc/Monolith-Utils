@@ -49,7 +49,6 @@ void RunInitProgram(InitializeOptions options)
     var request = new Initialize.Request
     {
         BranchName = options.BranchName,
-        ResultsDirectoryPath = options.ResultsDirectoryPath,
         ForceOverwrite = options.ForceOverwrite
     };
 

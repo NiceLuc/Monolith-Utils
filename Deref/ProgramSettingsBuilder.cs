@@ -11,25 +11,34 @@ internal class ProgramSettingsBuilder(
 {
     private readonly AppSettings _appSettings = appSettings.Value;
 
-    public Task<ProgramSettings> BuildAsync(CancellationToken cancellationToken) => BuildAsync(string.Empty, cancellationToken);
-
-    public Task<ProgramSettings> BuildAsync(string branchName, CancellationToken cancellationToken) => BuildAsync(branchName, null, cancellationToken);
-
-    public async Task<ProgramSettings> BuildAsync(string branchName, string? customTempDirectoryPath, CancellationToken cancellationToken)
+    public async Task<ProgramSettings> BuildAsync(CancellationToken cancellationToken)
     {
-        branchName = await ResolveBranchNameAsync(branchName, cancellationToken);
+        var branchName = await ResolveBranchNameAsync(cancellationToken);
+        return DoBuildAsync(branchName);
+    }
 
-        var tfsRootDirectory = ResolveDirectoryPath(_appSettings.TFSRootTemplate, branchName);
-        var tempDirectory = ResolveDirectoryPath(string.IsNullOrEmpty(customTempDirectoryPath)
-            ? _appSettings.TempDirectoryTemplate
-            : customTempDirectoryPath, branchName);
+    public Task<ProgramSettings> BuildAsync(string branchName, CancellationToken cancellationToken)
+    {
+        if (string.IsNullOrEmpty(branchName))
+            throw new ArgumentNullException(nameof(branchName), "branchName is required");
+
+        var settings = DoBuildAsync(branchName);
+        return Task.FromResult(settings);
+    }
+
+    #region Private Methods
+
+    private ProgramSettings DoBuildAsync(string branchName)
+    {
+        var tfsRootDirectory = _appSettings.GetTFSRootPath(branchName);
+        var tempDirectory = _appSettings.GetTempPath(branchName);
 
         var settings = new ProgramSettings
         {
             BranchName = branchName,
-            RootDirectory = tfsRootDirectory,
-            TempDirectory = tempDirectory,
-            BuildSolutions = (from s in _appSettings.RequiredSolutions
+            TfsRootDirectory = tfsRootDirectory,
+            TempRootDirectory = tempDirectory,
+            RequiredBuildSolutions = (from s in _appSettings.RequiredSolutions
                 let path = Path.Combine(tfsRootDirectory, s.SolutionPath)
                 let name = string.Format(s.BuildName, branchName)
                 select new BuildDefinition(name, path)).ToArray()
@@ -38,21 +47,19 @@ internal class ProgramSettingsBuilder(
         return settings;
     }
 
-
-    private async Task<string> ResolveBranchNameAsync(string branchName, CancellationToken cancellationToken)
+    private async Task<string> ResolveBranchNameAsync(CancellationToken cancellationToken)
     {
-        if (!string.IsNullOrEmpty(branchName))
-            return branchName;
-
-        var rootPath = ResolveDirectoryPath(_appSettings.TempDirectoryTemplate, string.Empty);
-        var configPath = Path.Combine(rootPath, "config.json");
+        // if the config file has not been built for this branch, return the default branch name
+        var configPath = Path.Combine(_appSettings.GetTempPath(), "config.json");
         if (!fileStorage.FileExists(configPath))
             return _appSettings.DefaultBranchName;
 
+        // otherwise, open the config file and return the branch name in the file
         var config = await configSerializer.DeserializeAsync(configPath, cancellationToken);
-        return config.BranchName;
+        return string.IsNullOrEmpty(config.BranchName)
+            ? _appSettings.DefaultBranchName
+            : config.BranchName;
     }
 
-    private static string ResolveDirectoryPath(string pattern, string branchName) =>
-        pattern.Replace("{{BRANCH_NAME}}", branchName);
+    #endregion
 }

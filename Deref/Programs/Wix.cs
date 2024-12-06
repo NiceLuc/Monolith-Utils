@@ -18,6 +18,7 @@ public class Wix
         {
             var settings = await settingsBuilder.BuildAsync(cancellationToken);
             var database = await databaseProvider.GetDatabaseAsync(settings.BranchName, cancellationToken);
+
             var lookup = database.WixProjects.ToDictionary(p => p.Name, StringComparer.InvariantCultureIgnoreCase);
 
             foreach (var wixProject in database.WixProjects) 

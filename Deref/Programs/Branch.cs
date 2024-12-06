@@ -22,18 +22,23 @@ public class Branch
 
         public async Task<string> Handle(Request request, CancellationToken cancellationToken)
         {
-            var tfsRootPath = _appSettings.TFSRootTemplate.Replace("{{BRANCH_NAME}}", "");
-
-            var tempRootPath = _appSettings.TempDirectoryTemplate.Replace("{{BRANCH_NAME}}", "");
-            var configFilePath = Path.Combine(tempRootPath, "config.json");
+            var configFilePath = Path.Combine(_appSettings.GetTempPath(), "config.json");
             var config = fileStorage.FileExists(configFilePath)
                 ? await configSerializer.DeserializeAsync(configFilePath, cancellationToken)
                 : new ProgramConfig {BranchName = _appSettings.DefaultBranchName};
+
+            var tfsRootPath = _appSettings.GetTFSRootPath();
 
             // list branches
             if (string.IsNullOrEmpty(request.BranchName))
             {
                 var branches = fileStorage.GetDirectoryNames(tfsRootPath);
+                if (branches.Length == 0)
+                {
+                    logger.LogWarning($"No TFS branches found in '{tfsRootPath}'");
+                    return string.Empty;
+                }
+
                 foreach (var branchName in branches)
                 {
                     var isCurrent = branchName == config.BranchName;
@@ -59,6 +64,7 @@ public class Branch
                 return string.Empty;
             }
 
+            // persist branch name to file
             config.BranchName = request.BranchName;
             await configSerializer.SerializeAsync(configFilePath, config, cancellationToken);
             logger.LogInformation($"Switched to branch '{config.BranchName}'");
