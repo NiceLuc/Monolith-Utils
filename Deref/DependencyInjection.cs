@@ -4,6 +4,7 @@ using Microsoft.Extensions.Hosting;
 using MonoUtils.Domain;
 using MonoUtils.Domain.Data;
 using MonoUtils.Infrastructure;
+using MonoUtils.Infrastructure.FileScanners;
 
 namespace Deref;
 
@@ -26,6 +27,13 @@ internal static class DependencyInjection
         }));
 
         services.Configure<AppSettings>(context.Configuration.GetSection("AppSettings"));
+
+        // used for building the database
+        services.AddSingleton<BranchDatabaseBuilderFactory>();
+        services.AddSingleton<SolutionFileScanner>();
+        services.AddSingleton<WixProjectFileScanner>();
+        services.AddSingleton<StandardProjectFileScanner>();
+        services.AddSingleton<WixComponentFileScanner>();
 
         return services;
     }

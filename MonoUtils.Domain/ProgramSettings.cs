@@ -1,6 +1,6 @@
 ﻿using MonoUtils.Domain.Data;
 
-namespace Deref;
+namespace MonoUtils.Domain;
 
 public class ProgramSettings
 {
