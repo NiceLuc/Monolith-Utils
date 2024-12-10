@@ -7,6 +7,7 @@ public class AppSettings
 
     public string DefaultBranchName { get; set; }
     public string TFSRootTemplate { get; set; }
+    public string[] DirectoriesToIgnore { get; set; }
     public string TempDirectoryTemplate { get; set; }
     public RequiredSolution[] RequiredSolutions { get; set; }
 

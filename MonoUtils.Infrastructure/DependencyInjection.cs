@@ -22,6 +22,7 @@ public static class DependencyInjection
     public static IServiceCollection AddInfrastructure(this IServiceCollection services, Assembly assembly)
     {
         services.AddTransient<ScopeTracker>();
+        services.AddTransient<UniqueNameResolver>();
 
         // file system persistence utilities
         services.AddSingleton<IFileStorage, FileStorage>();

@@ -9,13 +9,31 @@ public class WixComponentFileScanner(IFileStorage fileStorage)
     private static readonly Regex _wxsRegex = new(@"<Compile Include=""(?<wix_path>.+?\.wxs)""", RegexOptions.Multiline);
     private static readonly Regex _assemblyNameRegex = new(@"File.+?Source=""\$\(.+?\)(?<assembly_name>.+?\.dll)""", RegexOptions.Multiline);
 
-    public async Task ScanAsync(WixProjectRecord wixProject,
-        IDictionary<string, ProjectRecord> projectsByAssemblyName,
-        CancellationToken cancellationToken)
+    public async Task ScanAsync(BranchDatabaseBuilder builder, WixProjectRecord wixProject, CancellationToken cancellationToken)
     {
         // cannot scan a file that does not exist
         if (!wixProject.DoesExist)
             return;
+
+        if (wixProject.Solutions.Count != 1)
+            throw new InvalidOperationException($"Wix project ({wixProject.Path}) is referenced by {wixProject.Solutions.Count} project(s)");
+
+        // get all projects that are required for this wix project (hint: use the solution as the root)
+        var projects = builder.GetProjectsBySolutionName(wixProject.Solutions[0], p =>
+        {
+            // file must exist!
+            if (!p.DoesExist)
+                return false;
+
+            // ignore test projects
+            if (p.Path.Contains("Test", StringComparison.OrdinalIgnoreCase))
+                return false;
+
+            return true;
+
+        }, true);
+
+        var assemblyNames = projects.ToDictionary(p => p.AssemblyName);
 
         // open the wix project file to find out what wxs files are required
         var wxsFilePaths = await GetWxsFilePaths(wixProject, cancellationToken);
@@ -34,7 +52,7 @@ public class WixComponentFileScanner(IFileStorage fileStorage)
                     assemblyName = assemblyName[(assemblyNameIndex + 1)..];
 
                 // this is not a project reference, but some other random harvested binary
-                if (!projectsByAssemblyName.TryGetValue(assemblyName, out var project))
+                if (!assemblyNames.TryGetValue(assemblyName, out var project))
                     continue;
 
                 // csharp project is required for this wix project (harvested)

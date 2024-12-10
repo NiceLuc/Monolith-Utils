@@ -37,6 +37,8 @@ internal class ProgramSettingsBuilder(
         {
             BranchName = branchName,
             TfsRootDirectory = tfsRootDirectory,
+            DirectoriesToIgnore = (from directory in _appSettings.DirectoriesToIgnore
+                select Path.Combine(tfsRootDirectory, directory)).ToArray(),
             TempRootDirectory = tempDirectory,
             RequiredBuildSolutions = (from s in _appSettings.RequiredSolutions
                 let path = Path.Combine(tfsRootDirectory, s.SolutionPath)
