@@ -8,6 +8,6 @@ public record SolutionRecord(string Name, string Path, bool IsRequired, bool Doe
     public List<string> WixProjects { get; set; } = new();
 }
 
-public enum ProjectTypes { Unknown, OldStyle, SdkStyle }
+public enum ProjectType { Unknown, OldStyle, SdkStyle }
 
-public record ProjectReference(string Name, ProjectTypes Type);
+public record ProjectReference(string Name, ProjectType Type);

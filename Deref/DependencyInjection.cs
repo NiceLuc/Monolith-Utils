@@ -15,7 +15,7 @@ internal static class DependencyInjection
         services.AddSingleton<IProgramSettingsBuilder, ProgramSettingsBuilder>();
         services.AddSingleton<IBranchDatabaseProvider, BranchDatabaseProvider>();
 
-        services.AddSingleton<IDefinitionSerializer<BranchDatabase>, DefinitionSerializer<BranchDatabase>>();
+        services.AddSingleton<IDefinitionSerializer<BranchDatabase>, BranchDatabaseSerializer>();
         services.AddSingleton<IDefinitionSerializer<ProgramConfig>, DefinitionSerializer<ProgramConfig>>();
 
         services.AddSingleton(_ => new Parser(config =>

@@ -5,7 +5,7 @@
       /*
       "commandLineArgs": "init -f"
       */
-      "commandLineArgs": "init -f"
+      "commandLineArgs": "project -l"
     }
   }
 }

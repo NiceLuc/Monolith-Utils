@@ -8,10 +8,10 @@ public class SolutionFileScanner(IFileStorage fileStorage)
 {
     private static readonly Regex _slnProjectsRegex = new(@"Project\(""\{(?<project_type_guid>.+?)\}""\).+?""(?<project_name>.+?)"".+?""(?<project_path>.+?\.(?<project_type>(cs|db|sql|wix))proj)"".+?""\{(?<project_guid>.+?)\}""", RegexOptions.Multiline);
 
-    private readonly Dictionary<string, ProjectTypes> _projectTypes = new()
+    private readonly Dictionary<string, ProjectType> _projectTypes = new()
     {
-        { "FAE04EC0-301F-11D3-BF4B-00C04F79EFBC", ProjectTypes.OldStyle },
-        { "9A19103F-16F7-4668-BE54-9A1E7A4F7556", ProjectTypes.SdkStyle },
+        { "FAE04EC0-301F-11D3-BF4B-00C04F79EFBC", ProjectType.OldStyle },
+        { "9A19103F-16F7-4668-BE54-9A1E7A4F7556", ProjectType.SdkStyle },
     };
 
     public async Task<Results> ScanAsync(BranchDatabaseBuilder builder, string filePath, CancellationToken cancellationToken)
@@ -59,16 +59,16 @@ public class SolutionFileScanner(IFileStorage fileStorage)
         // let the caller add build name and project references
         return results;
 
-        ProjectTypes GetProjectType(ProjectRecord project, string extensionType, string projectTypeGuid)
+        ProjectType GetProjectType(ProjectRecord project, string extensionType, string projectTypeGuid)
         {
             if (extensionType != "cs")
-                return ProjectTypes.Unknown;
+                return ProjectType.Unknown;
 
             if(_projectTypes.TryGetValue(projectTypeGuid, out var projectType))
                 return projectType;
 
             builder.AddError($"Unknown csproj type. Solution: {solution.Path}, Project: {project.Path}, ProjectType: {projectTypeGuid}");
-            return ProjectTypes.Unknown;
+            return ProjectType.Unknown;
         }
     }
 
