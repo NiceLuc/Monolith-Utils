@@ -7,7 +7,3 @@ public record SolutionRecord(string Name, string Path, bool IsRequired, bool Doe
     public List<ProjectReference> Projects { get; set; } = new();
     public List<string> WixProjects { get; set; } = new();
 }
-
-public enum ProjectType { Unknown, OldStyle, SdkStyle }
-
-public record ProjectReference(string Name, ProjectType Type);

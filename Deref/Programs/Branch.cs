@@ -41,7 +41,7 @@ public class Branch
 
                 foreach (var branchName in branches)
                 {
-                    var isCurrent = branchName == config.BranchName;
+                    var isCurrent = branchName.Equals(config.BranchName, StringComparison.OrdinalIgnoreCase);
                     var statusChar = isCurrent ? "*" : " ";
                     logger.LogInformation($"{statusChar} {branchName}");
                 }
