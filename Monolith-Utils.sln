@@ -22,11 +22,11 @@ Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Deref", "Deref\Deref.csproj
 EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "src", "src", "{18B79242-B4E4-46B4-ACB4-AB294A599645}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "MonoUtils.Infrastructure", "MonoUtils.Infrastructure\MonoUtils.Infrastructure.csproj", "{FE88CC6C-4F5B-4C49-9465-44F32C078913}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "MonoUtils.Infrastructure", "MonoUtils.Infrastructure\MonoUtils.Infrastructure.csproj", "{FE88CC6C-4F5B-4C49-9465-44F32C078913}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "MonoUtils.Domain", "MonoUtils.Domain\MonoUtils.Domain.csproj", "{2D491F8E-D2B2-428F-8DE7-19D5B298094F}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "MonoUtils.Domain", "MonoUtils.Domain\MonoUtils.Domain.csproj", "{2D491F8E-D2B2-428F-8DE7-19D5B298094F}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "MonoUtils.UseCases", "MonoUtils.UseCases\MonoUtils.UseCases.csproj", "{3F65E241-2935-4103-BFAB-1800A33533B2}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "MonoUtils.UseCases", "MonoUtils.UseCases\MonoUtils.UseCases.csproj", "{3F65E241-2935-4103-BFAB-1800A33533B2}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution

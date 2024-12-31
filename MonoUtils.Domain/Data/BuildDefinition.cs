@@ -1,3 +1,3 @@
 ﻿namespace MonoUtils.Domain.Data;
 
-public record BuildDefinition(string BuildName, string SolutionPath);
+public record BuildDefinition(string BuildName, string SolutionPath, bool IsEnabled);

@@ -1,4 +1,4 @@
-﻿namespace Deref;
+﻿namespace MonoUtils.Domain;
 
 public class ProgramConfig
 {

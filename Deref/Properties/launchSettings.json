@@ -5,7 +5,7 @@
       /*
       "commandLineArgs": "init -f"
       */
-      "commandLineArgs": "project common"
+      "commandLineArgs": "branch"
     }
   }
 }

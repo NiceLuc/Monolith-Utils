@@ -4,11 +4,11 @@ namespace MonoUtils.Infrastructure;
 
 public class FileStorage : IFileStorage
 {
-    public Task WriteAllTextAsync(string filePath, string content, CancellationToken cancellationToken) 
-        => File.WriteAllTextAsync(filePath, content, cancellationToken);
+    public async Task WriteAllTextAsync(string filePath, string content, CancellationToken cancellationToken) 
+        => await File.WriteAllTextAsync(filePath, content, cancellationToken);
 
-    public Task<string> ReadAllTextAsync(string filePath, CancellationToken cancellationToken)
-        => File.ReadAllTextAsync(filePath, cancellationToken);
+    public async Task<string> ReadAllTextAsync(string filePath, CancellationToken cancellationToken)
+        => await File.ReadAllTextAsync(filePath, cancellationToken);
 
     public Stream GetFileStreamForRead(string filePath) => File.OpenRead(filePath);
 
