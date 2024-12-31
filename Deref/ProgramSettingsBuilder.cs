@@ -43,7 +43,7 @@ internal class ProgramSettingsBuilder(
             RequiredBuildSolutions = (from s in _appSettings.RequiredSolutions
                 let path = Path.Combine(tfsRootDirectory, s.SolutionPath)
                 let name = string.Format(s.BuildName, branchName)
-                select new BuildDefinition(name, path)).ToArray()
+                select new BuildDefinition(name, path, true)).ToArray()
         };
 
         return settings;
