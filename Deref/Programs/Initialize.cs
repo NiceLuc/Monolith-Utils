@@ -37,6 +37,7 @@ public class Initialize
             var solutionFiles = fileStorage.GetFilePaths(settings.TfsRootDirectory, "*.sln");
             logger.LogInformation("Found {SolutionCount} files!", solutionFiles.Length);
 
+            // remove specific directories that we don't care about!
             var total = solutionFiles.Length;
             if (settings.DirectoriesToIgnore.Length > 0)
             {
@@ -53,6 +54,7 @@ public class Initialize
                 logger.LogInformation("Filtered {SolutionCount} files!", solutionFiles.Length);
             }
 
+            // scan each solution file to capture all details
             var count = 0;
             foreach (var solutionFilePath in solutionFiles)
             {
@@ -88,7 +90,7 @@ public class Initialize
 
             logger.LogInformation("---");
 
-            // scan each project file to capture all details
+            // scan each project file gathered from solutions and wix project to capture all details
             total = builder.ProjectFilesToScanCount;
             count = 0;
 
@@ -120,7 +122,7 @@ public class Initialize
 
             logger.LogInformation("---");
 
-            // scan each project file to capture all details
+            // scan each WiX project file to capture all harvesting details
             total = builder.WixProjectFilesToScanCount;
             count = 0;
 

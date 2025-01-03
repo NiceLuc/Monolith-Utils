@@ -2,10 +2,7 @@
   "profiles": {
     "Deref": {
       "commandName": "Project",
-      /*
       "commandLineArgs": "init -f"
-      */
-      "commandLineArgs": "branch"
     }
   }
 }
