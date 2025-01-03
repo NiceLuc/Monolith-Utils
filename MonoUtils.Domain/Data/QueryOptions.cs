@@ -2,7 +2,7 @@
 
 public class QueryOptions
 {
-    public FilterType BranchFilter { get; set; }
+    public FilterType BranchFilter { get; set; } // All, OnlyRequired, OnlyNonRequired
     public string? SearchTerm { get; set; }
     public bool IsExcludeTests { get; set; }
     public bool IsRecursive { get; set; }

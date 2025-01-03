@@ -8,7 +8,6 @@
 
   <ItemGroup>
     <Folder Include="InitializeDatabase\" />
-    <Folder Include="LocalProjects\List\" />
     <Folder Include="LocalProjects\Details\" />
     <Folder Include="LocalSolutions\" />
     <Folder Include="LocalWixProjects\" />
