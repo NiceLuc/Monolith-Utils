@@ -4,12 +4,13 @@ using MonoUtils.Domain;
 using MonoUtils.Domain.Data;
 using MonoUtils.Infrastructure;
 using MonoUtils.Infrastructure.FileScanners;
+using SharedKernel;
 
 namespace Deref.Programs;
 
 public class Initialize
 {
-    public class Request : IRequest<string>
+    public class Request : IRequest<Result>
     {
         public bool ForceOverwrite { get; set; }
     }
@@ -23,9 +24,9 @@ public class Initialize
         StandardProjectFileScanner projectFileScanner,
         WixComponentFileScanner wixComponentFileScanner,
         IDefinitionSerializer<BranchDatabase> serializer,
-        IFileStorage fileStorage) : IRequestHandler<Request, string>
+        IFileStorage fileStorage) : IRequestHandler<Request, Result>
     {
-        public async Task<string> Handle(Request request, CancellationToken cancellationToken)
+        public async Task<Result> Handle(Request request, CancellationToken cancellationToken)
         {
             var settings = await settingsBuilder.BuildAsync(cancellationToken);
             ValidateRequest(settings, request);
@@ -41,14 +42,14 @@ public class Initialize
             var total = solutionFiles.Length;
             if (settings.DirectoriesToIgnore.Length > 0)
             {
-                foreach (var directory in settings.DirectoriesToIgnore)
+                foreach (var ignorePath in settings.DirectoriesToIgnore)
                 {
-                    solutionFiles = solutionFiles.Where(f => !f.StartsWith(directory, StringComparison.OrdinalIgnoreCase)).ToArray();
+                    solutionFiles = solutionFiles.Where(f => !f.StartsWith(ignorePath, StringComparison.OrdinalIgnoreCase)).ToArray();
 
                     var removedCount = total - solutionFiles.Length;
                     total = solutionFiles.Length;
 
-                    logger.LogInformation(" - Ignoring {RemovedCount} solutions in {IgnoredDirectory}", removedCount, directory);
+                    logger.LogInformation(" - Ignoring {RemovedCount} solutions in {IgnoredDirectory}", removedCount, ignorePath);
                 }
 
                 logger.LogInformation("Filtered {SolutionCount} files!", solutionFiles.Length);
@@ -151,7 +152,7 @@ public class Initialize
 
             var filePath = Path.Combine(settings.TempRootDirectory, "db.json");
             await serializer.SerializeAsync(filePath, data, cancellationToken);
-            return filePath;
+            return Result.Success();
         }
 
         private void ValidateRequest(ProgramSettings settings, Request request)

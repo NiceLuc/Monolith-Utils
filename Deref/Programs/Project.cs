@@ -3,12 +3,15 @@ using MediatR;
 using Microsoft.Extensions.Logging;
 using MonoUtils.Domain;
 using MonoUtils.Domain.Data;
+using MonoUtils.UseCases;
+using MonoUtils.UseCases.LocalProjects;
+using SharedKernel;
 
 namespace Deref.Programs;
 
 public class Project
 {
-    public class Request : IQueryRequest
+    public class Request : IRequest<Result>, IQueryRequest
     {
         // use request to show a list of projects or details about a specific project
         public bool IsList { get; set; }
@@ -36,17 +39,20 @@ public class Project
     }
 
     public class Handler(ILogger<Handler> logger,
+        ISender sender,
         IProgramSettingsBuilder settingsBuilder,
-        IBranchDatabaseProvider databaseProvider) : IRequestHandler<Request, string>
+        IBranchDatabaseProvider databaseProvider) : IRequestHandler<Request, Result>
     {
         private static readonly string _separator = new('-', 50);
         private const string _termPattern = "{0,4}"; // right align terms
         private const string _todoPattern = "        - {0}"; // 8 leading spaces!
 
-        public async Task<string> Handle(Request request, CancellationToken cancellationToken)
+        public async Task<Result> Handle(Request request, CancellationToken cancellationToken)
         {
+            await ConfigureRequestAsync(request, cancellationToken);
+
             if (!ValidateRequest(request, out var message))
-                return message;
+                return Result.Failure(ProjectErrors.InvalidRequest(message));
 
             var settings = await settingsBuilder.BuildAsync(cancellationToken);
             var database = await databaseProvider.GetDatabaseAsync(settings.BranchName, cancellationToken);
@@ -58,7 +64,7 @@ public class Project
             if (!request.IsList)
             {
                 if (!lookup.TryGetValue(request.ProjectName!, out var project))
-                    return "Project not found: " + request.ProjectName;
+                    return Result.Failure(ProjectErrors.ProjectNotFound);
 
                 var solutions = database.Solutions.ToDictionary(s => s.Name, StringComparer.InvariantCultureIgnoreCase);
                 var projectSolutions = project.Solutions.Select(s => solutions[s]);
@@ -95,7 +101,7 @@ public class Project
                 if (request.IsListBuildDefinitions) 
                     ShowBuildDefinitionList(buildDefinitions);
 
-                return string.Empty;
+                return Result.Success();
             }
 
             // list by a string filter
@@ -104,13 +110,18 @@ public class Project
                 var projects = database.Projects.Where(p 
                     => p.Name.Contains(request.ProjectName, StringComparison.InvariantCultureIgnoreCase)).ToArray();
                 ShowProjectsList("Search found", projects, request);
-                return string.Empty;
+                return Result.Success();
             }
 
             // list all
             var all = database.Projects.ToArray();
             ShowProjectsList("Listing", all, request);
-            return string.Empty;
+            return Result.Success();
+        }
+
+        private async Task ConfigureRequestAsync(Request request, CancellationToken cancellationToken)
+        {
+            throw new NotImplementedException();
         }
 
         #region Private Methods

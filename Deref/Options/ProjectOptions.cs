@@ -1,4 +1,6 @@
 ﻿using CommandLine;
+using MonoUtils.UseCases;
+using MonoUtils.Domain.Data;
 
 namespace Deref.Options;
 
@@ -30,17 +32,27 @@ internal class ProjectOptions : IListDisplayOptions, IListOptions
 
     // list options (applies to dependency list results as well as list results)
     public string? SearchTerm { get; set; }
+
+    [Option('i', "include", Default = FilterType.All, HelpText = "Filter results by their required status in our monolith")]
+    public FilterType FilterBy { get; set; }
+
+    [Option("missing", Default = TodoFilterType.NoFilter, HelpText = "Filter results by missing features.")]
+    public TodoFilterType TodoFilter { get; set; }
+
+    [Option("no-tests", Default = true, HelpText = "Exclude test items from the list.")]
     public bool IsExcludeTests { get; set; }
-    public bool IsIncludeAll { get; set; }
-    public bool IsIncludeOnlyRequired { get; set; }
-    public bool IsIncludeOnlyNonRequired { get; set; }
+
+    [Option("recursive", HelpText = "List all nested references required for the item.")]
     public bool IsRecursive { get; set; }
 
     #endregion
 
     #region IListDisplayOptions implementation
 
+    [Option('c', "counts", HelpText = "List using and used by counts for each item.")]
     public bool ShowListCounts { get; set; }
+
+    [Option('t', "todos", HelpText = "List current features needed for each item in the list.")]
     public bool ShowListTodos { get; set; }
 
     #endregion

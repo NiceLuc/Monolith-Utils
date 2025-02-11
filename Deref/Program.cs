@@ -9,6 +9,8 @@ using Microsoft.Extensions.Hosting;
 using MonoUtils.Domain.Data;
 using MonoUtils.Infrastructure;
 using MonoUtils.UseCases;
+using MonoUtils.UseCases.LocalProjects.List;
+using SharedKernel;
 
 // TODO: Figure out why the console app is not respecting the launchSettings.json environment variable
 //Environment.SetEnvironmentVariable("ASPNETCORE_ENVIRONMENT", "Development");
@@ -35,12 +37,13 @@ var parser = host.Services.GetRequiredService<Parser>();
 var mediator = host.Services.GetRequiredService<IMediator>();
 
 // parse the command line arguments and call appropriate handler
-parser.ParseArguments<InitializeOptions, BranchOptions, ProjectOptions, WixOptions>(args)
+var result = parser.ParseArguments<InitializeOptions, BranchOptions, ProjectOptions, WixOptions>(args)
     .WithParsed<InitializeOptions>(RunInitProgram)
     .WithParsed<BranchOptions>(RunBranchProgram)
     .WithParsed<ProjectOptions>(RunProjectProgram)
     .WithParsed<WixOptions>(RunWixProgram);
 
+await mediator.Send(result.Value);
 return;
 
 // helper methods
@@ -66,6 +69,22 @@ void RunBranchProgram(BranchOptions options)
 
 void RunProjectProgram(ProjectOptions options)
 {
+    if (options.IsList)
+    {
+        var listCommand = new ProjectListQuery
+        {
+            SearchTerm = options.ProjectName,
+            BranchFilter = options.FilterBy,
+            IsExcludeTests = options.IsExcludeTests,
+            ShowListCounts = options.ShowListCounts,
+            ShowListTodos = options.ShowListTodos,
+            TodoFilter = options.TodoFilter,
+        };
+
+        SendRequest(listCommand);
+        return;
+    }
+
     var request = new Project.Request
     {
         BranchFilter = ConvertToResultFilter(options),
@@ -106,7 +125,7 @@ FilterType ConvertToResultFilter(IListOptions options)
 */
 }
 
-void SendRequest<TRequest>(TRequest request) where TRequest : IRequest<string>
+void SendRequest<TRequest>(TRequest request) where TRequest : IRequest<Result>
 {
     var result = mediator.Send(request)
         .ConfigureAwait(false)

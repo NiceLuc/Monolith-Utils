@@ -1,21 +1,22 @@
 ﻿using MediatR;
 using Microsoft.Extensions.Logging;
 using MonoUtils.Domain;
+using SharedKernel;
 
 namespace Deref.Programs;
 
 public class Wix
 {
-    public class Request : IRequest<string>
+    public class Request : IRequest<Result>
     {
 
     }
 
     public class Handler(ILogger<Handler> logger,
         IProgramSettingsBuilder settingsBuilder,
-        IBranchDatabaseProvider databaseProvider) : IRequestHandler<Request, string>
+        IBranchDatabaseProvider databaseProvider) : IRequestHandler<Request, Result>
     {
-        public async Task<string> Handle(Request request, CancellationToken cancellationToken)
+        public async Task<Result> Handle(Request request, CancellationToken cancellationToken)
         {
             var settings = await settingsBuilder.BuildAsync(cancellationToken);
             var database = await databaseProvider.GetDatabaseAsync(settings.BranchName, cancellationToken);
@@ -25,7 +26,7 @@ public class Wix
             foreach (var wixProject in database.WixProjects) 
                 logger.LogInformation(wixProject.Path);
 
-            return string.Empty;
+            return Result.Success();
         }
 
     }
