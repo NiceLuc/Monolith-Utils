@@ -5,7 +5,7 @@
 /// </summary>
 public enum FilterType
 {
-    All,
-    OnlyRequired,
-    OnlyNonRequired
+    All, // include-all
+    OnlyRequired, // only-required
+    OnlyNonRequired // only-non-required
 }
