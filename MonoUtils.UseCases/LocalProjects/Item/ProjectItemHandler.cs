@@ -2,27 +2,20 @@
 using Microsoft.Extensions.Logging;
 using MonoUtils.Domain;
 using MonoUtils.Domain.Data;
-using MonoUtils.Domain.Data.Queries;
 using SharedKernel;
 
 namespace MonoUtils.UseCases.LocalProjects.Item;
 
-public class ProjectItemHandler(ILogger<ProjectItemHandler> logger,
-        IProgramSettingsBuilder settingsBuilder,
-        IBranchDatabaseProvider databaseProvider,
-        IBranchDatabaseContextFactory contextFactory) : IRequestHandler<ProjectItemQuery, Result<ProjectDTO>>
+public class ProjectItemHandler(IBranchDatabaseContextFactory contextFactory) : IRequestHandler<ProjectItemQuery, Result<ProjectDTO>>
 {
     public async Task<Result<ProjectDTO>> Handle(ProjectItemQuery query, CancellationToken cancellationToken)
     {
-        var settings = await settingsBuilder.BuildAsync(cancellationToken);
-        var database = await databaseProvider.GetDatabaseAsync(settings.BranchName, cancellationToken);
         var context = await contextFactory.CreateAsync(cancellationToken);
 
         var project = context.GetProject(query.ItemKey!);
         if (project == null)
             return Result<ProjectDTO>.Failure(new Error("Project.NotFound", "Project not found: " + query.ItemKey));
 
-        // var solutions = database.Solutions.ToDictionary(s => s.Name, StringComparer.InvariantCultureIgnoreCase);
         var buildDefinitions = context.GetBuildDefinitionNames(project);
 
         var result = new ProjectDTO(project.Name, project.Path, project.DoesExist)
