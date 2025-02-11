@@ -1,9 +1,8 @@
-﻿using MediatR;
-using MonoUtils.Domain.Data;
+﻿using MonoUtils.Domain.Data;
 
-namespace Deref.Programs;
+namespace MonoUtils.UseCases;
 
-public interface IQueryRequest : IRequest<string>
+public interface IQueryRequest
 {
     FilterType BranchFilter { get; set; }
     string? SearchTerm { get; set; }
