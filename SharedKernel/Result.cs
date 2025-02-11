@@ -40,9 +40,9 @@ public class Result<T> : Result
         ? _value! 
         : throw new InvalidOperationException("Value is not available for failed result");
 
-    public static Result<T> Success<T>(T value) => value is not null
+    public static Result<T> Success(T value) => value is not null
         ? new Result<T>(value, true, Error.None)
-        : Failure<T>(Error.NullValue);
+        : Failure(Error.NullValue);
 
-    public static Result<T> Failure<T>(Error error) => new(default, false, error);
+    public new static Result<T> Failure(Error error) => new(default, false, error);
 }
