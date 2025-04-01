@@ -68,23 +68,17 @@ public class WixComponentFileScanner(IFileStorage fileStorage)
 
     private async Task<List<string>> GetWxsFilePaths(WixProjectRecord wixProject, CancellationToken cancellationToken)
     {
-        var wixProjectXml = await fileStorage.ReadAllTextAsync(wixProject.Path, cancellationToken);
         var wixDirectory = Path.GetDirectoryName(wixProject.Path)!;
-
-        // find all wxs files required for this wix project
-        var wxsFilePaths = new List<string>();
         if (wixProject.IsSdk)
+            return fileStorage.GetFilePaths(wixDirectory, "*.wxs").ToList();
+
+        var wixProjectXml = await fileStorage.ReadAllTextAsync(wixProject.Path, cancellationToken);
+        var wxsFilePaths = new List<string>();
+        foreach (Match match in _wxsRegex.Matches(wixProjectXml))
         {
-            wxsFilePaths.AddRange(fileStorage.GetFilePaths(wixDirectory, "*.wxs"));
-        }
-        else
-        {
-            foreach (Match match in _wxsRegex.Matches(wixProjectXml))
-            {
-                var relativePath = Path.Combine(wixDirectory, match.Groups["wix_path"].Value);
-                var wxsPath = Path.GetFullPath(relativePath);
-                wxsFilePaths.Add(wxsPath);
-            }
+            var relativePath = Path.Combine(wixDirectory, match.Groups["wix_path"].Value);
+            var wxsPath = Path.GetFullPath(relativePath);
+            wxsFilePaths.Add(wxsPath);
         }
 
         return wxsFilePaths;
