@@ -9,6 +9,8 @@ namespace MonoUtils.Infrastructure;
 public class BranchDatabaseBuilder(ILoggerFactory loggerFactory, IFileStorage fileStorage, UniqueNameResolver resolver, BuildDefinition[] builds)
 {
     private readonly ILogger<BranchDatabaseBuilder> logger = loggerFactory.CreateLogger<BranchDatabaseBuilder>();
+
+    // required solutions (i.e. build definitions have a reference to a solution path)
     private readonly Dictionary<string, BuildDefinition> _requiredSolutions = builds.ToDictionary(s => s.SolutionPath);
 
     // record name & record
@@ -32,7 +34,6 @@ public class BranchDatabaseBuilder(ILoggerFactory loggerFactory, IFileStorage fi
 
     public SolutionRecord GetOrAddSolution(string solutionPath)
     {
-        // if the solution is referenced in one our build definitions, then it is considered a REQUIRED solution. 
         var isRequired = _requiredSolutions.TryGetValue(solutionPath, out var build);
 
         if (_solutionsByPath.TryGetValue(solutionPath, out var solution))
@@ -56,7 +57,9 @@ public class BranchDatabaseBuilder(ILoggerFactory loggerFactory, IFileStorage fi
     {
         if (_projectsByPath.TryGetValue(projectPath, out var project))
         {
-            // update the "IsRequired" flag if necessary
+            // when passing true for isRequired parameter, we need to make sure the flag is set
+            // if the flag is not set, then we must add a new "required" instance of the project
+            // important note: once a project has been defined as required, it's always required
             if (isRequired && !project.IsRequired)
             {
                 var requiredProject = new ProjectRecord(project.Name, project.Path, true, project.DoesExist);
@@ -64,22 +67,23 @@ public class BranchDatabaseBuilder(ILoggerFactory loggerFactory, IFileStorage fi
                 _projectsByPath[project.Path] = requiredProject;
                 project = requiredProject;
             }
+
+            return project;
         }
-        else
-        {
-            var projectName = Path.GetFileNameWithoutExtension(projectPath);
-            projectName = resolver.GetUniqueName(projectName, _projectsByName.ContainsKey);
-            var exists = fileStorage.FileExists(projectPath);
 
-            project = new ProjectRecord(projectName, projectPath, isRequired, exists);
+        // otherwise, create a new wix project and set initial references
+        var projectName = Path.GetFileNameWithoutExtension(projectPath);
+        projectName = resolver.GetUniqueName(projectName, _projectsByName.ContainsKey);
+        var exists = fileStorage.FileExists(projectPath);
 
-            _projectsByName.Add(projectName, project);
-            _projectsByPath.Add(projectPath, project);
+        project = new ProjectRecord(projectName, projectPath, isRequired, exists);
 
-            // if the file exists, then we must queue the file to be scanned
-            if (exists)
-                _projectFilesToScan.Enqueue(project);
-        }
+        _projectsByName.Add(projectName, project);
+        _projectsByPath.Add(projectPath, project);
+
+        // if the file exists, then we must queue the file to be scanned
+        if (exists)
+            _projectFilesToScan.Enqueue(project);
 
         return project;
     }
@@ -88,7 +92,9 @@ public class BranchDatabaseBuilder(ILoggerFactory loggerFactory, IFileStorage fi
     {
         if (_wixProjectsByPath.TryGetValue(projectPath, out var project))
         {
-            // update the "IsRequired" flag if necessary
+            // when passing true for isRequired parameter, we need to make sure the flag is set
+            // if the flag is not set, then we must add a new "required" instance of the project
+            // important note: once a project has been defined as required, it's always required
             if (isRequired && !project.IsRequired)
             {
                 var requiredProject = new WixProjectRecord(project.Name, project.Path, true, project.DoesExist);
@@ -96,23 +102,24 @@ public class BranchDatabaseBuilder(ILoggerFactory loggerFactory, IFileStorage fi
                 _wixProjectsByPath[project.Path] = requiredProject;
                 project = requiredProject;
             }
+
+            return project;
         }
-        else
-        {
-            var projectName = Path.GetFileNameWithoutExtension(projectPath);
-            projectName = resolver.GetUniqueName(projectName, _wixProjectsByName.ContainsKey);
-            var exists = fileStorage.FileExists(projectPath);
 
-            project = new WixProjectRecord(projectName, projectPath, isRequired, exists);
+        // otherwise, create a new wix project and set initial references
+        var projectName = Path.GetFileNameWithoutExtension(projectPath);
+        projectName = resolver.GetUniqueName(projectName, _wixProjectsByName.ContainsKey);
+        var exists = fileStorage.FileExists(projectPath);
 
-            _wixProjectsByName.Add(projectName, project);
-            _wixProjectsByPath.Add(projectPath, project);
+        project = new WixProjectRecord(projectName, projectPath, isRequired, exists);
 
-            // if the file exists, then we must queue the file to be scanned once all projects are scanned
-            // this is required to determine if the assembly name is referenced in any wxs files (final step)
-            if (exists)
-                _wixProjectFilesToScan.Enqueue(project);
-        }
+        _wixProjectsByName.Add(projectName, project);
+        _wixProjectsByPath.Add(projectPath, project);
+
+        // if the file exists, then we must queue the file to be scanned at a later time (once all cs projects have been scanned)
+        // this is required to determine if the assembly name is referenced in any wxs files (i.e. manual binary harvesting)
+        if (exists)
+            _wixProjectFilesToScan.Enqueue(project);
 
         return project;
     }
