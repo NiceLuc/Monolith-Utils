@@ -1,17 +1,16 @@
 ﻿using MediatR;
 
-namespace MonoUtils.UseCases.LocalBranches.Set
+namespace MonoUtils.UseCases.LocalBranches.Set;
+
+public class BranchSetCommand : IRequest
 {
-    public class BranchSetCommand : IRequest
-    {
 
-    }
+}
 
-    public class BranchSetHandler : IRequestHandler<BranchSetCommand>
+public class BranchSetHandler : IRequestHandler<BranchSetCommand>
+{
+    public Task Handle(BranchSetCommand request, CancellationToken cancellationToken)
     {
-        public Task Handle(BranchSetCommand request, CancellationToken cancellationToken)
-        {
-            throw new NotImplementedException();
-        }
+        throw new NotImplementedException();
     }
 }

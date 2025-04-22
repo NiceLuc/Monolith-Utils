@@ -1,6 +1,4 @@
 ﻿using MediatR;
-using Microsoft.Extensions.Logging;
-using MonoUtils.Domain;
 using MonoUtils.Domain.Data;
 using SharedKernel;
 
