@@ -1,12 +1,11 @@
 using Microsoft.Extensions.Logging;
-using Microsoft.Extensions.Logging.Abstractions;
 using MonoUtils.Domain;
 using MonoUtils.Domain.Data;
 using MonoUtils.Infrastructure;
 using Moq;
 using SharedKernel;
 
-namespace MonoUtils.UseCases.Tests
+namespace MonoUtils.Infrastructure.Tests
 {
     [TestClass]
     public class BranchDatabaseBuilderTests
@@ -320,15 +319,18 @@ namespace MonoUtils.UseCases.Tests
         #region GetProjectsBySolutionName Tests
 
         [TestMethod]
+        [Ignore]
         public void GetProjectsBySolutionName_ReturnsEmptyListForUnknownSolution()
         {
+            // assemble
             var builder = CreateBuilder();
-
-            // act
             var solution = builder.GetOrAddSolution(SOLUTION_PATH);
+            var project = builder.GetOrAddProject(PROJECT_PATH, true);
             var result = builder.CreateDatabase();
 
+            // act
         }
+
         #endregion
 
         private BranchDatabaseBuilder CreateBuilder(BuildDefinition[]? builds = null)
