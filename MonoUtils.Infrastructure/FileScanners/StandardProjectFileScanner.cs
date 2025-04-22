@@ -6,9 +6,9 @@ namespace MonoUtils.Infrastructure.FileScanners;
 
 public class StandardProjectFileScanner(IFileStorage fileStorage)
 {
-    private static readonly Regex _csProjReferenceRegex = new(@"ProjectReference Include=""(?<project_path>.+?\.(cs|db|sql)proj)""", RegexOptions.Multiline);
-    private static readonly Regex _csProjSdkRegex = new(@"<Project Sdk=", RegexOptions.Multiline);
-    private static readonly Regex _csProjNetStandardRegex = new(@"\<TargetFrameworks?\>.*netstandard2\.0.*\<\/TargetFrameworks?\>", RegexOptions.Multiline);
+    private static readonly Regex _csProjReferenceRegex = new(@"ProjectReference Include=""(?<project_path>.+?\.(cs|db|sql)proj)""", RegexOptions.IgnoreCase | RegexOptions.Multiline);
+    private static readonly Regex _csProjSdkRegex = new(@"<Project Sdk=", RegexOptions.IgnoreCase | RegexOptions.Multiline);
+    private static readonly Regex _csProjNetStandardRegex = new(@"\<TargetFrameworks?\>.*netstandard2\..*\<\/TargetFrameworks?\>", RegexOptions.IgnoreCase | RegexOptions.Multiline);
 
     public async Task ScanAsync(BranchDatabaseBuilder builder, ProjectRecord project, CancellationToken cancellationToken)
     {
