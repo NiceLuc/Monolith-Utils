@@ -161,12 +161,53 @@ namespace MonoUtils.UseCases.Tests
             var results = await scanner.ScanAsync(builder, SOLUTION_PATH, CancellationToken.None);
 
             // Assert
-            Assert.IsNotNull(results);
-            Assert.IsNotNull(results.Solution);
-            Assert.IsTrue(results.Solution.DoesExist);
             Assert.AreEqual(1, results.Solution.Projects.Count);
             Assert.AreEqual(expectedType, results.Solution.Projects[0].Type);
+            Assert.AreEqual(0, results.Solution.WixProjects.Count);
             Assert.AreEqual(0, results.WixProjectsToScan.Count);
+        }
+
+        [TestMethod]
+        [DataRow(true)]
+        [DataRow(false)]
+        public async Task ScanAsync_ShouldSetIsRequired_WhenBuildReferencesSolution(bool isRequired)
+        {
+            // Assemble
+            var builds = new List<BuildDefinition>();
+            if (isRequired)
+                builds.Add(new BuildDefinition(BUILD_NAME, SOLUTION_PATH, true));
+            
+            const string sampleSlnFile = """
+                Project("{00000000-0000-0000-0000-000000000000}") = "TestProject", "project_path.csproj", "{12345678-1234-1234-1234-123456789012}")
+                Project("{11111111-1111-1111-1111-111111111111}") = "TestWixProject", "wix_project_path.wixproj", "{12345678-1234-1234-1234-123456789112}")
+            """;
+
+            _fileStorage.Setup(s => s.FileExists(SOLUTION_PATH)).Returns(true);
+            _fileStorage.Setup(s => s.ReadAllTextAsync(SOLUTION_PATH, It.IsAny<CancellationToken>()))
+                .ReturnsAsync(sampleSlnFile);
+
+            _fileStorage.Setup(s => s.FileExists(It.Is<string>(x => x.EndsWith("proj")))).Returns(true);
+            _fileStorage.Setup(s => s.ReadAllTextAsync(It.Is<string>(x => x.EndsWith("proj")), It.IsAny<CancellationToken>()))
+                .ReturnsAsync(string.Empty);
+
+            var builder = CreateBuilder(builds.ToArray());
+            var scanner = new SolutionFileScanner(_fileStorage.Object);
+
+            // Act
+            var results = await scanner.ScanAsync(builder, SOLUTION_PATH, CancellationToken.None);
+
+            // Assert
+            Assert.AreEqual(1, results.Solution.Projects.Count);
+            Assert.AreEqual(1, results.Solution.WixProjects.Count);
+            Assert.AreEqual(1, results.WixProjectsToScan.Count);
+
+            Assert.AreEqual(1, builder.ProjectFilesToScanCount);
+            Assert.AreEqual(1, builder.WixProjectFilesToScanCount);
+            foreach(var project in builder.GetProjectFilesToScan())
+                Assert.AreEqual(isRequired, project.IsRequired);
+            foreach(var project in builder.GetWixProjectFilesToScan())
+                Assert.AreEqual(isRequired, project.IsRequired);
+
         }
 
         private BranchDatabaseBuilder CreateBuilder(BuildDefinition[]? builds = null)

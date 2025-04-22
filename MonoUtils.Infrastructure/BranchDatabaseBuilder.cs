@@ -1,4 +1,4 @@
-﻿using System.Collections;
+using System.Collections;
 using Microsoft.Extensions.Logging;
 using MonoUtils.Domain;
 using MonoUtils.Domain.Data;
@@ -208,8 +208,11 @@ public class BranchDatabaseBuilder(ILoggerFactory loggerFactory, IFileStorage fi
 
         public bool MoveNext()
         {
+            if (queue.Count == 0)
+                return false;
+
             Current = queue.Dequeue();
-            return queue.Count > 0;
+            return Current != null;
         }
 
         public void Reset() => Current = default!;
