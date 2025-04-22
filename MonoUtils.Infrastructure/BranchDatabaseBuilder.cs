@@ -1,4 +1,5 @@
-using System.Collections;
+﻿using System.Collections;
+using System.Text.RegularExpressions;
 using Microsoft.Extensions.Logging;
 using MonoUtils.Domain;
 using MonoUtils.Domain.Data;
@@ -8,6 +9,8 @@ namespace MonoUtils.Infrastructure;
 
 public class BranchDatabaseBuilder(ILoggerFactory loggerFactory, IFileStorage fileStorage, UniqueNameResolver resolver, BuildDefinition[] builds)
 {
+    private static readonly Regex _testProjectFilePathRegex = new(@"Tests?\.csproj", RegexOptions.Multiline);
+
     private readonly ILogger<BranchDatabaseBuilder> logger = loggerFactory.CreateLogger<BranchDatabaseBuilder>();
 
     // required solutions (i.e. build definitions have a reference to a solution path)
@@ -34,13 +37,12 @@ public class BranchDatabaseBuilder(ILoggerFactory loggerFactory, IFileStorage fi
 
     public SolutionRecord GetOrAddSolution(string solutionPath)
     {
-        var isRequired = _requiredSolutions.TryGetValue(solutionPath, out var build);
-
         if (_solutionsByPath.TryGetValue(solutionPath, out var solution))
             return solution;
 
         var solutionName = Path.GetFileNameWithoutExtension(solutionPath);
         solutionName = resolver.GetUniqueName(solutionName, _solutionsByName.ContainsKey);
+        var isRequired = _requiredSolutions.TryGetValue(solutionPath, out var build);
         var exists = fileStorage.FileExists(solutionPath);
 
         solution = new SolutionRecord(solutionName, solutionPath, isRequired, exists);
@@ -146,48 +148,33 @@ public class BranchDatabaseBuilder(ILoggerFactory loggerFactory, IFileStorage fi
     }
 
 
-    [Obsolete("Do not use this method. Instead, favor a new service that will query projects for a solution")]
-    public ProjectRecord[] GetProjectsBySolutionName(string solutionName, Func<ProjectRecord, bool> filter, bool recursive = false)
+    public ProjectRecord[] GetProjectsAvailableForWix(WixProjectRecord wixProject)
     {
+        if (wixProject.Solutions.Count != 1)
+            throw new InvalidOperationException($"Wix project ({wixProject.Path}) is referenced by {wixProject.Solutions.Count} project(s)");
+
+        // get all projects that are required for this wix project (hint: use the solution as the root)
+        var solutionName = wixProject.Solutions[0];
+
         if (!_solutionsByName.TryGetValue(solutionName, out var solution))
             throw new KeyNotFoundException($"Solution name not found {solutionName}");
 
         var projects = solution.Projects
             .Select(p => _projectsByName[p.Name])
-            .Where(filter) // apply custom filters
+            .Where(p =>
+            {
+                // file must exist!
+                if (!p.DoesExist) 
+                    return false;
+
+                // ignore test projects
+                return !_testProjectFilePathRegex.IsMatch(p.Path);
+
+            })
             .ToArray();
 
-        if (!recursive)
-            return projects;
-
-        var result = new Dictionary<string, ProjectRecord>();
-        foreach (var project in projects)
-        {
-            result.TryAdd(project.Name, project);
-            CaptureProjectNames(project);
-        }
-
-        // return the results here!!
-        return result.Values.ToArray();
-
-        // -------------- scoped method ---------------- //
-        void CaptureProjectNames(ProjectRecord current)
-        {
-            foreach (var name in current.References)
-            {
-                if (result.ContainsKey(name))
-                    continue;
-
-                var next = _projectsByName[name];
-
-                if (filter(next))
-                    result.Add(name, next);
-
-                CaptureProjectNames(next); // note: recursion!
-            }
-        }
+        return projects;
     }
-
 
     public BranchDatabase CreateDatabase() => new()
     {

@@ -19,20 +19,7 @@ public class WixComponentFileScanner(IFileStorage fileStorage)
             throw new InvalidOperationException($"Wix project ({wixProject.Path}) is referenced by {wixProject.Solutions.Count} project(s)");
 
         // get all projects that are required for this wix project (hint: use the solution as the root)
-        var projects = builder.GetProjectsBySolutionName(wixProject.Solutions[0], p =>
-        {
-            // file must exist!
-            if (!p.DoesExist)
-                return false;
-
-            // ignore test projects
-            if (p.Path.Contains("Test", StringComparison.OrdinalIgnoreCase))
-                return false;
-
-            return true;
-
-        }, true);
-
+        var projects = builder.GetProjectsAvailableForWix(wixProject);
         var assemblyNames = projects.ToDictionary(p => p.AssemblyName);
 
         // open the wix project file to find out what wxs files are required

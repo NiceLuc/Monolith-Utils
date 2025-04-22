@@ -316,19 +316,104 @@ namespace MonoUtils.Infrastructure.Tests
         }
         #endregion
 
-        #region GetProjectsBySolutionName Tests
+        #region GetProjectsAvailableForWix Tests
 
         [TestMethod]
-        [Ignore]
-        public void GetProjectsBySolutionName_ReturnsEmptyListForUnknownSolution()
+        public void GetProjectsAvailableForWix_ThrowsExceptionWhenSolutionNotSet()
         {
-            // assemble
+            // Assemble
+            var builder = CreateBuilder();
+            var wix = builder.GetOrAddWixProject(WIX_PROJECT_PATH, true);
+
+            // Act
+            var error = Assert.ThrowsException<InvalidOperationException>(()
+                => builder.GetProjectsAvailableForWix(wix));
+
+            // Assert
+            Assert.IsTrue(error.Message.Contains(WIX_PROJECT_PATH));
+        }
+
+        [TestMethod]
+        public void GetProjectsAvailableForWix_ThrowsExceptionWhenSolutionNotFound()
+        {
+            // Assemble
+            _fileStorage.Setup(s => s.FileExists(It.IsAny<string>())).Returns(true);
+            var builder = CreateBuilder();
+            var wix = builder.GetOrAddWixProject(WIX_PROJECT_PATH, true);
+            wix.Solutions.Add("INVALID_NAME");
+
+            // Act
+            var error = Assert.ThrowsException<KeyNotFoundException>(()
+                => builder.GetProjectsAvailableForWix(wix));
+
+            // Assert
+            Assert.IsTrue(error.Message.Contains("INVALID_NAME"));
+        }
+
+        [TestMethod]
+        public void GetProjectsAvailableForWix_ReturnsAllNonWixProjects()
+        {
+            // Assemble
+            _fileStorage.Setup(s => s.FileExists(It.IsAny<string>())).Returns(true);
+
             var builder = CreateBuilder();
             var solution = builder.GetOrAddSolution(SOLUTION_PATH);
-            var project = builder.GetOrAddProject(PROJECT_PATH, true);
-            var result = builder.CreateDatabase();
+            var wix = builder.GetOrAddWixProject(WIX_PROJECT_PATH, true);
+            wix.Solutions.Add(solution.Name);
 
-            // act
+            var project = builder.GetOrAddProject(PROJECT_PATH, true);
+            var project2 = builder.GetOrAddProject("project_2.csproj", true);
+            var project3 = builder.GetOrAddProject("project_3.csproj", true);
+            var testProject = builder.GetOrAddProject("some_Test.csproj", true);
+            var testsProject = builder.GetOrAddProject("more_Tests.csproj", true);
+
+            // add all projects to the solution
+            foreach (var p in new[] {project, project2, project3, testProject, testsProject})
+            {
+                var reference = new ProjectReference(p.Name, ProjectType.Unknown);
+                solution.Projects.Add(reference);
+            }
+
+            // Act
+            var result = builder.GetProjectsAvailableForWix(wix);
+
+            // Assert
+            Assert.IsNotNull(result);
+            Assert.AreEqual(3, result.Length);
+
+            // should not have test projects
+            Assert.IsFalse(result.Any(p => p.Path.Contains(testProject.Path)));
+            Assert.IsFalse(result.Any(p => p.Path.Contains(testsProject.Path)));
+        }
+
+        [TestMethod]
+        public void GetProjectsAvailableForWix_IgnoresMissingProjects()
+        {
+            // Assemble
+            _fileStorage.Setup(s => s.FileExists(It.Is<string>(x => x.EndsWith("csproj")))).Returns(false);
+
+            var builder = CreateBuilder();
+            var solution = builder.GetOrAddSolution(SOLUTION_PATH);
+            var wix = builder.GetOrAddWixProject(WIX_PROJECT_PATH, true);
+            wix.Solutions.Add(solution.Name);
+
+            var project = builder.GetOrAddProject(PROJECT_PATH, true);
+            var project2 = builder.GetOrAddProject("project_2.csproj", true);
+            var project3 = builder.GetOrAddProject("project_3.csproj", true);
+
+            // add all projects to the solution
+            foreach (var p in new[] {project, project2, project3})
+            {
+                var reference = new ProjectReference(p.Name, ProjectType.Unknown);
+                solution.Projects.Add(reference);
+            }
+
+            // Act
+            var result = builder.GetProjectsAvailableForWix(wix);
+
+            // Assert
+            Assert.IsNotNull(result);
+            Assert.AreEqual(0, result.Length);
         }
 
         #endregion
