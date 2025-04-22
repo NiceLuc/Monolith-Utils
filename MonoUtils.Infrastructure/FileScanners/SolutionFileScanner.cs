@@ -75,6 +75,6 @@ public class SolutionFileScanner(IFileStorage fileStorage)
     public class Results(SolutionRecord solution)
     {
         public SolutionRecord Solution { get; } = solution;
-        public List<WixProjectRecord> WixProjectsToScan { get; set; } = new();
+        public List<WixProjectRecord> WixProjectsToScan { get; } = new();
     }
 }
