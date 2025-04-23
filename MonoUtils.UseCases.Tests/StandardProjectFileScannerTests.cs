@@ -105,6 +105,9 @@ public class StandardProjectFileScannerTests
     [DataRow("NET48;NETSTANDARD2.0", true)]
     [DataRow("NETSTANDARD2.0;NET48", true)]
     [DataRow("NET48", false)]
+    [DataRow("netstandard2", false)]
+    [DataRow("net48;netstandard2", false)]
+    [DataRow("netstandard2;net48", false)]
     [DataRow("netstandard2.0", true)]
     [DataRow("net48;netstandard2.0", true)]
     [DataRow("netstandard2.0;net48", true)]
@@ -149,6 +152,47 @@ public class StandardProjectFileScannerTests
     }
 
     // todo: add reference tests
+    [TestMethod]
+    public async Task ScanAsync_CapturesProjectReferences_FromXml()
+    {
+        // Arrange
+        const string project2FileName = @"project_path_2.csproj";
+        const string project2Path = @"c:\dummy\" + project2FileName;
+        const string project1Xml = """
+                           <ProjectReference Include="project_path_2.csproj" />
+                           """;
+        _fileStorage.Setup(s => s.FileExists(It.Is<string>(x => x.EndsWith("csproj")))).Returns(true);
+        _fileStorage.Setup(s => s.ReadAllTextAsync(PROJECT_PATH, It.IsAny<CancellationToken>()))
+            .ReturnsAsync(project1Xml);
+        _fileStorage.Setup(s => s.ReadAllTextAsync(project2Path, It.IsAny<CancellationToken>()))
+            .ReturnsAsync(string.Empty);
+
+        var builder = CreateBuilder();
+        var scanner = new StandardProjectFileScanner(_fileStorage.Object);
+        var project1 = builder.GetOrAddProject(PROJECT_PATH, true);
+        var project2 = builder.GetOrAddProject(project2Path, true);
+
+        // Act
+        var a = await scanner.ScanAsync(builder, project1, CancellationToken.None);
+        var b = await scanner.ScanAsync(builder, project2, CancellationToken.None);
+
+        // Assert
+        Assert.AreSame(project1, a.Project);
+        Assert.AreSame(project2, b.Project);
+        Assert.AreSame(a.References[0], b.Project);
+        Assert.AreEqual(1, a.References.Count);
+        Assert.AreEqual(0, b.References.Count);
+
+        Assert.AreEqual(1, project1.References.Count);
+        Assert.AreEqual(0, project1.ReferencedBy.Count);
+        Assert.AreEqual(project2.Name, project1.References[0]);
+
+        Assert.AreEqual(0, project2.References.Count);
+        Assert.AreEqual(1, project2.ReferencedBy.Count);
+        Assert.AreEqual(project1.Name, project2.ReferencedBy[0]);
+
+        Assert.AreEqual(0, builder.ProjectFilesToScanCount);
+    }
 
     private BranchDatabaseBuilder CreateBuilder(BuildDefinition[]? builds = null)
     {
