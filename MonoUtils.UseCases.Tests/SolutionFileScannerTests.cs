@@ -48,9 +48,8 @@ public class SolutionFileScannerTests
         Assert.IsNotNull(results);
         Assert.IsNotNull(results.Solution);
         Assert.IsFalse(results.Solution.DoesExist);
-        Assert.AreEqual(0, results.Solution.Projects.Count);
-        Assert.AreEqual(0, results.Solution.Projects.Count);
-        Assert.AreEqual(0, results.WixProjectsToScan.Count);
+        Assert.AreEqual(0, results.Projects.Count);
+        Assert.AreEqual(0, results.WixProjects.Count);
     }
 
     [TestMethod]
@@ -70,8 +69,8 @@ public class SolutionFileScannerTests
         Assert.IsNotNull(results);
         Assert.IsNotNull(results.Solution);
         Assert.IsTrue(results.Solution.DoesExist);
-        Assert.AreEqual(0, results.Solution.Projects.Count);
-        Assert.AreEqual(0, results.WixProjectsToScan.Count);
+        Assert.AreEqual(0, results.Projects.Count);
+        Assert.AreEqual(0, results.WixProjects.Count);
     }
 
     [TestMethod]
@@ -83,9 +82,10 @@ public class SolutionFileScannerTests
     public async Task ScanAsync_ShouldAddVariousProjectTypes(string projectExtension, bool expectedResult)
     {
         // Arrange
-        const string sampleSlnFile = """
-                                         Project("{00000000-0000-0000-0000-000000000000}") = "TestProject", "project_path.{{EXTENSION}}", "{12345678-1234-1234-1234-123456789012}")
-                                     """;
+        const string sampleSlnFile =
+            """
+                Project("{00000000-0000-0000-0000-000000000000}") = "TestProject", "project_path.{{EXTENSION}}", "{12345678-1234-1234-1234-123456789012}")
+            """;
 
         _fileStorage.Setup(s => s.FileExists(SOLUTION_PATH)).Returns(true);
         _fileStorage.Setup(s => s.ReadAllTextAsync(SOLUTION_PATH, It.IsAny<CancellationToken>()))
@@ -103,17 +103,17 @@ public class SolutionFileScannerTests
 
         // Assert
         var expectedCount = expectedResult ? 1 : 0;
-        Assert.AreEqual(expectedCount, results.Solution.Projects.Count);
-        Assert.AreEqual(0, results.WixProjectsToScan.Count);
+        Assert.AreEqual(expectedCount, results.Projects.Count);
     }
 
     [TestMethod]
     public async Task ScanAsync_ShouldAddWixProjectTypes()
     {
         // Arrange
-        const string sampleSlnFile = """
-                                         Project("{00000000-0000-0000-0000-000000000000}") = "TestProject", "wix_project_path.wixproj", "{12345678-1234-1234-1234-123456789012}")
-                                     """;
+        const string sampleSlnFile =
+            """
+                Project("{00000000-0000-0000-0000-000000000000}") = "TestProject", "wix_project_path.wixproj", "{12345678-1234-1234-1234-123456789012}")
+            """;
 
         _fileStorage.Setup(s => s.FileExists(SOLUTION_PATH)).Returns(true);
         _fileStorage.Setup(s => s.ReadAllTextAsync(SOLUTION_PATH, It.IsAny<CancellationToken>()))
@@ -130,9 +130,8 @@ public class SolutionFileScannerTests
         var results = await scanner.ScanAsync(builder, SOLUTION_PATH, CancellationToken.None);
 
         // Assert
-        Assert.AreEqual(0, results.Solution.Projects.Count);
-        Assert.AreEqual(1, results.Solution.WixProjects.Count);
-        Assert.AreEqual(1, results.WixProjectsToScan.Count);
+        Assert.AreEqual(0, results.Projects.Count);
+        Assert.AreEqual(1, results.WixProjects.Count);
     }
 
     [TestMethod]
@@ -142,9 +141,10 @@ public class SolutionFileScannerTests
     public async Task ScanAsync_ShouldCaptureProjectTypeReferences(string projectGuid, ProjectType expectedType)
     {
         // Arrange
-        const string sampleSlnFile = """
-                                         Project("{PROJECT_GUID}") = "TestProject", "project_path.csproj", "{12345678-1234-1234-1234-123456789012}")
-                                     """;
+        const string sampleSlnFile =
+            """
+                Project("{PROJECT_GUID}") = "TestProject", "project_path.csproj", "{12345678-1234-1234-1234-123456789012}")
+            """;
 
         _fileStorage.Setup(s => s.FileExists(SOLUTION_PATH)).Returns(true);
         _fileStorage.Setup(s => s.ReadAllTextAsync(SOLUTION_PATH, It.IsAny<CancellationToken>()))
@@ -161,10 +161,10 @@ public class SolutionFileScannerTests
         var results = await scanner.ScanAsync(builder, SOLUTION_PATH, CancellationToken.None);
 
         // Assert
-        Assert.AreEqual(1, results.Solution.Projects.Count);
-        Assert.AreEqual(expectedType, results.Solution.Projects[0].Type);
-        Assert.AreEqual(0, results.Solution.WixProjects.Count);
-        Assert.AreEqual(0, results.WixProjectsToScan.Count);
+        Assert.AreEqual(1, results.Projects.Count);
+        Assert.AreEqual(PROJECT_PATH, results.Projects[0].Path);
+        Assert.AreEqual(expectedType, results.Projects[0].Type);
+        Assert.AreEqual(0, results.WixProjects.Count);
     }
 
     [TestMethod]
@@ -176,11 +176,12 @@ public class SolutionFileScannerTests
         var builds = new List<BuildDefinition>();
         if (isRequired)
             builds.Add(new BuildDefinition(BUILD_NAME, SOLUTION_PATH, true));
-            
-        const string sampleSlnFile = """
-                                         Project("{00000000-0000-0000-0000-000000000000}") = "TestProject", "project_path.csproj", "{12345678-1234-1234-1234-123456789012}")
-                                         Project("{11111111-1111-1111-1111-111111111111}") = "TestWixProject", "wix_project_path.wixproj", "{12345678-1234-1234-1234-123456789112}")
-                                     """;
+
+        const string sampleSlnFile =
+            """
+                Project("{00000000-0000-0000-0000-000000000000}") = "TestProject", "project_path.csproj", "{12345678-1234-1234-1234-123456789012}")
+                Project("{11111111-1111-1111-1111-111111111111}") = "TestWixProject", "wix_project_path.wixproj", "{12345678-1234-1234-1234-123456789112}")
+            """;
 
         _fileStorage.Setup(s => s.FileExists(SOLUTION_PATH)).Returns(true);
         _fileStorage.Setup(s => s.ReadAllTextAsync(SOLUTION_PATH, It.IsAny<CancellationToken>()))
@@ -197,22 +198,11 @@ public class SolutionFileScannerTests
         var results = await scanner.ScanAsync(builder, SOLUTION_PATH, CancellationToken.None);
 
         // Assert
-        Assert.AreEqual(1, results.Solution.Projects.Count);
-        Assert.AreEqual(1, results.Solution.WixProjects.Count);
-        Assert.AreEqual(1, results.WixProjectsToScan.Count);
-
-        Assert.AreEqual(1, builder.ProjectFilesToScanCount);
-        Assert.AreEqual(1, builder.WixProjectFilesToScanCount);
-        foreach(var project in builder.GetProjectFilesToScan())
-            Assert.AreEqual(isRequired, project.IsRequired);
-        foreach(var project in builder.GetWixProjectFilesToScan())
-            Assert.AreEqual(isRequired, project.IsRequired);
-
+        Assert.AreEqual(isRequired, results.Solution.IsRequired);
+        Assert.AreEqual(1, results.Projects.Count);
+        Assert.AreEqual(1, results.WixProjects.Count);
     }
 
-    private BranchDatabaseBuilder CreateBuilder(BuildDefinition[]? builds = null)
-    {
-        builds ??= [];
-        return new BranchDatabaseBuilder(_loggerFactory.Object, _fileStorage.Object, _resolver, builds);
-    }
+    private BranchDatabaseBuilder CreateBuilder(BuildDefinition[]? builds = null) 
+        => new(_loggerFactory.Object, _fileStorage.Object, _resolver, builds ?? []);
 }

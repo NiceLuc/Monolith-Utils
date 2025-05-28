@@ -28,13 +28,6 @@ internal static class DependencyInjection
 
         services.Configure<AppSettings>(context.Configuration.GetSection("AppSettings"));
 
-        // used for building the database
-        services.AddSingleton<BranchDatabaseBuilderFactory>();
-        services.AddSingleton<SolutionFileScanner>();
-        services.AddSingleton<WixProjectFileScanner>();
-        services.AddSingleton<StandardProjectFileScanner>();
-        services.AddSingleton<WixComponentFileScanner>();
-
         return services;
     }
 }

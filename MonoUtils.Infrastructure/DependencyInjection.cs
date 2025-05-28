@@ -3,6 +3,7 @@ using SharedKernel;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 using MonoUtils.Domain;
+using MonoUtils.Infrastructure.FileScanners;
 using Mustache;
 using Serilog;
 
@@ -28,12 +29,18 @@ public static class DependencyInjection
         services.AddSingleton<IFileStorage, FileStorage>();
 
         // embedded resource utilities
-        services.AddSingleton<IEmbeddedResourceProvider>(_
-            => new EmbeddedResourceProvider(assembly));
+        services.AddSingleton<IEmbeddedResourceProvider>(_ => new EmbeddedResourceProvider(assembly));
 
         // handlebars template support
         services.AddSingleton<FormatCompiler>();
         services.AddSingleton<ITemplateEngine, HandlebarsTemplateEngine>();
+
+        // used for building the database
+        services.AddSingleton<BranchDatabaseBuilderFactory>();
+        services.AddSingleton<SolutionFileScanner>();
+        services.AddSingleton<WixProjectFileScanner>();
+        services.AddSingleton<StandardProjectFileScanner>();
+        services.AddSingleton<WixComponentFileScanner>();
 
         return services;
     }

@@ -1,18 +1,23 @@
 ﻿using System.Text.RegularExpressions;
 using MonoUtils.Domain;
 using MonoUtils.Domain.Data;
-using SharedKernel;
 
 namespace MonoUtils.Infrastructure.FileScanners;
 
 public class StandardProjectFileScanner(IFileStorage fileStorage)
 {
-    private static readonly Regex _csProjReferenceRegex = new(@"ProjectReference Include=""(?<project_path>.+?\.(cs|db|sql)proj)""", RegexOptions.IgnoreCase | RegexOptions.Multiline);
     private static readonly Regex _csProjSdkRegex = new(@"<Project Sdk=", RegexOptions.IgnoreCase | RegexOptions.Multiline);
     private static readonly Regex _csProjNetStandardRegex = new(@"\<TargetFrameworks?\>.*netstandard2\.\d.*\<\/TargetFrameworks?\>", RegexOptions.IgnoreCase | RegexOptions.Multiline);
+    private static readonly Regex _csProjReferenceRegex = new(@"ProjectReference Include=""(?<project_path>.+?\.(cs|db|sql)proj)""", RegexOptions.IgnoreCase | RegexOptions.Multiline);
 
-    public async Task<Results> ScanAsync(BranchDatabaseBuilder builder, ProjectRecord project, CancellationToken cancellationToken)
+    public async Task<StandardProjectScanResults> ScanAsync(ProjectRecord project, CancellationToken cancellationToken)
     {
+        var result = new StandardProjectScanResults(project);
+
+        // cannot scan a file that does not exist
+        if (!project.DoesExist)
+            return result;
+
         var projectXml = await fileStorage.ReadAllTextAsync(project.Path, cancellationToken); // todo: ignore comments!!
         project.AssemblyName = GetAssemblyName(project.Path, projectXml);
         project.PdbFileName = GetPdbFileName(project.AssemblyName);
@@ -23,16 +28,11 @@ public class StandardProjectFileScanner(IFileStorage fileStorage)
         var packagesConfig = Path.Combine(projectDirectory, "packages.config");
         project.IsPackageRef = !fileStorage.FileExists(packagesConfig);
 
-        var result = new Results(project);
         foreach (Match match in _csProjReferenceRegex.Matches(projectXml))
         {
             var relativePath = Path.Combine(projectDirectory, match.Groups["project_path"].Value);
             var referencePath = Path.GetFullPath(relativePath);
-
-            var reference = builder.GetOrAddProject(referencePath, project.IsRequired);
-            project.References.Add(reference.Name);
-            reference.ReferencedBy.Add(project.Name);
-            result.References.Add(reference);
+            result.References.Add(referencePath);
         }
 
         return result;
@@ -70,9 +70,9 @@ public class StandardProjectFileScanner(IFileStorage fileStorage)
         return assemblyName[..lastIndex] + ".pdb";
     }
 
-    public class Results(ProjectRecord project)
+    public class StandardProjectScanResults(ProjectRecord project)
     {
         public ProjectRecord Project { get; } = project;
-        public List<ProjectRecord> References { get; } = new();
+        public List<string> References { get; } = new();
     }
 }

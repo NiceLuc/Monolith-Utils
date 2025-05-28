@@ -1,7 +1,7 @@
 ﻿namespace MonoUtils.Domain.Data;
 
-public record SolutionRecord(string Name, string Path, bool IsRequired, bool DoesExist) 
-    : SchemaRecord(Name, Path, IsRequired, DoesExist)
+public record SolutionRecord(string Name, string Path, bool DoesExist, bool IsRequired) 
+    : SchemaRecord(Name, Path, DoesExist)
 {
     public List<string> Builds { get; set; } = new();
     public List<ProjectReference> Projects { get; set; } = new();

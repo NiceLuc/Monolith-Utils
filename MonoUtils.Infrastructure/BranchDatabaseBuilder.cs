@@ -26,12 +26,18 @@ public class BranchDatabaseBuilder(ILoggerFactory loggerFactory, IFileStorage fi
     private readonly Dictionary<string, ProjectRecord> _projectsByPath = new(StringComparer.InvariantCultureIgnoreCase);
     private readonly Dictionary<string, WixProjectRecord> _wixProjectsByPath = new(StringComparer.InvariantCultureIgnoreCase);
 
+    // references
+    private readonly List<SolutionProjectReference> _solutionReferences = new();
+    private readonly List<ProjectReference> _projectReferences = new();
+    private readonly List<SolutionWixProjectReference> _solutionInstallers = new();
+    private readonly List<WixProjectReference> _wixProjectReferences = new();
+    private readonly List<WixAssemblyReference> _wixAssemblyReferences = new();
+
     // files to scan
     private readonly Queue<ProjectRecord> _projectFilesToScan = new();
     private readonly Queue<WixProjectRecord> _wixProjectFilesToScan = new();
 
     private readonly List<string> _errors = new();
-
 
     public void AddError(string error) => _errors.Add(error);
 
@@ -45,7 +51,7 @@ public class BranchDatabaseBuilder(ILoggerFactory loggerFactory, IFileStorage fi
         var isRequired = _requiredSolutions.TryGetValue(solutionPath, out var build);
         var exists = fileStorage.FileExists(solutionPath);
 
-        solution = new SolutionRecord(solutionName, solutionPath, isRequired, exists);
+        solution = new SolutionRecord(solutionName, solutionPath, exists, isRequired);
         if (build is not null)
             solution.Builds.Add(build.BuildName);
 
@@ -55,30 +61,17 @@ public class BranchDatabaseBuilder(ILoggerFactory loggerFactory, IFileStorage fi
         return solution;
     }
 
-    public ProjectRecord GetOrAddProject(string projectPath, bool isRequired)
+    public ProjectRecord GetOrAddProject(string projectPath)
     {
         if (_projectsByPath.TryGetValue(projectPath, out var project))
-        {
-            // when passing true for isRequired parameter, we need to make sure the flag is set
-            // if the flag is not set, then we must add a new "required" instance of the project
-            // important note: once a project has been defined as required, it's always required
-            if (isRequired && !project.IsRequired)
-            {
-                var requiredProject = new ProjectRecord(project.Name, project.Path, true, project.DoesExist);
-                _projectsByName[project.Name] = requiredProject;
-                _projectsByPath[project.Path] = requiredProject;
-                project = requiredProject;
-            }
-
             return project;
-        }
 
         // otherwise, create a new wix project and set initial references
         var projectName = Path.GetFileNameWithoutExtension(projectPath);
         projectName = resolver.GetUniqueName(projectName, _projectsByName.ContainsKey);
         var exists = fileStorage.FileExists(projectPath);
 
-        project = new ProjectRecord(projectName, projectPath, isRequired, exists);
+        project = new ProjectRecord(projectName, projectPath, exists);
 
         _projectsByName.Add(projectName, project);
         _projectsByPath.Add(projectPath, project);
@@ -90,30 +83,17 @@ public class BranchDatabaseBuilder(ILoggerFactory loggerFactory, IFileStorage fi
         return project;
     }
 
-    public WixProjectRecord GetOrAddWixProject(string projectPath, bool isRequired)
+    public WixProjectRecord GetOrAddWixProject(string projectPath)
     {
         if (_wixProjectsByPath.TryGetValue(projectPath, out var project))
-        {
-            // when passing true for isRequired parameter, we need to make sure the flag is set
-            // if the flag is not set, then we must add a new "required" instance of the project
-            // important note: once a project has been defined as required, it's always required
-            if (isRequired && !project.IsRequired)
-            {
-                var requiredProject = new WixProjectRecord(project.Name, project.Path, true, project.DoesExist);
-                _wixProjectsByName[project.Name] = requiredProject;
-                _wixProjectsByPath[project.Path] = requiredProject;
-                project = requiredProject;
-            }
-
             return project;
-        }
 
         // otherwise, create a new wix project and set initial references
         var projectName = Path.GetFileNameWithoutExtension(projectPath);
         projectName = resolver.GetUniqueName(projectName, _wixProjectsByName.ContainsKey);
         var exists = fileStorage.FileExists(projectPath);
 
-        project = new WixProjectRecord(projectName, projectPath, isRequired, exists);
+        project = new WixProjectRecord(projectName, projectPath, exists);
 
         _wixProjectsByName.Add(projectName, project);
         _wixProjectsByPath.Add(projectPath, project);
@@ -126,6 +106,20 @@ public class BranchDatabaseBuilder(ILoggerFactory loggerFactory, IFileStorage fi
         return project;
     }
 
+    public void AddSolutionProject(SolutionRecord solution, ProjectRecord project, ProjectType type) 
+        => _solutionReferences.Add(new SolutionProjectReference(solution.Name, project.Name, type));
+
+    public void AddProjectReference(ProjectRecord project, ProjectRecord reference) 
+        => _projectReferences.Add(new ProjectReference(project.Name, reference.Name));
+
+    public void AddSolutionWixProject(SolutionRecord solution, WixProjectRecord wixProject) 
+        => _solutionInstallers.Add(new SolutionWixProjectReference(solution.Name, wixProject.Name));
+
+    public void AddWixProjectReference(WixProjectRecord wixProject, ProjectRecord project) 
+        => _wixProjectReferences.Add(new WixProjectReference(wixProject.Name, project.Name));
+
+    public void AddWixAssemblyReference(WixProjectRecord wixProject, ProjectRecord project) 
+        => _wixAssemblyReferences.Add(new WixAssemblyReference(wixProject.Name, project.Name));
 
     public int ProjectFilesToScanCount => _projectFilesToScan.Count;
 
@@ -134,7 +128,7 @@ public class BranchDatabaseBuilder(ILoggerFactory loggerFactory, IFileStorage fi
     public IEnumerable<ProjectRecord> GetProjectFilesToScan()
     {
         // custom code to enable a foreach loop on an active queue
-        var enumerator = new ProjectFilesToScanEnumerator(_projectFilesToScan);
+        var enumerator = new QueueEnumerator<ProjectRecord>(_projectFilesToScan);
         while (enumerator.MoveNext())
             yield return enumerator.Current;
     }
@@ -142,7 +136,7 @@ public class BranchDatabaseBuilder(ILoggerFactory loggerFactory, IFileStorage fi
     public IEnumerable<WixProjectRecord> GetWixProjectFilesToScan()
     {
         // custom code to enable a foreach loop on an active queue
-        var enumerator = new WixProjectFilesToScanEnumerator(_wixProjectFilesToScan);
+        var enumerator = new QueueEnumerator<WixProjectRecord>(_wixProjectFilesToScan);
         while (enumerator.MoveNext())
             yield return enumerator.Current;
     }
@@ -185,9 +179,6 @@ public class BranchDatabaseBuilder(ILoggerFactory loggerFactory, IFileStorage fi
     };
 
     #region Private Classes
-
-    private class ProjectFilesToScanEnumerator(Queue<ProjectRecord> queue) : QueueEnumerator<ProjectRecord>(queue);
-    private class WixProjectFilesToScanEnumerator(Queue<WixProjectRecord> queue) : QueueEnumerator<WixProjectRecord>(queue);
 
     private class QueueEnumerator<T>(Queue<T> queue) : IEnumerator<T>
     {

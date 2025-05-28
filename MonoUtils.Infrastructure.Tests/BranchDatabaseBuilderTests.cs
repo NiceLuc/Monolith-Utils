@@ -192,7 +192,7 @@ public class BranchDatabaseBuilderTests
         var builder = CreateBuilder();
 
         // act
-        var wix = builder.GetOrAddWixProject(WIX_PROJECT_PATH, isRequired);
+        var wix = builder.GetOrAddWixProject(WIX_PROJECT_PATH);
         var result = builder.CreateDatabase();
 
         // assert
@@ -212,11 +212,11 @@ public class BranchDatabaseBuilderTests
     {
         // assemble
         var builder = CreateBuilder();
-        var original = builder.GetOrAddWixProject(WIX_PROJECT_PATH, originalRequired);
+        var original = builder.GetOrAddWixProject(WIX_PROJECT_PATH);
 
         // act
         var result = builder.CreateDatabase();
-        var wix = builder.GetOrAddWixProject(WIX_PROJECT_PATH, newRequired);
+        var wix = builder.GetOrAddWixProject(WIX_PROJECT_PATH);
 
         // assert
         if (expectedSame)
@@ -242,7 +242,7 @@ public class BranchDatabaseBuilderTests
         var builder = CreateBuilder();
 
         // act
-        var wix = builder.GetOrAddWixProject(WIX_PROJECT_PATH, false);
+        var wix = builder.GetOrAddWixProject(WIX_PROJECT_PATH);
         var result = builder.CreateDatabase();
 
         // assert
@@ -293,7 +293,7 @@ public class BranchDatabaseBuilderTests
 
         // add initial projects
         for (var index = 0; index < 3; index++) 
-            builder.GetOrAddWixProject(@$"c:\temp\wix_project_{index}_path.csproj", true);
+            builder.GetOrAddWixProject(@$"c:\temp\wix_project_{index}_path.csproj");
 
         // act
         var counter = 0;
@@ -303,7 +303,7 @@ public class BranchDatabaseBuilderTests
 
             // THE TEST: after scanning 2 projects, add a new one!
             if (counter == 1)
-                builder.GetOrAddWixProject(@"c:\temp\wix_project_3_path.csproj", true);
+                builder.GetOrAddWixProject(@"c:\temp\wix_project_3_path.csproj");
 
             counter += 1;
         }
@@ -322,7 +322,7 @@ public class BranchDatabaseBuilderTests
     {
         // Assemble
         var builder = CreateBuilder();
-        var wix = builder.GetOrAddWixProject(WIX_PROJECT_PATH, true);
+        var wix = builder.GetOrAddWixProject(WIX_PROJECT_PATH);
 
         // Act
         var error = Assert.ThrowsException<InvalidOperationException>(()
@@ -338,7 +338,7 @@ public class BranchDatabaseBuilderTests
         // Assemble
         _fileStorage.Setup(s => s.FileExists(It.IsAny<string>())).Returns(true);
         var builder = CreateBuilder();
-        var wix = builder.GetOrAddWixProject(WIX_PROJECT_PATH, true);
+        var wix = builder.GetOrAddWixProject(WIX_PROJECT_PATH);
         wix.Solutions.Add("INVALID_NAME");
 
         // Act
@@ -357,7 +357,7 @@ public class BranchDatabaseBuilderTests
 
         var builder = CreateBuilder();
         var solution = builder.GetOrAddSolution(SOLUTION_PATH);
-        var wix = builder.GetOrAddWixProject(WIX_PROJECT_PATH, true);
+        var wix = builder.GetOrAddWixProject(WIX_PROJECT_PATH);
         wix.Solutions.Add(solution.Name);
 
         var project = builder.GetOrAddProject(PROJECT_PATH, true);
@@ -393,7 +393,7 @@ public class BranchDatabaseBuilderTests
 
         var builder = CreateBuilder();
         var solution = builder.GetOrAddSolution(SOLUTION_PATH);
-        var wix = builder.GetOrAddWixProject(WIX_PROJECT_PATH, true);
+        var wix = builder.GetOrAddWixProject(WIX_PROJECT_PATH);
         wix.Solutions.Add(solution.Name);
 
         var project = builder.GetOrAddProject(PROJECT_PATH, true);

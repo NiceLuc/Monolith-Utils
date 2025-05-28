@@ -8,32 +8,54 @@ public class WixProjectFileScanner(IFileStorage fileStorage)
 {
     private static readonly Regex _sdkRegex = new(@"<Project Sdk=", RegexOptions.Multiline);
     private static readonly Regex _projectRegex = new(@"ProjectReference Include=""(?<project_path>.+?\.(cs|db|sql)proj)""", RegexOptions.Multiline);
+    private static readonly Regex _wxsRegex = new(@"<Compile Include=""(?<wix_path>.+?\.wxs)""", RegexOptions.Multiline);
 
-    public async Task ScanAsync(BranchDatabaseBuilder builder, SolutionRecord solution, WixProjectRecord wixProject, CancellationToken cancellationToken)
+    public async Task<WixProjectScanResults> ScanAsync(WixProjectRecord wixProject, CancellationToken cancellationToken)
     {
-        var wixProjDirectory = Path.GetDirectoryName(wixProject.Path)!;
-
         // capture all wix project references
+        var wixProjDirectory = Path.GetDirectoryName(wixProject.Path)!;
         var wixProjXml = await fileStorage.ReadAllTextAsync(wixProject.Path, cancellationToken);
-
         wixProject.IsSdk = _sdkRegex.IsMatch(wixProjXml);
 
         // capture all cs project references
+        var results = new WixProjectScanResults(wixProject);
         foreach (Match match in _projectRegex.Matches(wixProjXml))
         {
             var relativePath = Path.Combine(wixProjDirectory, match.Groups["project_path"].Value);
             var projectPath = Path.GetFullPath(relativePath);
-
-            // get a reference to the csharp project
-            var project = builder.GetOrAddProject(projectPath, solution.IsRequired);
-
-            // csharp project is required for the wix project (not harvested)
-            var wixReference = new WixProjectReference(wixProject.Name, false);
-            project.WixProjects.Add(wixReference);
-
-            // wix project depends on the csharp project (not harvested)
-            var projectReference = new WixProjectReference(project.Name, false);
-            wixProject.ProjectReferences.Add(projectReference);
+            results.ProjectReferences.Add(projectPath);
         }
+
+        var wxsFiles = await GetWxsFilePaths(wixProject, cancellationToken);
+        foreach (var wxsFile in wxsFiles) 
+            results.ComponentFilePaths.Add(wxsFile);
+
+        return results;
     }
+
+    private async Task<List<string>> GetWxsFilePaths(WixProjectRecord wixProject, CancellationToken cancellationToken)
+    {
+        var wixDirectory = Path.GetDirectoryName(wixProject.Path)!;
+        if (wixProject.IsSdk)
+            return fileStorage.GetFilePaths(wixDirectory, "*.wxs").ToList();
+
+        var wixProjectXml = await fileStorage.ReadAllTextAsync(wixProject.Path, cancellationToken);
+        var wxsFilePaths = new List<string>();
+        foreach (Match match in _wxsRegex.Matches(wixProjectXml))
+        {
+            var relativePath = Path.Combine(wixDirectory, match.Groups["wix_path"].Value);
+            var wxsPath = Path.GetFullPath(relativePath);
+            wxsFilePaths.Add(wxsPath);
+        }
+
+        return wxsFilePaths;
+    }
+
+    public class WixProjectScanResults(WixProjectRecord wixProject)
+    {
+        public WixProjectRecord WixProject { get; } = wixProject;
+        public List<string> ProjectReferences { get; } = new();
+        public List<string> ComponentFilePaths { get; } = new();
+    }
+
 }

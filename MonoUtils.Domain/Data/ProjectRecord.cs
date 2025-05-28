@@ -1,7 +1,7 @@
 ﻿namespace MonoUtils.Domain.Data;
 
-public record ProjectRecord(string Name, string Path, bool IsRequired, bool DoesExist) 
-    : SchemaRecord(Name, Path, IsRequired, DoesExist)
+public record ProjectRecord(string Name, string Path, bool DoesExist) 
+    : SchemaRecord(Name, Path, DoesExist)
 {
     public string AssemblyName { get; set; }
     public string PdbFileName { get; set; }

@@ -14,67 +14,57 @@ public class SolutionFileScanner(IFileStorage fileStorage)
         { "9A19103F-16F7-4668-BE54-9A1E7A4F7556", ProjectType.SdkStyle },
     };
 
-    public async Task<Results> ScanAsync(BranchDatabaseBuilder builder, string filePath, CancellationToken cancellationToken)
+    public async Task<Results> ScanAsync(SolutionRecord solution, CancellationToken cancellationToken)
     {
-        var solution = builder.GetOrAddSolution(filePath);
         var results = new Results(solution);
 
         // cannot scan a file that does not exist
         if (!solution.DoesExist)
             return results;
 
-        var solutionDirectory = Path.GetDirectoryName(filePath)!;
-
-        var solutionXml = await fileStorage.ReadAllTextAsync(filePath, cancellationToken);
+        var solutionDirectory = Path.GetDirectoryName(solution.Path)!;
+        var solutionXml = await fileStorage.ReadAllTextAsync(solution.Path, cancellationToken);
         foreach (Match match in _slnProjectsRegex.Matches(solutionXml))
         {
             var relativePath = Path.Combine(solutionDirectory, match.Groups["project_path"].Value);
             var projectPath = Path.GetFullPath(relativePath);
 
             var type = match.Groups["project_type"].Value;
-
-            // wix files get scanned outside of this scanner method. they are pre-scanned before
-            // all other projects are scanned, but are then scanned again at the end to determine
-            // if any component files reference them for manual harvesting
-            if (type == "wix")
-            {
-                var wixProject = builder.GetOrAddWixProject(projectPath, solution.IsRequired);
-                wixProject.Solutions.Add(solution.Name);
-                solution.WixProjects.Add(wixProject.Name);
-
-                // wix projects get returned to the caller
-                results.WixProjectsToScan.Add(wixProject);
-                continue;
-            }
-
-            // standard project files get added with a reference to their project type
-            var project = builder.GetOrAddProject(projectPath, solution.IsRequired);
             var guid = match.Groups["project_type_guid"].Value;
-            var projectType = GetProjectType(project, type, guid);
-            var reference = new ProjectReference(project.Name, projectType);
-            project.Solutions.Add(solution.Name);
-            solution.Projects.Add(reference);
+
+            switch (type)
+            {
+                case "wix":
+                    results.WixProjects.Add(projectPath);
+                    break;
+
+                case "cs":
+
+                    if (!_projectTypes.TryGetValue(guid, out var projectType))
+                    {
+                        solution.Errors.Add($"Unknown project guid type. Solution: {solution.Path}, Project: {projectPath}, ProjectType: {guid}");
+                        projectType = ProjectType.Unknown;
+                    }
+
+                    results.Projects.Add(new ProjectItem(projectPath, projectType));
+                    break;
+
+                default:
+                    solution.Errors.Add($"Unknown project type. Solution: {solution.Path}, Project: {projectPath}");
+                    break;
+            }
         }
 
         // let the caller add build name and project references
         return results;
-
-        ProjectType GetProjectType(ProjectRecord project, string extensionType, string projectTypeGuid)
-        {
-            if (extensionType != "cs")
-                return ProjectType.Unknown;
-
-            if(_projectTypes.TryGetValue(projectTypeGuid, out var projectType))
-                return projectType;
-
-            builder.AddError($"Unknown csproj type. Solution: {solution.Path}, Project: {project.Path}, ProjectType: {projectTypeGuid}");
-            return ProjectType.Unknown;
-        }
     }
 
     public class Results(SolutionRecord solution)
     {
         public SolutionRecord Solution { get; } = solution;
-        public List<WixProjectRecord> WixProjectsToScan { get; } = new();
+        public List<ProjectItem> Projects { get; } = new();
+        public List<string> WixProjects { get; } = new();
     }
+
+    public record ProjectItem(string Path, ProjectType Type);
 }
