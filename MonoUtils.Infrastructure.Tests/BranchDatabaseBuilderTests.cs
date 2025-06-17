@@ -31,395 +31,209 @@ public class BranchDatabaseBuilderTests
         _resolver = new UniqueNameResolver();
     }
 
+    /*
     #region AddError Tests
     [TestMethod]
-    public void AddError_HappyPath()
+    [DataRow(RecordType.Solution, "solution", ErrorSeverity.Info)]
+    [DataRow(RecordType.Solution, "solution", ErrorSeverity.Warning)]
+    [DataRow(RecordType.Solution, "solution", ErrorSeverity.Critical)]
+    [DataRow(RecordType.Project, "project", ErrorSeverity.Info)]
+    [DataRow(RecordType.Project, "project", ErrorSeverity.Warning)]
+    [DataRow(RecordType.Project, "project", ErrorSeverity.Critical)]
+    [DataRow(RecordType.WixProject, "wix", ErrorSeverity.Info)]
+    [DataRow(RecordType.WixProject, "wix", ErrorSeverity.Warning)]
+    [DataRow(RecordType.WixProject, "wix", ErrorSeverity.Critical)]
+    public void AddError_HappyPath(RecordType type, string name, ErrorSeverity severity)
     {
         // assemble
         var builder = CreateBuilder();
+        var error = new ErrorRecord(type, name, "test", severity);
+        builder.AddError(error);
 
         // act
-        builder.AddError("test error message");
-        var result = builder.CreateDatabase();
+        var db = builder.CreateDatabase();
+        var result = db.Errors[0];
 
         // assert
-        Assert.AreEqual(result.Errors.Count, 1);
-        Assert.AreEqual(result.Errors[0], "test error message");
+        Assert.AreEqual(result.Message, "test");
     }
     #endregion
+    */
 
-    #region GetOrAddSolution Tests
     [TestMethod]
     [DataRow(false)]
     [DataRow(true)]
-    public void GetOrAddSolution_CapturesIsRequired(bool isRequired)
+    public void GetOrAddSolution_CreatesNewRecord(bool expectedExists)
     {
         // assemble
-        var builds = new List<BuildDefinition>();
-        if (isRequired)
-            builds.Add(new BuildDefinition(BUILD_NAME, SOLUTION_PATH, true));
-            
-        var builder = CreateBuilder(builds.ToArray());
+        const string expectedName = "solution_path";
+        _fileStorage.Setup(s => s.FileExists(SOLUTION_PATH)).Returns(expectedExists);
+        var builder = CreateBuilder();
 
         // act
         var solution = builder.GetOrAddSolution(SOLUTION_PATH);
-        var result = builder.CreateDatabase();
 
         // assert
-        Assert.AreEqual(isRequired, solution.IsRequired);
-        Assert.IsFalse(solution.DoesExist);
-        Assert.AreEqual("solution_path", solution.Name);
+        Assert.AreEqual(false, solution.IsRequired);
+        Assert.AreEqual(expectedName, solution.Name);
+        Assert.AreEqual(expectedExists, solution.DoesExist);
         Assert.AreEqual(SOLUTION_PATH, solution.Path);
-        Assert.AreEqual(result.Solutions.Count, 1);
+    }
+
+    [TestMethod]
+    public void GetOrAddSolution_CachesResult()
+    {
+        _fileStorage.Setup(s => s.FileExists(SOLUTION_PATH)).Returns(true);
+        var builder = CreateBuilder();
+
+        // act
+        var a = builder.GetOrAddSolution(SOLUTION_PATH);
+        var b = builder.GetOrAddSolution(SOLUTION_PATH);
+
+        // assert
+        Assert.IsNotNull(a);
+        Assert.AreSame(a, b);
     }
 
     [TestMethod]
     [DataRow(false)]
     [DataRow(true)]
-    public void GetOrAddSolution_CapturesDoesExist(bool doesExist)
+    public void GetOrAddProject_CreatesNewRecord(bool expectedExists)
     {
         // assemble
-        _fileStorage.Setup(s => s.FileExists(SOLUTION_PATH)).Returns(doesExist);
+        const string expectedName = "project_path";
+        _fileStorage.Setup(s => s.FileExists(PROJECT_PATH)).Returns(expectedExists);
         var builder = CreateBuilder();
 
         // act
-        var solution = builder.GetOrAddSolution(SOLUTION_PATH);
-        var result = builder.CreateDatabase();
+        var project = builder.GetOrAddProject(PROJECT_PATH);
 
         // assert
-        Assert.AreEqual(doesExist, solution.DoesExist);
-        Assert.AreEqual(result.Solutions.Count, 1);
-    }
-
-    [TestMethod]
-    public void GetOrAddSolution_GetsExistingSolutionReference()
-    {
-        // assemble
-        var builder = CreateBuilder();
-        var original = builder.GetOrAddSolution(SOLUTION_PATH);
-
-        // act
-        var found = builder.GetOrAddSolution(SOLUTION_PATH);
-        var result = builder.CreateDatabase();
-
-        // assert
-        Assert.AreSame(original, found);
-        Assert.AreEqual(result.Solutions.Count, 1);
-    }
-    #endregion
-
-    #region GetOrAddProject Tests
-    [TestMethod]
-    [DataRow(false)]
-    [DataRow(true)]
-    public void GetOrAddProject_CapturesIsRequired(bool isRequired)
-    {
-        // assemble
-        var builder = CreateBuilder();
-
-        // act
-        var project = builder.GetOrAddProject(PROJECT_PATH, isRequired);
-        var result = builder.CreateDatabase();
-
-        // assert
-        Assert.AreEqual(isRequired, project.IsRequired);
-        Assert.IsFalse(project.DoesExist);
-        Assert.AreEqual("project_path", project.Name);
+        Assert.AreEqual(false, project.IsRequired);
+        Assert.AreEqual(expectedExists, project.DoesExist);
+        Assert.AreEqual(expectedName, project.Name);
         Assert.AreEqual(PROJECT_PATH, project.Path);
-        Assert.AreEqual(result.Projects.Count, 1);
     }
 
     [TestMethod]
-    [DataRow(true, true, true, true)]
-    [DataRow(true, false, true, true)]
-    [DataRow(false, true, true, false)]
-    [DataRow(false, false, false, true)]
-    public void GetOrAddProject_UpdatesIsRequired(bool originalRequired, bool newRequired, bool expectedRequired, bool expectedSame)
+    public void GetOrAddProject_CachesResult()
     {
         // assemble
+        _fileStorage.Setup(s => s.FileExists(PROJECT_PATH)).Returns(false);
         var builder = CreateBuilder();
-        var original = builder.GetOrAddProject(PROJECT_PATH, originalRequired);
 
         // act
-        var result = builder.CreateDatabase();
-        var project = builder.GetOrAddProject(PROJECT_PATH, newRequired);
+        var a = builder.GetOrAddProject(PROJECT_PATH);
+        var b = builder.GetOrAddProject(PROJECT_PATH);
 
         // assert
-
-        if (expectedSame)
-            Assert.AreSame(original, project);
-        else
-            Assert.AreNotSame(original, project);
-
-        Assert.AreEqual(expectedRequired, project.IsRequired);
-        Assert.IsFalse(project.DoesExist);
-        Assert.AreEqual("project_path", project.Name);
-        Assert.AreEqual(PROJECT_PATH, project.Path);
-        Assert.AreEqual(result.Projects.Count, 1);
+        Assert.IsNotNull(a);
+        Assert.AreSame(a, b);
     }
 
     [TestMethod]
     [DataRow(false)]
     [DataRow(true)]
-    public void GetOrAddProject_CapturesDoesExist(bool doesExist)
+    public void GetOrAddWixProject_CreatesNewRecord(bool expectedExists)
     {
         // assemble
-        _fileStorage.Setup(s => s.FileExists(PROJECT_PATH)).Returns(doesExist);
-        var expectedScanCount = doesExist ? 1 : 0;
+        const string expectedName = "wix_project_path";
+        _fileStorage.Setup(s => s.FileExists(WIX_PROJECT_PATH)).Returns(expectedExists);
         var builder = CreateBuilder();
 
         // act
-        var project = builder.GetOrAddProject(PROJECT_PATH, false);
-        var result = builder.CreateDatabase();
+        var project = builder.GetOrAddWixProject(WIX_PROJECT_PATH);
 
         // assert
-        Assert.IsFalse(project.IsRequired);
-        Assert.AreEqual(doesExist, project.DoesExist);
-        Assert.AreEqual("project_path", project.Name);
-        Assert.AreEqual(PROJECT_PATH, project.Path);
-        Assert.AreEqual(result.Projects.Count, 1);
-        Assert.AreEqual(expectedScanCount, builder.ProjectFilesToScanCount);
+        Assert.AreEqual(false, project.IsRequired);
+        Assert.AreEqual(expectedExists, project.DoesExist);
+        Assert.AreEqual(expectedName, project.Name);
+        Assert.AreEqual(WIX_PROJECT_PATH, project.Path);
     }
-    #endregion
 
-    #region GetOrAddWiXProject Tests
     [TestMethod]
-    [DataRow(false)]
-    [DataRow(true)]
-    public void GetOrAddWixProject_CapturesIsRequired(bool isRequired)
+    public void GetOrAddWixProject_CachesResult()
     {
         // assemble
+        _fileStorage.Setup(s => s.FileExists(WIX_PROJECT_PATH)).Returns(false);
         var builder = CreateBuilder();
 
         // act
-        var wix = builder.GetOrAddWixProject(WIX_PROJECT_PATH);
-        var result = builder.CreateDatabase();
+        var a = builder.GetOrAddWixProject(WIX_PROJECT_PATH);
+        var b = builder.GetOrAddWixProject(WIX_PROJECT_PATH);
 
         // assert
-        Assert.AreEqual(isRequired, wix.IsRequired);
-        Assert.IsFalse(wix.DoesExist);
-        Assert.AreEqual("wix_project_path", wix.Name);
-        Assert.AreEqual(WIX_PROJECT_PATH, wix.Path);
-        Assert.AreEqual(result.WixProjects.Count, 1);
+        Assert.IsNotNull(a);
+        Assert.AreSame(a, b);
     }
 
     [TestMethod]
-    [DataRow(true, true, true, true)]
-    [DataRow(true, false, true, true)]
-    [DataRow(false, true, true, false)]
-    [DataRow(false, false, false, true)]
-    public void GetOrAddWixProject_UpdatesIsRequired(bool originalRequired, bool newRequired, bool expectedRequired, bool expectedSame)
+    public void CreateDatabase_SetsRequiredSolutions()
     {
         // assemble
-        var builder = CreateBuilder();
-        var original = builder.GetOrAddWixProject(WIX_PROJECT_PATH);
-
-        // act
-        var result = builder.CreateDatabase();
-        var wix = builder.GetOrAddWixProject(WIX_PROJECT_PATH);
-
-        // assert
-        if (expectedSame)
-            Assert.AreSame(original, wix);
-        else
-            Assert.AreNotSame(original, wix);
-
-        Assert.AreEqual(expectedRequired, wix.IsRequired);
-        Assert.IsFalse(wix.DoesExist);
-        Assert.AreEqual("wix_project_path", wix.Name);
-        Assert.AreEqual(WIX_PROJECT_PATH, wix.Path);
-        Assert.AreEqual(result.WixProjects.Count, 1);
-    }
-
-    [TestMethod]
-    [DataRow(false)]
-    [DataRow(true)]
-    public void GetOrAddWixProject_CapturesDoesExist(bool doesExist)
-    {
-        // assemble
-        _fileStorage.Setup(s => s.FileExists(WIX_PROJECT_PATH)).Returns(doesExist);
-        var expectedScanCount = doesExist ? 1 : 0;
-        var builder = CreateBuilder();
-
-        // act
-        var wix = builder.GetOrAddWixProject(WIX_PROJECT_PATH);
-        var result = builder.CreateDatabase();
-
-        // assert
-        Assert.IsFalse(wix.IsRequired);
-        Assert.AreEqual(doesExist, wix.DoesExist);
-        Assert.AreEqual("wix_project_path", wix.Name);
-        Assert.AreEqual(WIX_PROJECT_PATH, wix.Path);
-        Assert.AreEqual(result.WixProjects.Count, 1);
-        Assert.AreEqual(expectedScanCount, builder.WixProjectFilesToScanCount);
-    }
-    #endregion
-
-    #region Dynamic Scan Enumeration Tests
-    [TestMethod]
-    public void GetProjectFilesToScan_SupportsNewProjectsDuringIteration()
-    {
-        _fileStorage.Setup(s => s.FileExists(It.IsAny<string>())).Returns(true);
-        var builder = CreateBuilder();
-
-        // add initial projects
-        for (var index = 0; index < 3; index++) 
-            builder.GetOrAddProject(@$"c:\temp\project_{index}_path.csproj", true);
-
-        // act
-        var counter = 0;
-        foreach (var project in builder.GetProjectFilesToScan())
-        {
-            Assert.AreEqual($"project_{counter}_path", project.Name);
-
-            // THE TEST: after scanning 2 projects, add a new one!
-            if (counter == 1)
-                builder.GetOrAddProject(@"c:\temp\project_3_path.csproj", true);
-
-            counter += 1;
-        }
-
-        var result = builder.CreateDatabase();
-
-        // assert
-        Assert.AreEqual(4, result.Projects.Count);
-    }
-
-    [TestMethod]
-    public void GetWixProjectFilesToScan_SupportsNewWixProjectsDuringIteration()
-    {
-        _fileStorage.Setup(s => s.FileExists(It.IsAny<string>())).Returns(true);
-        var builder = CreateBuilder();
-
-        // add initial projects
-        for (var index = 0; index < 3; index++) 
-            builder.GetOrAddWixProject(@$"c:\temp\wix_project_{index}_path.csproj");
-
-        // act
-        var counter = 0;
-        foreach (var project in builder.GetWixProjectFilesToScan())
-        {
-            Assert.AreEqual($"wix_project_{counter}_path", project.Name);
-
-            // THE TEST: after scanning 2 projects, add a new one!
-            if (counter == 1)
-                builder.GetOrAddWixProject(@"c:\temp\wix_project_3_path.csproj");
-
-            counter += 1;
-        }
-
-        var result = builder.CreateDatabase();
-
-        // assert
-        Assert.AreEqual(4, result.WixProjects.Count);
-    }
-    #endregion
-
-    #region GetProjectsAvailableForWix Tests
-
-    [TestMethod]
-    public void GetProjectsAvailableForWix_ThrowsExceptionWhenSolutionNotSet()
-    {
-        // Assemble
-        var builder = CreateBuilder();
-        var wix = builder.GetOrAddWixProject(WIX_PROJECT_PATH);
-
-        // Act
-        var error = Assert.ThrowsException<InvalidOperationException>(()
-            => builder.GetProjectsAvailableForWix(wix));
-
-        // Assert
-        Assert.IsTrue(error.Message.Contains(WIX_PROJECT_PATH));
-    }
-
-    [TestMethod]
-    public void GetProjectsAvailableForWix_ThrowsExceptionWhenSolutionNotFound()
-    {
-        // Assemble
-        _fileStorage.Setup(s => s.FileExists(It.IsAny<string>())).Returns(true);
-        var builder = CreateBuilder();
-        var wix = builder.GetOrAddWixProject(WIX_PROJECT_PATH);
-        wix.Solutions.Add("INVALID_NAME");
-
-        // Act
-        var error = Assert.ThrowsException<KeyNotFoundException>(()
-            => builder.GetProjectsAvailableForWix(wix));
-
-        // Assert
-        Assert.IsTrue(error.Message.Contains("INVALID_NAME"));
-    }
-
-    [TestMethod]
-    public void GetProjectsAvailableForWix_ReturnsAllNonWixProjects()
-    {
-        // Assemble
-        _fileStorage.Setup(s => s.FileExists(It.IsAny<string>())).Returns(true);
-
+        _fileStorage.Setup(s => s.FileExists(SOLUTION_PATH)).Returns(true);
         var builder = CreateBuilder();
         var solution = builder.GetOrAddSolution(SOLUTION_PATH);
-        var wix = builder.GetOrAddWixProject(WIX_PROJECT_PATH);
-        wix.Solutions.Add(solution.Name);
+        solution.Builds.Add(BUILD_NAME);
 
-        var project = builder.GetOrAddProject(PROJECT_PATH, true);
-        var project2 = builder.GetOrAddProject("project_2.csproj", true);
-        var project3 = builder.GetOrAddProject("project_3.csproj", true);
-        var testProject = builder.GetOrAddProject("some_Test.csproj", true);
-        var testsProject = builder.GetOrAddProject("more_Tests.csproj", true);
+        // act
+        var db = builder.CreateDatabase();
+        var result = db.Solutions[0];
 
-        // add all projects to the solution
-        foreach (var p in new[] {project, project2, project3, testProject, testsProject})
-        {
-            var reference = new ProjectReference(p.Name, ProjectType.Unknown);
-            solution.Projects.Add(reference);
-        }
-
-        // Act
-        var result = builder.GetProjectsAvailableForWix(wix);
-
-        // Assert
-        Assert.IsNotNull(result);
-        Assert.AreEqual(3, result.Length);
-
-        // should not have test projects
-        Assert.IsFalse(result.Any(p => p.Path.Contains(testProject.Path)));
-        Assert.IsFalse(result.Any(p => p.Path.Contains(testsProject.Path)));
+        // assert
+        Assert.IsTrue(result.IsRequired);
     }
 
     [TestMethod]
-    public void GetProjectsAvailableForWix_IgnoresMissingProjects()
+    public void CreateDatabase_SetsRequiredProjects()
     {
-        // Assemble
-        _fileStorage.Setup(s => s.FileExists(It.Is<string>(x => x.EndsWith("csproj")))).Returns(false);
-
+        // assemble
+        _fileStorage.Setup(s => s.FileExists(SOLUTION_PATH)).Returns(true);
+        _fileStorage.Setup(s => s.FileExists(PROJECT_PATH)).Returns(true);
         var builder = CreateBuilder();
         var solution = builder.GetOrAddSolution(SOLUTION_PATH);
-        var wix = builder.GetOrAddWixProject(WIX_PROJECT_PATH);
-        wix.Solutions.Add(solution.Name);
+        solution.Builds.Add(BUILD_NAME);
 
-        var project = builder.GetOrAddProject(PROJECT_PATH, true);
-        var project2 = builder.GetOrAddProject("project_2.csproj", true);
-        var project3 = builder.GetOrAddProject("project_3.csproj", true);
+        // assign the project to the solution
+        var project = builder.GetOrAddProject(PROJECT_PATH);
+        solution.Projects.Add(new SolutionProjectReference(project.Name, ProjectType.Unknown));
 
-        // add all projects to the solution
-        foreach (var p in new[] {project, project2, project3})
-        {
-            var reference = new ProjectReference(p.Name, ProjectType.Unknown);
-            solution.Projects.Add(reference);
-        }
+        // act
+        var db = builder.CreateDatabase();
+        var result = db.Projects[0];
 
-        // Act
-        var result = builder.GetProjectsAvailableForWix(wix);
-
-        // Assert
-        Assert.IsNotNull(result);
-        Assert.AreEqual(0, result.Length);
+        // assert
+        Assert.IsTrue(result.IsRequired);
     }
 
-    #endregion
-
-    private BranchDatabaseBuilder CreateBuilder(BuildDefinition[]? builds = null)
+    [TestMethod]
+    public void CreateDatabase_SetsRequiredWixProjects()
     {
-        builds ??= [];
-        return new BranchDatabaseBuilder(_loggerFactory.Object, _fileStorage.Object, _resolver, builds);
+        // assemble
+        _fileStorage.Setup(s => s.FileExists(SOLUTION_PATH)).Returns(true);
+        _fileStorage.Setup(s => s.FileExists(WIX_PROJECT_PATH)).Returns(true);
+        var builder = CreateBuilder();
+        var solution = builder.GetOrAddSolution(SOLUTION_PATH);
+        solution.Builds.Add(BUILD_NAME);
+
+        // assign the wix project to the solution
+        var wixProject = builder.GetOrAddWixProject(WIX_PROJECT_PATH);
+        solution.WixProjects.Add(wixProject.Name);
+
+        // act
+        var db = builder.CreateDatabase();
+        var result = db.WixProjects[0];
+
+        // assert
+        Assert.IsTrue(result.IsRequired);
+    }
+
+
+    private BranchDatabaseBuilder CreateBuilder()
+    {
+        var solutionProvider = new RecordProvider<SolutionRecord>(_resolver, _fileStorage.Object);
+        var projectProvider = new RecordProvider<ProjectRecord>(_resolver, _fileStorage.Object);
+        var wixProjectProvider = new RecordProvider<WixProjectRecord>(_resolver, _fileStorage.Object);
+        return new BranchDatabaseBuilder(solutionProvider, projectProvider, wixProjectProvider);
     }
 }

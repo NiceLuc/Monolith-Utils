@@ -1,6 +1,5 @@
 ﻿using System.Text.RegularExpressions;
 using MonoUtils.Domain;
-using MonoUtils.Domain.Data;
 
 namespace MonoUtils.Infrastructure.FileScanners;
 
@@ -9,33 +8,36 @@ public class StandardProjectFileScanner(IFileStorage fileStorage)
     private static readonly Regex _csProjSdkRegex = new(@"<Project Sdk=", RegexOptions.IgnoreCase | RegexOptions.Multiline);
     private static readonly Regex _csProjNetStandardRegex = new(@"\<TargetFrameworks?\>.*netstandard2\.\d.*\<\/TargetFrameworks?\>", RegexOptions.IgnoreCase | RegexOptions.Multiline);
     private static readonly Regex _csProjReferenceRegex = new(@"ProjectReference Include=""(?<project_path>.+?\.(cs|db|sql)proj)""", RegexOptions.IgnoreCase | RegexOptions.Multiline);
+    private static readonly Regex _testProjectFilePathRegex = new(@"Tests?\.csproj", RegexOptions.Multiline);
 
-    public async Task<StandardProjectScanResults> ScanAsync(ProjectRecord project, CancellationToken cancellationToken)
+    public async Task<Results> ScanAsync(string path, CancellationToken cancellationToken)
     {
-        var result = new StandardProjectScanResults(project);
+        if (!fileStorage.FileExists(path))
+            throw new FileNotFoundException($"Project file not found: {path}");
 
-        // cannot scan a file that does not exist
-        if (!project.DoesExist)
-            return result;
-
-        var projectXml = await fileStorage.ReadAllTextAsync(project.Path, cancellationToken); // todo: ignore comments!!
-        project.AssemblyName = GetAssemblyName(project.Path, projectXml);
-        project.PdbFileName = GetPdbFileName(project.AssemblyName);
-        project.IsSdk = _csProjSdkRegex.IsMatch(projectXml);
-        project.IsNetStandard2 = _csProjNetStandardRegex.IsMatch(projectXml);
-
-        var projectDirectory = Path.GetDirectoryName(project.Path)!;
+        var projectXml = await fileStorage.ReadAllTextAsync(path, cancellationToken); // todo: ignore comments!!
+        var assemblyName = GetAssemblyName(path, projectXml);
+        var projectDirectory = Path.GetDirectoryName(path)!;
         var packagesConfig = Path.Combine(projectDirectory, "packages.config");
-        project.IsPackageRef = !fileStorage.FileExists(packagesConfig);
+
+        var results = new Results
+        {
+            AssemblyName = assemblyName,
+            PdbFileName = GetPdbFileName(assemblyName),
+            IsSdk = _csProjSdkRegex.IsMatch(projectXml),
+            IsNetStandard2 = _csProjNetStandardRegex.IsMatch(projectXml),
+            IsPackageRef = !fileStorage.FileExists(packagesConfig),
+            IsTestProject = _testProjectFilePathRegex.IsMatch(path)
+        };
 
         foreach (Match match in _csProjReferenceRegex.Matches(projectXml))
         {
             var relativePath = Path.Combine(projectDirectory, match.Groups["project_path"].Value);
             var referencePath = Path.GetFullPath(relativePath);
-            result.References.Add(referencePath);
+            results.References.Add(referencePath);
         }
 
-        return result;
+        return results;
     }
 
     private static string GetAssemblyName(string projectFilePath, string projectXml)
@@ -70,9 +72,14 @@ public class StandardProjectFileScanner(IFileStorage fileStorage)
         return assemblyName[..lastIndex] + ".pdb";
     }
 
-    public class StandardProjectScanResults(ProjectRecord project)
+    public class Results
     {
-        public ProjectRecord Project { get; } = project;
+        public string AssemblyName { get; set; }
+        public string PdbFileName { get; set; }
+        public bool IsSdk { get; set; }
+        public bool IsNetStandard2 { get; set; }
+        public bool IsPackageRef { get; set; }
+        public bool IsTestProject { get; set; }
         public List<string> References { get; } = new();
     }
 }

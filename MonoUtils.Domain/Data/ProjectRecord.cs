@@ -3,11 +3,14 @@
 public record ProjectRecord(string Name, string Path, bool DoesExist) 
     : SchemaRecord(Name, Path, DoesExist)
 {
-    public string AssemblyName { get; set; }
-    public string PdbFileName { get; set; }
     public bool IsSdk { get; set; }
     public bool IsNetStandard2 { get; set; }
     public bool IsPackageRef { get; set; }
+    public bool IsTestProject { get; set; }
+    public bool IsRequired { get; set; }
+
+    public string AssemblyName { get; set; }
+    public string PdbFileName { get; set; }
 
     public List<string> Solutions { get; set; } = new();
     public List<string> References { get; set; } = new();

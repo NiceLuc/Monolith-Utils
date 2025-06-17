@@ -7,7 +7,6 @@
   </PropertyGroup>
 
   <ItemGroup>
-    <Folder Include="InitializeDatabase\" />
     <Folder Include="LocalSolutions\" />
     <Folder Include="LocalWixProjects\" />
   </ItemGroup>
@@ -19,6 +18,7 @@
 
   <ItemGroup>
     <ProjectReference Include="..\MonoUtils.Domain\MonoUtils.Domain.csproj" />
+    <ProjectReference Include="..\MonoUtils.Infrastructure\MonoUtils.Infrastructure.csproj" />
   </ItemGroup>
 
 </Project>

@@ -18,7 +18,7 @@ public class WixProjectRepository(IFileStorage fileStorage, UniqueNameResolver r
         projectName = resolver.GetUniqueName(projectName, _wixProjNames.Contains);
         var exists = fileStorage.FileExists(filePath);
 
-        var project = new WixProjectRecord(projectName, filePath, isRequired, exists);
+        var project = new WixProjectRecord(projectName, filePath, exists);
         _wixProjects.Add(filePath, project);
         _wixProjNames.Add(projectName);
 

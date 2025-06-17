@@ -191,11 +191,11 @@ public class Project
             else
             {
                 var names = wixProjects
-                    .Where(w => !w.IsHarvested)
+                    .Where(w => !w.IsManuallyHarvested)
                     .Select(w => w.ProjectName)
                     .ToDictionary(w => w, StringComparer.InvariantCultureIgnoreCase);
 
-                foreach (var wixProject in wixProjects.Where(w => w.IsHarvested))
+                foreach (var wixProject in wixProjects.Where(w => w.IsManuallyHarvested))
                 {
                     if (names.TryGetValue(wixProject.ProjectName, out var found))
                     {

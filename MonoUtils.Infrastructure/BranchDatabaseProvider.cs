@@ -1,7 +1,7 @@
 ﻿using MonoUtils.Domain;
 using MonoUtils.Domain.Data;
 
-namespace Deref;
+namespace MonoUtils.Infrastructure;
 
 public class BranchDatabaseProvider(
     IProgramSettingsBuilder settingsBuilder, 

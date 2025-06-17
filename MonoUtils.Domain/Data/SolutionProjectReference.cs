@@ -1,3 +1,3 @@
 ﻿namespace MonoUtils.Domain.Data;
 
-public record SolutionProjectReference(string SolutionName, string ProjectName, ProjectType ProjectType);
+public record SolutionProjectReference(string ProjectName, ProjectType ProjectType);

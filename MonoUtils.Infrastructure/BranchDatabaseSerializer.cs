@@ -2,9 +2,8 @@
 using System.Text.Json.Serialization;
 using MonoUtils.Domain;
 using MonoUtils.Domain.Data;
-using MonoUtils.Infrastructure;
 
-namespace Deref;
+namespace MonoUtils.Infrastructure;
 
 public class BranchDatabaseSerializer(IFileStorage fileStorage) : DefinitionSerializer<BranchDatabase>(fileStorage)
 {

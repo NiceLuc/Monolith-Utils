@@ -2,8 +2,14 @@
 
 public class BranchDatabase
 {
-    public List<string> Errors { get; set; }
-    public List<ProjectRecord> Projects { get; set; }
-    public List<SolutionRecord> Solutions { get; set; }
-    public List<WixProjectRecord> WixProjects { get; set; }
+    public IList<ErrorRecord> Errors { get; set; }
+
+    public IList<SolutionRecord> Solutions { get; set; }
+    public IList<ProjectRecord> Projects { get; set; }
+    public IList<WixProjectRecord> WixProjects { get; set; }
+
+    public IList<SolutionProjectReference> SolutionProjects { get; set; }
+    public IList<ProjectReference> ProjectReferences { get; set; }
+    public IList<SolutionWixProjectReference> SolutionWixProjects { get; set; }
+    public IList<WixProjectReference> WixProjectReferences { get; set; }
 }

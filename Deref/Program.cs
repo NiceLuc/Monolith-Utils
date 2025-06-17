@@ -9,7 +9,7 @@ using Microsoft.Extensions.Hosting;
 using MonoUtils.Domain.Data;
 using MonoUtils.Infrastructure;
 using MonoUtils.UseCases;
-using MonoUtils.UseCases.LocalProjects.List;
+using MonoUtils.UseCases.LocalProjects;
 using SharedKernel;
 
 // TODO: Figure out why the console app is not respecting the launchSettings.json environment variable
@@ -71,7 +71,7 @@ void RunProjectProgram(ProjectOptions options)
 {
     if (options.IsList)
     {
-        var listCommand = new ProjectListQuery
+        var listCommand = new ProjectList.Query
         {
             SearchTerm = options.ProjectName,
             BranchFilter = options.FilterBy,

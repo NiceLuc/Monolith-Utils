@@ -1,3 +1,3 @@
 ﻿namespace MonoUtils.Domain.Data;
 
-public record WixProjectReference(string WixProjectName, string ProjectName);
+public record WixProjectReference(string ProjectName, bool IsManuallyHarvested);

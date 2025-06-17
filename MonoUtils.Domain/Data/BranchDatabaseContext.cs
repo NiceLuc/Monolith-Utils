@@ -2,66 +2,67 @@
 
 namespace MonoUtils.Domain.Data;
 
-public class BranchDatabaseContext(BranchDatabase database)
+public class BranchDatabaseContext
 {
-    private readonly Lazy<Dictionary<string, ProjectRecord>> _projects = new(() =>
-        database.Projects.ToDictionary(p => p.Name, StringComparer.InvariantCultureIgnoreCase));
+    private readonly Dictionary<string, ProjectRecord> _projects;
 
-    private readonly Lazy<Dictionary<string, SolutionRecord>> _solutions = new(() =>
-        database.Solutions.ToDictionary(s => s.Name, StringComparer.InvariantCultureIgnoreCase));
+    private readonly Dictionary<string, SolutionRecord> _solutions;
 
-    private readonly Lazy<Dictionary<string, WixProjectRecord>> _wixProjects = new(() =>
-        database.WixProjects.ToDictionary(w => w.Name, StringComparer.InvariantCultureIgnoreCase));
+    private readonly Dictionary<string, WixProjectRecord> _wixProjects;
 
-    private readonly Lazy<Dictionary<string, string[]>> _buildDefinitions = new(() => 
-        database.Solutions.ToDictionary(s => s.Name, s => s.Builds.ToArray(), StringComparer.InvariantCultureIgnoreCase));
+    private readonly Dictionary<string, string[]> _buildDefinitions;
+
+    public BranchDatabaseContext(BranchDatabase database)
+    {
+        _projects = database.Projects.ToDictionary(p => p.Name, StringComparer.InvariantCultureIgnoreCase);
+        _solutions = database.Solutions.ToDictionary(s => s.Name, StringComparer.InvariantCultureIgnoreCase);
+        _wixProjects = database.WixProjects.ToDictionary(w => w.Name, StringComparer.InvariantCultureIgnoreCase);
+        _buildDefinitions = database.Solutions.ToDictionary(s => s.Name, s => s.Builds.ToArray(), StringComparer.InvariantCultureIgnoreCase);
+    }
 
     public ProjectRecord[] GetProjectsReferencing(ProjectRecord project, ItemQuery<ProjectRecord> query, bool isRecursive = false)
     {
-        var lookup = _projects.Value;
         ProjectRecord[] results;
 
         if (!isRecursive)
         {
-            results = project.References.Select(p => lookup[p])
+            results = project.References.Select(p => _projects[p])
                 .Where(query.IsActive).ToArray();
-
         }
         else
         {
-            var result = new Dictionary<string, ProjectRecord>();
-            CaptureProjectNames(result, project);
-            results = result.Values.ToArray();
+            var records = new Dictionary<string, ProjectRecord>();
+            CaptureProjectNames(records, project);
+            results = records.Values.ToArray();
         }
 
         return SortedResults(results, query);
 
-        void CaptureProjectNames(Dictionary<string, ProjectRecord> result, ProjectRecord current)
+        void CaptureProjectNames(Dictionary<string, ProjectRecord> added, ProjectRecord current)
         {
             foreach (var name in current.References)
             {
-                if (result.ContainsKey(name))
+                if (added.ContainsKey(name))
                     continue;
 
-                var next = lookup[name];
+                var next = _projects[name];
                 if (!query.IsActive(next))
                     continue;
 
-                result.Add(name, next);
+                added.Add(name, next);
 
-                CaptureProjectNames(result, next); // note: recursion!
+                CaptureProjectNames(added, next); // note: recursion!
             }
         }
     }
 
     public ProjectRecord[] GetProjectsReferencedBy(ProjectRecord project, ItemQuery<ProjectRecord> query)
     {
-        var lookup = _projects.Value;
         ProjectRecord[] results;
 
         if (!query.IsRecursive)
         {
-            results = project.ReferencedBy.Select(p => lookup[p]).ToArray();
+            results = project.ReferencedBy.Select(p => _projects[p]).ToArray();
         }
         else
         {
@@ -79,7 +80,7 @@ public class BranchDatabaseContext(BranchDatabase database)
                 if (result.ContainsKey(name))
                     continue;
 
-                var next = lookup[name];
+                var next = _projects[name];
                 result.Add(name, next);
 
                 CaptureProjectNames(result, next); // note: recursion!
@@ -89,8 +90,7 @@ public class BranchDatabaseContext(BranchDatabase database)
 
     public string[] GetBuildDefinitionNames(ProjectRecord project)
     {
-        var lookup = _buildDefinitions.Value;
-        var buildNames = project.Solutions.SelectMany(s => lookup[s]);
+        var buildNames = project.Solutions.SelectMany(s => _buildDefinitions[s]);
         return buildNames.Distinct().OrderBy(b => b).ToArray();
     }
 
@@ -99,20 +99,17 @@ public class BranchDatabaseContext(BranchDatabase database)
         if (project.WixProjects.Count == 0)
             return [];
 
-        var lookup = _wixProjects.Value;
-        return project.WixProjects.Select(w => lookup[w.ProjectName]).ToArray();
+        return project.WixProjects.Select(w => _wixProjects[w.ProjectName]).ToArray();
     }
 
     public ProjectRecord? GetProject(string projectName)
     {
-        var lookup = _projects.Value;
-        return lookup.GetValueOrDefault(projectName);
+        return _projects.GetValueOrDefault(projectName);
     }
 
     public SolutionRecord? GetSolution(string solutionName)
     {
-        var lookup = _solutions.Value;
-        return lookup.GetValueOrDefault(solutionName);
+        return _solutions.GetValueOrDefault(solutionName);
     }
 
     private ProjectRecord[] SortedResults(ProjectRecord[] results, ItemQuery<ProjectRecord> query)

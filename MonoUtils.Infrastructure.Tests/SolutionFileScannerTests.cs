@@ -1,12 +1,9 @@
-using Microsoft.Extensions.Logging;
 using MonoUtils.Domain;
 using MonoUtils.Domain.Data;
-using MonoUtils.Infrastructure;
 using MonoUtils.Infrastructure.FileScanners;
 using Moq;
-using SharedKernel;
 
-namespace MonoUtils.UseCases.Tests;
+namespace MonoUtils.Infrastructure.Tests;
 
 [TestClass]
 public class SolutionFileScannerTests
@@ -17,20 +14,14 @@ public class SolutionFileScannerTests
     private const string WIX_PROJECT_PATH = @"c:\dummy\wix_project_path.wixproj";
 
     private readonly MockRepository _mockRepository = new(MockBehavior.Strict);
-    private Mock<ILoggerFactory> _loggerFactory;
+
     private Mock<IFileStorage> _fileStorage;
-    private UniqueNameResolver _resolver;
 
     [TestInitialize]
     public void BeforeEachTest()
     {
-        _loggerFactory = _mockRepository.Create<ILoggerFactory>();
-        _loggerFactory.Setup(f => f.CreateLogger(It.IsAny<string>())).Returns(new Mock<ILogger>().Object);
-
         _fileStorage = _mockRepository.Create<IFileStorage>();
         _fileStorage.Setup(s => s.FileExists(It.IsAny<string>())).Returns(false);
-
-        _resolver = new UniqueNameResolver();
     }
 
     [TestMethod]
@@ -38,18 +29,14 @@ public class SolutionFileScannerTests
     {
         // Arrange
         _fileStorage.Setup(s => s.FileExists(SOLUTION_PATH)).Returns(false);
-        var builder = CreateBuilder();
-        var scanner = new SolutionFileScanner(_fileStorage.Object);
+        var scanner = CreateScanner();
 
         // Act
-        var results = await scanner.ScanAsync(builder, SOLUTION_PATH, CancellationToken.None);
+        var results = await Assert.ThrowsExceptionAsync<FileNotFoundException>(() 
+            => scanner.ScanAsync(SOLUTION_PATH, CancellationToken.None));
 
         // Assert
-        Assert.IsNotNull(results);
-        Assert.IsNotNull(results.Solution);
-        Assert.IsFalse(results.Solution.DoesExist);
-        Assert.AreEqual(0, results.Projects.Count);
-        Assert.AreEqual(0, results.WixProjects.Count);
+        Assert.IsTrue(results.Message.Contains("Solution file not found"));
     }
 
     [TestMethod]
@@ -59,16 +46,14 @@ public class SolutionFileScannerTests
         _fileStorage.Setup(s => s.FileExists(SOLUTION_PATH)).Returns(true);
         _fileStorage.Setup(s => s.ReadAllTextAsync(SOLUTION_PATH, It.IsAny<CancellationToken>()))
             .ReturnsAsync(string.Empty);
-        var builder = CreateBuilder();
-        var scanner = new SolutionFileScanner(_fileStorage.Object);
+
+        var scanner = CreateScanner();
 
         // Act
-        var results = await scanner.ScanAsync(builder, SOLUTION_PATH, CancellationToken.None);
+        var results = await scanner.ScanAsync(SOLUTION_PATH, CancellationToken.None);
 
         // Assert
         Assert.IsNotNull(results);
-        Assert.IsNotNull(results.Solution);
-        Assert.IsTrue(results.Solution.DoesExist);
         Assert.AreEqual(0, results.Projects.Count);
         Assert.AreEqual(0, results.WixProjects.Count);
     }
@@ -95,11 +80,10 @@ public class SolutionFileScannerTests
         _fileStorage.Setup(s => s.ReadAllTextAsync(It.Is<string>(x => x.EndsWith("proj")), It.IsAny<CancellationToken>()))
             .ReturnsAsync(string.Empty);
 
-        var builder = CreateBuilder();
-        var scanner = new SolutionFileScanner(_fileStorage.Object);
+        var scanner = CreateScanner();
 
         // Act
-        var results = await scanner.ScanAsync(builder, SOLUTION_PATH, CancellationToken.None);
+        var results = await scanner.ScanAsync(SOLUTION_PATH, CancellationToken.None);
 
         // Assert
         var expectedCount = expectedResult ? 1 : 0;
@@ -123,11 +107,10 @@ public class SolutionFileScannerTests
         _fileStorage.Setup(s => s.ReadAllTextAsync(WIX_PROJECT_PATH, It.IsAny<CancellationToken>()))
             .ReturnsAsync(string.Empty);
 
-        var builder = CreateBuilder();
-        var scanner = new SolutionFileScanner(_fileStorage.Object);
+        var scanner = CreateScanner();
 
         // Act
-        var results = await scanner.ScanAsync(builder, SOLUTION_PATH, CancellationToken.None);
+        var results = await scanner.ScanAsync(SOLUTION_PATH, CancellationToken.None);
 
         // Assert
         Assert.AreEqual(0, results.Projects.Count);
@@ -154,11 +137,10 @@ public class SolutionFileScannerTests
         _fileStorage.Setup(s => s.ReadAllTextAsync(PROJECT_PATH, It.IsAny<CancellationToken>()))
             .ReturnsAsync(string.Empty);
 
-        var builder = CreateBuilder();
-        var scanner = new SolutionFileScanner(_fileStorage.Object);
+        var scanner = CreateScanner();
 
         // Act
-        var results = await scanner.ScanAsync(builder, SOLUTION_PATH, CancellationToken.None);
+        var results = await scanner.ScanAsync(SOLUTION_PATH, CancellationToken.None);
 
         // Assert
         Assert.AreEqual(1, results.Projects.Count);
@@ -170,13 +152,9 @@ public class SolutionFileScannerTests
     [TestMethod]
     [DataRow(true)]
     [DataRow(false)]
-    public async Task ScanAsync_ShouldSetIsRequired_WhenBuildReferencesSolution(bool isRequired)
+    public async Task ScanAsync_ShouldCaptureBothTypesOfProjects(bool isRequired)
     {
         // Assemble
-        var builds = new List<BuildDefinition>();
-        if (isRequired)
-            builds.Add(new BuildDefinition(BUILD_NAME, SOLUTION_PATH, true));
-
         const string sampleSlnFile =
             """
                 Project("{00000000-0000-0000-0000-000000000000}") = "TestProject", "project_path.csproj", "{12345678-1234-1234-1234-123456789012}")
@@ -191,18 +169,15 @@ public class SolutionFileScannerTests
         _fileStorage.Setup(s => s.ReadAllTextAsync(It.Is<string>(x => x.EndsWith("proj")), It.IsAny<CancellationToken>()))
             .ReturnsAsync(string.Empty);
 
-        var builder = CreateBuilder(builds.ToArray());
-        var scanner = new SolutionFileScanner(_fileStorage.Object);
+        var scanner = CreateScanner();
 
         // Act
-        var results = await scanner.ScanAsync(builder, SOLUTION_PATH, CancellationToken.None);
+        var results = await scanner.ScanAsync(SOLUTION_PATH, CancellationToken.None);
 
         // Assert
-        Assert.AreEqual(isRequired, results.Solution.IsRequired);
         Assert.AreEqual(1, results.Projects.Count);
         Assert.AreEqual(1, results.WixProjects.Count);
     }
 
-    private BranchDatabaseBuilder CreateBuilder(BuildDefinition[]? builds = null) 
-        => new(_loggerFactory.Object, _fileStorage.Object, _resolver, builds ?? []);
+    private SolutionFileScanner CreateScanner() => new(_fileStorage.Object);
 }

@@ -1,6 +1,5 @@
 ﻿using System.Text.RegularExpressions;
 using MonoUtils.Domain;
-using MonoUtils.Domain.Data;
 
 namespace MonoUtils.Infrastructure.FileScanners;
 
@@ -10,15 +9,23 @@ public class WixProjectFileScanner(IFileStorage fileStorage)
     private static readonly Regex _projectRegex = new(@"ProjectReference Include=""(?<project_path>.+?\.(cs|db|sql)proj)""", RegexOptions.Multiline);
     private static readonly Regex _wxsRegex = new(@"<Compile Include=""(?<wix_path>.+?\.wxs)""", RegexOptions.Multiline);
 
-    public async Task<WixProjectScanResults> ScanAsync(WixProjectRecord wixProject, CancellationToken cancellationToken)
+    public async Task<Results> ScanAsync(string path, CancellationToken cancellationToken)
     {
-        // capture all wix project references
-        var wixProjDirectory = Path.GetDirectoryName(wixProject.Path)!;
-        var wixProjXml = await fileStorage.ReadAllTextAsync(wixProject.Path, cancellationToken);
-        wixProject.IsSdk = _sdkRegex.IsMatch(wixProjXml);
+        if (!fileStorage.FileExists(path))
+            throw new FileNotFoundException($"WixProject file not found: {path}");
 
-        // capture all cs project references
-        var results = new WixProjectScanResults(wixProject);
+        var wixProjDirectory = Path.GetDirectoryName(path)!;
+        var wixProjXml = await fileStorage.ReadAllTextAsync(path, cancellationToken);
+
+        var packagesConfig = Path.Combine(wixProjDirectory, "packages.config");
+
+        var results = new Results
+        {
+            IsSdk = _sdkRegex.IsMatch(wixProjXml),
+            IsPackageRef = !fileStorage.FileExists(packagesConfig)
+        };
+
+        // capture csproj references
         foreach (Match match in _projectRegex.Matches(wixProjXml))
         {
             var relativePath = Path.Combine(wixProjDirectory, match.Groups["project_path"].Value);
@@ -26,34 +33,30 @@ public class WixProjectFileScanner(IFileStorage fileStorage)
             results.ProjectReferences.Add(projectPath);
         }
 
-        var wxsFiles = await GetWxsFilePaths(wixProject, cancellationToken);
-        foreach (var wxsFile in wxsFiles) 
-            results.ComponentFilePaths.Add(wxsFile);
+        // capture wxs component files
+        var wixDirectory = Path.GetDirectoryName(path)!;
+        if (results.IsSdk)
+        {
+            results.ComponentFilePaths.AddRange(fileStorage.GetFilePaths(wixDirectory, "*.wxs"));
+        }
+        else
+        {
+            var wixProjectXml = await fileStorage.ReadAllTextAsync(path, cancellationToken);
+            foreach (Match match in _wxsRegex.Matches(wixProjectXml))
+            {
+                var relativePath = Path.Combine(wixDirectory, match.Groups["wix_path"].Value);
+                var wxsPath = Path.GetFullPath(relativePath);
+                results.ComponentFilePaths.Add(wxsPath);
+            }
+        }
 
         return results;
     }
 
-    private async Task<List<string>> GetWxsFilePaths(WixProjectRecord wixProject, CancellationToken cancellationToken)
+    public class Results
     {
-        var wixDirectory = Path.GetDirectoryName(wixProject.Path)!;
-        if (wixProject.IsSdk)
-            return fileStorage.GetFilePaths(wixDirectory, "*.wxs").ToList();
-
-        var wixProjectXml = await fileStorage.ReadAllTextAsync(wixProject.Path, cancellationToken);
-        var wxsFilePaths = new List<string>();
-        foreach (Match match in _wxsRegex.Matches(wixProjectXml))
-        {
-            var relativePath = Path.Combine(wixDirectory, match.Groups["wix_path"].Value);
-            var wxsPath = Path.GetFullPath(relativePath);
-            wxsFilePaths.Add(wxsPath);
-        }
-
-        return wxsFilePaths;
-    }
-
-    public class WixProjectScanResults(WixProjectRecord wixProject)
-    {
-        public WixProjectRecord WixProject { get; } = wixProject;
+        public bool IsSdk { get; set; }
+        public bool IsPackageRef { get; set; }
         public List<string> ProjectReferences { get; } = new();
         public List<string> ComponentFilePaths { get; } = new();
     }

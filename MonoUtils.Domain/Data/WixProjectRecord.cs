@@ -5,6 +5,7 @@ public record WixProjectRecord(string Name, string Path, bool DoesExist)
 {
     public bool IsSdk { get; set; }
     public bool IsPackageRef { get; set; }
+    public bool IsRequired { get; set; }
 
     public List<string> References { get; set; } = new();
     public List<string> ReferencedBy { get; set; } = new();

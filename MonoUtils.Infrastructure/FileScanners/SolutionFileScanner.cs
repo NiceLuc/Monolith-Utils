@@ -14,16 +14,16 @@ public class SolutionFileScanner(IFileStorage fileStorage)
         { "9A19103F-16F7-4668-BE54-9A1E7A4F7556", ProjectType.SdkStyle },
     };
 
-    public async Task<Results> ScanAsync(SolutionRecord solution, CancellationToken cancellationToken)
+    public async Task<Results> ScanAsync(string path, CancellationToken cancellationToken)
     {
-        var results = new Results(solution);
+        if (!fileStorage.FileExists(path))
+            throw new FileNotFoundException($"Solution file not found: {path}");
 
-        // cannot scan a file that does not exist
-        if (!solution.DoesExist)
-            return results;
+        var solutionDirectory = Path.GetDirectoryName(path)!;
+        var solutionXml = await fileStorage.ReadAllTextAsync(path, cancellationToken);
 
-        var solutionDirectory = Path.GetDirectoryName(solution.Path)!;
-        var solutionXml = await fileStorage.ReadAllTextAsync(solution.Path, cancellationToken);
+        var results = new Results();
+
         foreach (Match match in _slnProjectsRegex.Matches(solutionXml))
         {
             var relativePath = Path.Combine(solutionDirectory, match.Groups["project_path"].Value);
@@ -42,29 +42,33 @@ public class SolutionFileScanner(IFileStorage fileStorage)
 
                     if (!_projectTypes.TryGetValue(guid, out var projectType))
                     {
-                        solution.Errors.Add($"Unknown project guid type. Solution: {solution.Path}, Project: {projectPath}, ProjectType: {guid}");
+                        results.Errors.Add($"Unknown project guid type. Solution: {path}, Project: {projectPath}, ProjectType: {guid}");
                         projectType = ProjectType.Unknown;
                     }
 
                     results.Projects.Add(new ProjectItem(projectPath, projectType));
                     break;
 
+                case "db":
+                case "sql":
+                    results.Projects.Add(new ProjectItem(projectPath, ProjectType.Unknown));
+                    break;
+
                 default:
-                    solution.Errors.Add($"Unknown project type. Solution: {solution.Path}, Project: {projectPath}");
+                    results.Errors.Add($"Unknown project type. Solution: {path}, Project: {projectPath}");
                     break;
             }
         }
 
-        // let the caller add build name and project references
         return results;
     }
 
-    public class Results(SolutionRecord solution)
+    public class Results
     {
-        public SolutionRecord Solution { get; } = solution;
+        public List<string> Errors { get; } = new();
         public List<ProjectItem> Projects { get; } = new();
         public List<string> WixProjects { get; } = new();
     }
 
-    public record ProjectItem(string Path, ProjectType Type);
+    public record struct ProjectItem(string Path, ProjectType Type);
 }

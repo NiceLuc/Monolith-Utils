@@ -1,208 +1,177 @@
-﻿using System.Collections;
-using System.Text.RegularExpressions;
-using Microsoft.Extensions.Logging;
-using MonoUtils.Domain;
-using MonoUtils.Domain.Data;
-using SharedKernel;
+﻿using MonoUtils.Domain.Data;
 
 namespace MonoUtils.Infrastructure;
 
-public class BranchDatabaseBuilder(ILoggerFactory loggerFactory, IFileStorage fileStorage, UniqueNameResolver resolver, BuildDefinition[] builds)
+public class BranchDatabaseBuilder(
+    RecordProvider<SolutionRecord> solutionProvider,
+    RecordProvider<ProjectRecord> projectProvider, 
+    RecordProvider<WixProjectRecord> wixProjectProvider)
 {
-    private static readonly Regex _testProjectFilePathRegex = new(@"Tests?\.csproj", RegexOptions.Multiline);
-
-    private readonly ILogger<BranchDatabaseBuilder> logger = loggerFactory.CreateLogger<BranchDatabaseBuilder>();
-
     // required solutions (i.e. build definitions have a reference to a solution path)
-    private readonly Dictionary<string, BuildDefinition> _requiredSolutions = builds.ToDictionary(s => s.SolutionPath);
+    private readonly List<ErrorRecord> _errors = new();
 
-    // record name & record
-    private readonly Dictionary<string, SolutionRecord> _solutionsByName = new(StringComparer.InvariantCultureIgnoreCase);
-    private readonly Dictionary<string, ProjectRecord> _projectsByName = new(StringComparer.InvariantCultureIgnoreCase);
-    private readonly Dictionary<string, WixProjectRecord> _wixProjectsByName = new(StringComparer.InvariantCultureIgnoreCase);
 
-    // file path & record
-    private readonly Dictionary<string, SolutionRecord> _solutionsByPath = new(StringComparer.InvariantCultureIgnoreCase);
-    private readonly Dictionary<string, ProjectRecord> _projectsByPath = new(StringComparer.InvariantCultureIgnoreCase);
-    private readonly Dictionary<string, WixProjectRecord> _wixProjectsByPath = new(StringComparer.InvariantCultureIgnoreCase);
-
-    // references
-    private readonly List<SolutionProjectReference> _solutionReferences = new();
-    private readonly List<ProjectReference> _projectReferences = new();
-    private readonly List<SolutionWixProjectReference> _solutionInstallers = new();
-    private readonly List<WixProjectReference> _wixProjectReferences = new();
-    private readonly List<WixAssemblyReference> _wixAssemblyReferences = new();
-
-    // files to scan
-    private readonly Queue<ProjectRecord> _projectFilesToScan = new();
-    private readonly Queue<WixProjectRecord> _wixProjectFilesToScan = new();
-
-    private readonly List<string> _errors = new();
-
-    public void AddError(string error) => _errors.Add(error);
-
-    public SolutionRecord GetOrAddSolution(string solutionPath)
+    public void AddError(SolutionRecord solution, string message, ErrorSeverity severity)
     {
-        if (_solutionsByPath.TryGetValue(solutionPath, out var solution))
-            return solution;
-
-        var solutionName = Path.GetFileNameWithoutExtension(solutionPath);
-        solutionName = resolver.GetUniqueName(solutionName, _solutionsByName.ContainsKey);
-        var isRequired = _requiredSolutions.TryGetValue(solutionPath, out var build);
-        var exists = fileStorage.FileExists(solutionPath);
-
-        solution = new SolutionRecord(solutionName, solutionPath, exists, isRequired);
-        if (build is not null)
-            solution.Builds.Add(build.BuildName);
-
-        _solutionsByName.Add(solutionName, solution);
-        _solutionsByPath.Add(solutionPath, solution);
-
-        return solution;
+        _errors.Add(new ErrorRecord(RecordType.Solution, solution.Name, message, severity));
     }
+
+    public void AddError(ProjectRecord project, string message, ErrorSeverity severity)
+    {
+        _errors.Add(new ErrorRecord(RecordType.Project, project.Name, message, severity));
+    }
+
+    public void AddError(WixProjectRecord wixProject, string message, ErrorSeverity severity)
+    {
+        _errors.Add(new ErrorRecord(RecordType.WixProject, wixProject.Name, message, severity));
+    }
+
+
+    public SolutionRecord GetOrAddSolution(string solutionPath) 
+        => solutionProvider.GetOrAdd(solutionPath, (name, exists) 
+            => new SolutionRecord(name, solutionPath, exists));
 
     public ProjectRecord GetOrAddProject(string projectPath)
+        => projectProvider.GetOrAdd(projectPath, (name, exists) 
+            => new ProjectRecord(name, projectPath, exists));
+
+    public WixProjectRecord GetOrAddWixProject(string projectPath) 
+        => wixProjectProvider.GetOrAdd(projectPath, (name, exists)
+            => new WixProjectRecord(name, projectPath, exists));
+
+
+    public void UpdateProject(ProjectRecord project)
     {
-        if (_projectsByPath.TryGetValue(projectPath, out var project))
-            return project;
-
-        // otherwise, create a new wix project and set initial references
-        var projectName = Path.GetFileNameWithoutExtension(projectPath);
-        projectName = resolver.GetUniqueName(projectName, _projectsByName.ContainsKey);
-        var exists = fileStorage.FileExists(projectPath);
-
-        project = new ProjectRecord(projectName, projectPath, exists);
-
-        _projectsByName.Add(projectName, project);
-        _projectsByPath.Add(projectPath, project);
-
-        // if the file exists, then we must queue the file to be scanned
-        if (exists)
-            _projectFilesToScan.Enqueue(project);
-
-        return project;
+        projectProvider.UpdateRecord(project);
     }
 
-    public WixProjectRecord GetOrAddWixProject(string projectPath)
+    public void UpdateWixProject(WixProjectRecord wixProject)
     {
-        if (_wixProjectsByPath.TryGetValue(projectPath, out var project))
-            return project;
-
-        // otherwise, create a new wix project and set initial references
-        var projectName = Path.GetFileNameWithoutExtension(projectPath);
-        projectName = resolver.GetUniqueName(projectName, _wixProjectsByName.ContainsKey);
-        var exists = fileStorage.FileExists(projectPath);
-
-        project = new WixProjectRecord(projectName, projectPath, exists);
-
-        _wixProjectsByName.Add(projectName, project);
-        _wixProjectsByPath.Add(projectPath, project);
-
-        // if the file exists, then we must queue the file to be scanned at a later time (once all cs projects have been scanned)
-        // this is required to determine if the assembly name is referenced in any wxs files (i.e. manual binary harvesting)
-        if (exists)
-            _wixProjectFilesToScan.Enqueue(project);
-
-        return project;
+        wixProjectProvider.UpdateRecord(wixProject);
     }
 
-    public void AddSolutionProject(SolutionRecord solution, ProjectRecord project, ProjectType type) 
-        => _solutionReferences.Add(new SolutionProjectReference(solution.Name, project.Name, type));
-
-    public void AddProjectReference(ProjectRecord project, ProjectRecord reference) 
-        => _projectReferences.Add(new ProjectReference(project.Name, reference.Name));
-
-    public void AddSolutionWixProject(SolutionRecord solution, WixProjectRecord wixProject) 
-        => _solutionInstallers.Add(new SolutionWixProjectReference(solution.Name, wixProject.Name));
-
-    public void AddWixProjectReference(WixProjectRecord wixProject, ProjectRecord project) 
-        => _wixProjectReferences.Add(new WixProjectReference(wixProject.Name, project.Name));
-
-    public void AddWixAssemblyReference(WixProjectRecord wixProject, ProjectRecord project) 
-        => _wixAssemblyReferences.Add(new WixAssemblyReference(wixProject.Name, project.Name));
-
-    public int ProjectFilesToScanCount => _projectFilesToScan.Count;
-
-    public int WixProjectFilesToScanCount => _wixProjectFilesToScan.Count;
-
-    public IEnumerable<ProjectRecord> GetProjectFilesToScan()
+    public ProjectRecord[] GetProjectsAvailableForInstallers(SolutionRecord solution)
     {
-        // custom code to enable a foreach loop on an active queue
-        var enumerator = new QueueEnumerator<ProjectRecord>(_projectFilesToScan);
-        while (enumerator.MoveNext())
-            yield return enumerator.Current;
+        var projects = GetProjectsForSolutions(solution);
+        return projects.Where(p => p is {DoesExist: true, IsTestProject: false}).ToArray();
     }
 
-    public IEnumerable<WixProjectRecord> GetWixProjectFilesToScan()
+    public BranchDatabase CreateDatabase()
     {
-        // custom code to enable a foreach loop on an active queue
-        var enumerator = new QueueEnumerator<WixProjectRecord>(_wixProjectFilesToScan);
-        while (enumerator.MoveNext())
-            yield return enumerator.Current;
+        // any solution that has a build definition
+        // is considered REQUIRED!
+        var solutions = (from s in solutionProvider.GetRecords()
+            where s.Builds.Any()
+            select s).ToArray();
+
+        SetRequiredSolutions(solutions);
+        SetRequiredProjects(solutions);
+        SetRequiredWixProjects(solutions);
+
+        return new BranchDatabase
+        {
+            Errors = _errors.ToList(),
+            Solutions = solutionProvider.GetRecords(),
+            Projects = projectProvider.GetRecords(),
+            WixProjects = wixProjectProvider.GetRecords()
+        };
     }
 
 
-    public ProjectRecord[] GetProjectsAvailableForWix(WixProjectRecord wixProject)
+    private void SetRequiredSolutions(SolutionRecord[] solutions)
     {
-        if (wixProject.Solutions.Count != 1)
-            throw new InvalidOperationException($"Wix project ({wixProject.Path}) is referenced by {wixProject.Solutions.Count} project(s)");
+        foreach (var solution in solutions)
+            solutionProvider.UpdateRecord(solution with {IsRequired = true});
+    }
 
-        // get all projects that are required for this wix project (hint: use the solution as the root)
-        var solutionName = wixProject.Solutions[0];
+    private void SetRequiredProjects(SolutionRecord[] solutions)
+    {
+        // we immediately have required projects from all required solutions
+        var projects = GetProjectsForSolutions(solutions);
 
-        if (!_solutionsByName.TryGetValue(solutionName, out var solution))
-            throw new KeyNotFoundException($"Solution name not found {solutionName}");
+        // now update all records to indicate they are required
+        foreach (var project in projects)
+            projectProvider.UpdateRecord(project with {IsRequired = true});
+    }
 
-        var projects = solution.Projects
-            .Select(p => _projectsByName[p.Name])
-            .Where(p =>
-            {
-                // file must exist!
-                if (!p.DoesExist) 
-                    return false;
-
-                // ignore test projects
-                return !_testProjectFilePathRegex.IsMatch(p.Path);
-
-            })
+    private void SetRequiredWixProjects(SolutionRecord[] solutions)
+    {
+        var result =
+            (from s in solutions
+                from p in s.WixProjects
+                select p)
+            .Distinct()
+            .Select(wixProjectProvider.GetRecordByName)
             .ToArray();
 
-        return projects;
+        foreach (var wixProject in result)
+            wixProjectProvider.UpdateRecord(wixProject with { IsRequired = true });
     }
 
-    public BranchDatabase CreateDatabase() => new()
+    private ProjectRecord[] GetProjectsForSolutions(params SolutionRecord[] solutions)
     {
-        Errors = _errors.ToList(),
-        Solutions = _solutionsByPath.Values.ToList(),
-        Projects = _projectsByPath.Values.ToList(),
-        WixProjects = _wixProjectsByPath.Values.ToList()
-    };
+        // we immediately have required projects from all required solutions
+        var result =
+            (from s in solutions
+                from p in s.Projects
+                select p.ProjectName)
+            .Distinct()
+            .ToDictionary(n => n, projectProvider.GetRecordByName);
 
-    #region Private Classes
+        // get all references recursively for these projects
+        var projects = result.Select(kv => kv.Value).ToArray();
+        var lookup = projectProvider._byName;
+        foreach (var project in projects)
+            CollectAllReferencesFrom(project);
 
-    private class QueueEnumerator<T>(Queue<T> queue) : IEnumerator<T>
-    {
-        public T Current { get; private set; }
+        return result.Values.ToArray();
 
-        public bool MoveNext()
+        // helper method!
+        void CollectAllReferencesFrom(ProjectRecord current)
         {
-            if (queue.Count == 0)
-                return false;
+            foreach (var name in current.References)
+            {
+                if (result.ContainsKey(name))
+                    continue;
 
-            Current = queue.Dequeue();
-            return Current != null;
+                var next = lookup[name];
+                result.Add(name, next);
+
+                CollectAllReferencesFrom(next); // note: recursion!
+            }
         }
 
-        public void Reset() => Current = default!;
-
-        object? IEnumerator.Current => Current;
-
-        public void Dispose()
+        /*
+        public ProjectRecord[] GetProjectsAvailableForWix(WixProjectRecord wixProject)
         {
-            // no op
+            if (wixProject.Solutions.Count != 1)
+                throw new InvalidOperationException($"Wix project ({wixProject.Path}) is referenced by {wixProject.Solutions.Count} project(s)");
+
+            // get all projects that are required for this wix project (hint: use the solution as the root)
+            var solutionName = wixProject.Solutions[0];
+
+            if (!_solutionsByName.TryGetValue(solutionName, out var solution))
+                throw new KeyNotFoundException($"Solution name not found {solutionName}");
+
+            var projects = solution.Projects
+                .Select(p => _projectsByName[p.Name])
+                .Where(p =>
+                {
+                    // file must exist!
+                    if (!p.DoesExist) 
+                        return false;
+
+                    // ignore test projects
+                    return !_testProjectFilePathRegex.IsMatch(p.Path);
+
+                })
+                .ToArray();
+
+            return projects;
         }
+
+         */
+        return [];
     }
-
-    #endregion
 
 }

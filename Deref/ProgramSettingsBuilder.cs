@@ -40,7 +40,7 @@ internal class ProgramSettingsBuilder(
             DirectoriesToIgnore = (from directory in _appSettings.DirectoriesToIgnore
                 select Path.Combine(tfsRootDirectory, directory)).ToArray(),
             TempRootDirectory = tempDirectory,
-            RequiredBuildSolutions = (from s in _appSettings.RequiredSolutions
+            RequiredBuilds = (from s in _appSettings.RequiredSolutions
                 let path = Path.Combine(tfsRootDirectory, s.SolutionPath)
                 let name = string.Format(s.BuildName, branchName)
                 select new BuildDefinition(name, path, true)).ToArray()

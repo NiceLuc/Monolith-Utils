@@ -3,6 +3,7 @@ using SharedKernel;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 using MonoUtils.Domain;
+using MonoUtils.Domain.Data;
 using MonoUtils.Infrastructure.FileScanners;
 using Mustache;
 using Serilog;
@@ -36,11 +37,20 @@ public static class DependencyInjection
         services.AddSingleton<ITemplateEngine, HandlebarsTemplateEngine>();
 
         // used for building the database
+        services.AddSingleton<BranchDatabaseBuilder>();
         services.AddSingleton<BranchDatabaseBuilderFactory>();
+        services.AddSingleton<RecordProvider<SolutionRecord>>();
+        services.AddSingleton<RecordProvider<ProjectRecord>>();
+        services.AddSingleton<RecordProvider<WixProjectRecord>>();
         services.AddSingleton<SolutionFileScanner>();
         services.AddSingleton<WixProjectFileScanner>();
         services.AddSingleton<StandardProjectFileScanner>();
         services.AddSingleton<WixComponentFileScanner>();
+
+        services.AddSingleton<IDefinitionSerializer<BranchDatabase>, BranchDatabaseSerializer>();
+        services.AddSingleton<IDefinitionSerializer<ProgramConfig>, DefinitionSerializer<ProgramConfig>>();
+
+        services.AddSingleton<IBranchDatabaseProvider, BranchDatabaseProvider>();
 
         return services;
     }

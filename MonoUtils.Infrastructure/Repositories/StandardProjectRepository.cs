@@ -18,7 +18,7 @@ public class StandardProjectRepository(IFileStorage fileStorage, UniqueNameResol
         projectName = resolver.GetUniqueName(projectName, _projectNames.Contains);
         var exists = fileStorage.FileExists(filePath);
 
-        var project = new ProjectRecord(projectName, filePath, isRequired, exists);
+        var project = new ProjectRecord(projectName, filePath, exists);
         _projects.Add(filePath, project);
         _projectNames.Add(projectName);
 
