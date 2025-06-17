@@ -37,5 +37,7 @@ public class RecordProvider<T>(UniqueNameResolver resolver, IFileStorage fileSto
 
     public IList<T> GetRecords() => _byPath.Values.ToList();
 
+    public T GetRecordByPath(string path) => _byPath[path];
+
     public T GetRecordByName(string name) => _byName[name];
 }

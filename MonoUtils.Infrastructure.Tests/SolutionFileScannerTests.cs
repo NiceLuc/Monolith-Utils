@@ -15,7 +15,7 @@ public class SolutionFileScannerTests
 
     private readonly MockRepository _mockRepository = new(MockBehavior.Strict);
 
-    private Mock<IFileStorage> _fileStorage;
+    private Mock<IFileStorage> _fileStorage = null!;
 
     [TestInitialize]
     public void BeforeEachTest()
@@ -150,9 +150,7 @@ public class SolutionFileScannerTests
     }
 
     [TestMethod]
-    [DataRow(true)]
-    [DataRow(false)]
-    public async Task ScanAsync_ShouldCaptureBothTypesOfProjects(bool isRequired)
+    public async Task ScanAsync_ShouldCaptureBothTypesOfProjects()
     {
         // Assemble
         const string sampleSlnFile =

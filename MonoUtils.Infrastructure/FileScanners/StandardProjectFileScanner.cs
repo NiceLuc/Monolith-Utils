@@ -48,13 +48,15 @@ public class StandardProjectFileScanner(IFileStorage fileStorage)
 
         // Match AssemblyName
         var assemblyNameMatch = Regex.Match(projectXml, assemblyNamePattern, RegexOptions.IgnoreCase);
-        var assemblyName = assemblyNameMatch.Success
+        var assemblyName = assemblyNameMatch.Success && !string.IsNullOrEmpty(assemblyNameMatch.Groups[1].Value)
             ? assemblyNameMatch.Groups[1].Value
             : Path.GetFileNameWithoutExtension(projectFilePath);
 
         // Match OutputType
         var outputTypeMatch = Regex.Match(projectXml, outputTypePattern, RegexOptions.IgnoreCase);
-        var outputType = outputTypeMatch.Success ? outputTypeMatch.Groups[1].Value : "Library";
+        var outputType = outputTypeMatch.Success && !string.IsNullOrEmpty(outputTypeMatch.Groups[1].Value)
+            ? outputTypeMatch.Groups[1].Value 
+            : "Library";
 
         // Determine the file extension
         var extension = outputType.Equals("Exe", StringComparison.OrdinalIgnoreCase) ? ".exe" : ".dll";

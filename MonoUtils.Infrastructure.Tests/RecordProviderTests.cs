@@ -75,6 +75,40 @@ public class RecordProviderTests
     }
 
     [TestMethod]
+    public void GetRecordByPath_ThrowsException_WhenRecordDoesNotExist()
+    {
+        // assemble
+        var provider = CreateRecordProvider();
+
+        // act
+        var byPath = Assert.ThrowsException<KeyNotFoundException>(() => provider.GetRecordByPath("missing"));
+        var byName = Assert.ThrowsException<KeyNotFoundException>(() => provider.GetRecordByName("missing"));
+
+        // assert
+        Assert.IsNotNull(byPath);
+        Assert.IsNotNull(byName);
+    }
+
+    [TestMethod]
+    public void GetOrAdd_CachesRecordByNameAndPath()
+    {
+        // assemble
+        _fileStorage.Setup(s => s.FileExists(PROJECT_PATH)).Returns(false);
+        var provider = CreateRecordProvider();
+        var record = provider.GetOrAdd(PROJECT_PATH, (name, exists)
+            => new ProjectRecord(name, PROJECT_PATH, exists));
+
+        // act
+        var byPath = provider.GetRecordByPath(record.Path);
+        var byName = provider.GetRecordByName(record.Name);
+
+        // assert
+        Assert.IsNotNull(byPath);
+        Assert.IsNotNull(byName);
+        Assert.AreSame(byPath, byName);
+    }
+
+    [TestMethod]
     public void UpdateRecord_OverwritesExistingRecord()
     {
         // assemble

@@ -39,15 +39,18 @@ public class StandardProjectFileScannerTests
     }
 
     [TestMethod]
+    [DataRow("", "Exe", "project_path.exe", "project_path.pdb")]
+    [DataRow("MissingOutputType", "", "MissingOutputType.dll", "MissingOutputType.pdb")]
     [DataRow("SampleLib", "Library", "SampleLib.dll", "SampleLib.pdb")]
     [DataRow("SampleApp", "Exe", "SampleApp.exe", "SampleApp.pdb")]
     public async Task ScanAsync_CapturesAssemblyNameAndPdbName_FromXml(string assemblyName, string outputType, string expectedAssemblyName, string expectedPdbFilePath)
     {
         // Arrange
-        const string xml = """
-                           <AssemblyName>{{ASSEMBLY_NAME}}</AssemblyName>
-                           <OutputType>{{OUTPUT_TYPE}}</OutputType>
-                           """;
+        const string xml =
+            """
+            <AssemblyName>{{ASSEMBLY_NAME}}</AssemblyName>
+            <OutputType>{{OUTPUT_TYPE}}</OutputType>
+            """;
         _fileStorage.Setup(s => s.ReadAllTextAsync(PROJECT_PATH, It.IsAny<CancellationToken>()))
             .ReturnsAsync(xml.Replace("{{ASSEMBLY_NAME}}", assemblyName).Replace("{{OUTPUT_TYPE}}", outputType));
 
@@ -115,20 +118,26 @@ public class StandardProjectFileScannerTests
     }
 
     [TestMethod]
-    public async Task ScanAsync_CapturesPackageRef_FromXml()
+    [DataRow(true, false)]
+    [DataRow(false, true)]
+    public async Task ScanAsync_CapturesPackageRef(bool containsPackagesConfig, bool expectedResult)
     {
         // Arrange
         _fileStorage.Setup(s => s.ReadAllTextAsync(PROJECT_PATH, It.IsAny<CancellationToken>())).ReturnsAsync(string.Empty);
-        _fileStorage.Setup(s => s.FileExists(It.Is<string>(x => x.Contains("packages.config")))).Returns(true);
+        _fileStorage.Setup(s => s.FileExists(It.Is<string>(x => x.Contains("packages.config")))).Returns(containsPackagesConfig);
         var scanner = CreateScanner();
 
         // Act
         var results = await scanner.ScanAsync(PROJECT_PATH, CancellationToken.None);
 
         // Assert
-        Assert.AreEqual(false, results.IsPackageRef);
+        Assert.AreEqual(expectedResult, results.IsPackageRef);
     }
 
+    public async Task ScanAsync_CapturesIsTestProject()
+    {
+
+    }
     [TestMethod]
     public async Task ScanAsync_CapturesProjectReferences_FromXml()
     {
