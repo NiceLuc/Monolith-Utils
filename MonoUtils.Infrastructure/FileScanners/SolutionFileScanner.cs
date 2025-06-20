@@ -55,8 +55,8 @@ public class SolutionFileScanner(IFileStorage fileStorage)
                     break;
 
                 default:
-                    results.Errors.Add($"Unknown project type. Solution: {path}, Project: {projectPath}");
-                    break;
+                    // regex pattern has no supporting switch block (this would be a developer bug)
+                    throw new InvalidOperationException($"Unknown project type. Solution: {path}, Project: {projectPath}");
             }
         }
 

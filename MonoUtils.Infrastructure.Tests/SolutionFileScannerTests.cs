@@ -91,6 +91,39 @@ public class SolutionFileScannerTests
     }
 
     [TestMethod]
+    [DataRow("project.cs")]
+    [DataRow("project.txt")]
+    [DataRow("project.proj")]
+    [DataRow("project.xproj")]
+    [DataRow("project.ccproj")]
+    public async Task ScanAsync_IgnoresNonSupportedProjectTypes(string projectName)
+    {
+        // Arrange
+        const string sampleSlnFile =
+            """
+                Project("{00000000-0000-0000-0000-000000000000}") = "TestProject", "{{PROJECT_NAME}}", "{12345678-1234-1234-1234-123456789012}")
+            """;
+
+        _fileStorage.Setup(s => s.FileExists(SOLUTION_PATH)).Returns(true);
+        _fileStorage.Setup(s => s.ReadAllTextAsync(SOLUTION_PATH, It.IsAny<CancellationToken>()))
+            .ReturnsAsync(sampleSlnFile.Replace("{{PROJECT_NAME}}", projectName));
+
+        _fileStorage.Setup(s => s.FileExists(It.Is<string>(x => x.EndsWith("proj")))).Returns(true);
+        _fileStorage.Setup(s => s.ReadAllTextAsync(It.Is<string>(x => x.EndsWith("proj")), It.IsAny<CancellationToken>()))
+            .ReturnsAsync(string.Empty);
+
+        var scanner = CreateScanner();
+
+        // Act
+        var results = await scanner.ScanAsync(SOLUTION_PATH, CancellationToken.None);
+
+        // Assert
+        Assert.AreEqual(0, results.Projects.Count);
+        Assert.AreEqual(0, results.WixProjects.Count);
+        Assert.AreEqual(0, results.Errors.Count);
+    }
+
+    [TestMethod]
     public async Task ScanAsync_ShouldAddWixProjectTypes()
     {
         // Arrange
@@ -128,6 +161,7 @@ public class SolutionFileScannerTests
             """
                 Project("{PROJECT_GUID}") = "TestProject", "project_path.csproj", "{12345678-1234-1234-1234-123456789012}")
             """;
+        var expectedErrorCount = expectedType == ProjectType.Unknown ? 1 : 0;
 
         _fileStorage.Setup(s => s.FileExists(SOLUTION_PATH)).Returns(true);
         _fileStorage.Setup(s => s.ReadAllTextAsync(SOLUTION_PATH, It.IsAny<CancellationToken>()))
@@ -146,6 +180,7 @@ public class SolutionFileScannerTests
         Assert.AreEqual(1, results.Projects.Count);
         Assert.AreEqual(PROJECT_PATH, results.Projects[0].Path);
         Assert.AreEqual(expectedType, results.Projects[0].Type);
+        Assert.AreEqual(expectedErrorCount, results.Errors.Count);
         Assert.AreEqual(0, results.WixProjects.Count);
     }
 
