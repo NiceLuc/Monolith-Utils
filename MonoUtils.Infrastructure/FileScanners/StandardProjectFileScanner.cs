@@ -8,7 +8,7 @@ public class StandardProjectFileScanner(IFileStorage fileStorage)
     private static readonly Regex _csProjSdkRegex = new(@"<Project Sdk=", RegexOptions.IgnoreCase | RegexOptions.Multiline);
     private static readonly Regex _csProjNetStandardRegex = new(@"\<TargetFrameworks?\>.*netstandard2\.\d.*\<\/TargetFrameworks?\>", RegexOptions.IgnoreCase | RegexOptions.Multiline);
     private static readonly Regex _csProjReferenceRegex = new(@"ProjectReference Include=""(?<project_path>.+?\.(cs|db|sql)proj)""", RegexOptions.IgnoreCase | RegexOptions.Multiline);
-    private static readonly Regex _testProjectFilePathRegex = new(@"Tests?\.csproj", RegexOptions.Multiline);
+    private static readonly Regex _testProjectFilePathRegex = new(@"Tests?\.(Unit\.)?csproj", RegexOptions.Multiline | RegexOptions.IgnoreCase);
 
     public async Task<Results> ScanAsync(string path, CancellationToken cancellationToken)
     {
@@ -67,10 +67,8 @@ public class StandardProjectFileScanner(IFileStorage fileStorage)
 
     private static string GetPdbFileName(string assemblyName)
     {
+        // assembly name will always have an extension, so we can safely find the last dot
         var lastIndex = assemblyName.LastIndexOf('.');
-        if (lastIndex < 0)
-            return assemblyName + ".pdb";
-
         return assemblyName[..lastIndex] + ".pdb";
     }
 

@@ -21,6 +21,21 @@ public class StandardProjectFileScannerTests
     }
 
     [TestMethod]
+    public async Task ScanAsync_ThrowsExceptionWhenFileNotFound()
+    {
+        // Arrange
+        _fileStorage.Setup(s => s.FileExists(PROJECT_PATH)).Returns(false);
+        var scanner = CreateScanner();
+
+        // Act
+        var error = await Assert.ThrowsExceptionAsync<FileNotFoundException>(() 
+            => scanner.ScanAsync(PROJECT_PATH, CancellationToken.None));
+
+        // Assert
+        Assert.IsTrue(error.Message.Contains("Project file not found"));
+    }
+
+    [TestMethod]
     public async Task ScanAsync_AddsProject_WhenFileIsEmpty()
     {
         // Arrange
@@ -134,10 +149,31 @@ public class StandardProjectFileScannerTests
         Assert.AreEqual(expectedResult, results.IsPackageRef);
     }
 
-    public async Task ScanAsync_CapturesIsTestProject()
+    [TestMethod]
+    [DataRow(@"c:\dummy\project.Tests.csproj", true)]
+    [DataRow(@"c:\dummy\project.Test.csproj", true)]
+    [DataRow(@"c:\dummy\projectTests.csproj", true)]
+    [DataRow(@"c:\dummy\projectTest.csproj", true)]
+    [DataRow(@"c:\dummy\projectUnitTests.csproj", true)]
+    [DataRow(@"c:\dummy\project_tests.csproj", true)]
+    [DataRow(@"c:\dummy\project_test.csproj", true)]
+    [DataRow(@"c:\dummy\project.tests.unit.csproj", true)]
+    [DataRow(@"c:\dummy\test_project.csproj", false)]
+    [DataRow(@"c:\tests\project.csproj", false)]
+    public async Task ScanAsync_CapturesIsTestProject(string filePath, bool expectedResult)
     {
+        // Arrange
+        _fileStorage.Setup(s => s.FileExists(filePath)).Returns(true);
+        _fileStorage.Setup(s => s.ReadAllTextAsync(filePath, It.IsAny<CancellationToken>())).ReturnsAsync(string.Empty);
+        var scanner = CreateScanner();
 
+        // Act
+        var results = await scanner.ScanAsync(filePath, CancellationToken.None);
+
+        // Assert
+        Assert.AreEqual(expectedResult, results.IsTestProject);
     }
+
     [TestMethod]
     public async Task ScanAsync_CapturesProjectReferences_FromXml()
     {
