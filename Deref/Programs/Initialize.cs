@@ -50,7 +50,7 @@ public class Initialize
                 };
 
                 var solution = await sender.Send(command, cancellationToken);
-                logger.LogInformation($"Scanned {solution.Path} ({solution.Projects.Count} projects, {solution.WixProjects} wix projects)");
+                logger.LogInformation($"Scanned {solution.Path} ({solution.Projects.Length} projects, {solution.WixProjects} wix projects)");
             }
 
             // persist the results to a json file

@@ -10,7 +10,7 @@ public class ImportWixProject
 {
     public class Request : IRequest<WixProjectRecord>
     {
-        public BranchDatabaseBuilder Builder { get; set; }
+        public IBranchDatabaseBuilder Builder { get; set; }
         public string Path { get; set; }
         public ProjectRecord[] AvailableProjects { get; set; } = [];
     }
@@ -47,21 +47,24 @@ public class ImportWixProject
                 {
                     if (!projectPaths.TryGetValue(path, out var project))
                     {
-                        wix.Errors.Add("Project is not available for this wix file");
+                        builder.AddWarning(wix, "Project is not available for this wix file");
                         continue;
                     }
 
-                    project.WixProjects.Add(new WixProjectReference(wix.Name, false));
-                    wix.ProjectReferences.Add(new WixProjectReference(project.Name, false));
+                    builder.AddWixProjectReference(wix, project, false);
 
                     if (!project.DoesExist)
                     {
-                        logger.LogError($"Wix project file ({wix.Path}) references a project that does not exist: {project.Path}");
+                        builder.AddWarning(wix, $"Wix project file ({wix.Path}) references a project that does not exist: {project.Path}");
                     }
                 }
 
+                if (!results.ComponentFilePaths.Any())
+                    return wix;
+
                 // capture manually harvested project assemblies
                 var assemblyNames = request.AvailableProjects.ToDictionary(p => p.AssemblyName, StringComparer.OrdinalIgnoreCase);
+                var harvested = new HashSet<string>();
                 foreach (var path in results.ComponentFilePaths)
                 {
                     var wxsResults = await wxsScanner.ScanAsync(path, cancellationToken);
@@ -70,12 +73,17 @@ public class ImportWixProject
                         if (!assemblyNames.TryGetValue(assemblyName, out var project))
                             continue;
 
-                        project.WixProjects.Add(new WixProjectReference(wix.Name, true));
-                        wix.ProjectReferences.Add(new WixProjectReference(project.Name, true));
+                        // prevent duplicate references
+                        if (!harvested.Add(assemblyName))
+                        {
+                            builder.AddWarning(wix, $"Duplicate manually harvested assembly ({assemblyName}) added to {wix.Path}");
+                            continue;
+                        }
 
+                        builder.AddWixProjectReference(wix, project, true);
                         if (!project.DoesExist)
                         {
-                            logger.LogError($"Wix component file ({path}) references a project assembly that does not exist: {assemblyName} ({project.Path})");
+                            builder.AddWarning(wix, $"Wix component file ({path}) references a project assembly that does not exist: {assemblyName} ({project.Path})");
                         }
                     }
                 }
@@ -84,7 +92,7 @@ public class ImportWixProject
             {
                 var errorMessage = string.Format($" - Error scanning Wix project: {request.Path} ({e.Message})");
                 logger.LogWarning(errorMessage);
-                builder.AddError(wix, errorMessage, ErrorSeverity.Critical);
+                builder.AddError(wix, "Error importing wix project", e);
             }
 
             return wix;

@@ -5,27 +5,52 @@ namespace MonoUtils.Infrastructure;
 public class BranchDatabaseBuilder(
     RecordProvider<SolutionRecord> solutionProvider,
     RecordProvider<ProjectRecord> projectProvider, 
-    RecordProvider<WixProjectRecord> wixProjectProvider)
+    RecordProvider<WixProjectRecord> wixProjectProvider) : IBranchDatabaseBuilder
 {
     // required solutions (i.e. build definitions have a reference to a solution path)
     private readonly List<ErrorRecord> _errors = new();
+    private readonly List<BuildDefinitionSolutionReference> _buildSolutions = new();
+    private readonly List<SolutionProjectReference> _solutionProjects = new();
+    private readonly List<SolutionWixProjectReference> _solutionWixProjects = new();
+    private readonly List<ProjectReference> _projectReferences = new();
+    private readonly List<WixProjectReference> _projectWixReferences = new();
 
-
-    public void AddError(SolutionRecord solution, string message, ErrorSeverity severity)
+    public void AddError<T>(T record, string message, Exception? error = null) where T: SchemaRecord
     {
-        _errors.Add(new ErrorRecord(RecordType.Solution, solution.Name, message, severity));
+        var type = record switch
+        {
+            SolutionRecord => RecordType.Solution,
+            ProjectRecord => RecordType.Project,
+            WixProjectRecord => RecordType.WixProject,
+            _ => throw new ArgumentException("Unsupported record type", nameof(record))
+        };
+
+        message = error is not null 
+            ? $"{message} (Exception: {error.Message})" 
+            : message;
+
+        _errors.Add(new ErrorRecord(type, record.Name, message, ErrorSeverity.Critical));
     }
 
-    public void AddError(ProjectRecord project, string message, ErrorSeverity severity)
+    public void AddWarning<T>(T record, string message) where T : SchemaRecord
     {
-        _errors.Add(new ErrorRecord(RecordType.Project, project.Name, message, severity));
+        var type = record switch
+        {
+            SolutionRecord => RecordType.Solution,
+            ProjectRecord => RecordType.Project,
+            WixProjectRecord => RecordType.WixProject,
+            _ => throw new ArgumentException("Unsupported record type", nameof(record))
+        };
+
+        _errors.Add(new ErrorRecord(type, record.Name, message, ErrorSeverity.Warning));
     }
 
-    public void AddError(WixProjectRecord wixProject, string message, ErrorSeverity severity)
-    {
-        _errors.Add(new ErrorRecord(RecordType.WixProject, wixProject.Name, message, severity));
-    }
 
+    public void AddBuildSolution(SolutionRecord solution, string buildName)
+    {
+        // add a build definition to all solutions
+        _buildSolutions.Add(new BuildDefinitionSolutionReference(buildName, solution.Name));
+    }
 
     public SolutionRecord GetOrAddSolution(string solutionPath) 
         => solutionProvider.GetOrAdd(solutionPath, (name, exists) 
@@ -38,6 +63,26 @@ public class BranchDatabaseBuilder(
     public WixProjectRecord GetOrAddWixProject(string projectPath) 
         => wixProjectProvider.GetOrAdd(projectPath, (name, exists)
             => new WixProjectRecord(name, projectPath, exists));
+
+    public void AddProjectToSolution(SolutionRecord solution, ProjectRecord project)
+    {
+        _solutionProjects.Add(new SolutionProjectReference(solution.Name, project.Name));
+    }
+
+    public void AddWixProjectToSolution(SolutionRecord solution, WixProjectRecord wixProject)
+    {
+        _solutionWixProjects.Add(new SolutionWixProjectReference(solution.Name, wixProject.Name));
+    }
+
+    public void AddProjectReference(ProjectRecord project, ProjectRecord reference)
+    {
+        _projectReferences.Add(new ProjectReference(project.Name, reference.Name));
+    }
+
+    public void AddWixProjectReference(WixProjectRecord wixProject, ProjectRecord reference, bool isManuallyHarvested)
+    {
+        _projectWixReferences.Add(new WixProjectReference(wixProject.Name, reference.Name, isManuallyHarvested));
+    }
 
 
     public void UpdateProject(ProjectRecord project)
@@ -58,6 +103,17 @@ public class BranchDatabaseBuilder(
 
     public BranchDatabase CreateDatabase()
     {
+        /*
+            project.Solutions.Add(solution.Name);
+            solution.Projects.Add(new SolutionProjectReference(project.Name, item.Type));
+
+            wixProject.Solutions.Add(solution.Name);
+            solution.WixProjects.Add(wixProject.Name);
+
+            project.References.Add(reference.Name);
+            reference.ReferencedBy.Add(project.Name);
+         */
+
         // any solution that has a build definition
         // is considered REQUIRED!
         var solutions = (from s in solutionProvider.GetRecords()
@@ -174,4 +230,9 @@ public class BranchDatabaseBuilder(
         return [];
     }
 
+    private record struct BuildDefinitionSolutionReference(string BuildName, string SolutionName);
+    private record struct SolutionProjectReference(string SolutionName, string ProjectName);
+    private record struct SolutionWixProjectReference(string SolutionName, string WixProjectName);
+    private record struct ProjectReference(string ProjectName, string ReferenceName);
+    private record struct WixProjectReference(string WixProjectName, string ProjectName, bool IsManuallyHarvested);
 }

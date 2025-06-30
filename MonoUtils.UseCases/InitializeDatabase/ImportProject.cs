@@ -10,7 +10,7 @@ public class ImportProject
 {
     public class Command : IRequest<ProjectRecord>
     {
-        public BranchDatabaseBuilder Builder { get; set; }
+        public IBranchDatabaseBuilder Builder { get; set; }
         public string Path { get; set; }
     }
 
@@ -58,15 +58,14 @@ public class ImportProject
                     };
 
                     var reference = await sender.Send(request, cancellationToken);
-                    project.References.Add(reference.Name);
-                    reference.ReferencedBy.Add(project.Name);
+                    builder.AddProjectReference(project, reference);
                 }
             }
             catch (Exception ex)
             {
                 var errorMessage = string.Format($" - Error importing project: {command.Path} ({ex.Message})");
                 logger.LogWarning(errorMessage);
-                builder.AddError(project, errorMessage, ErrorSeverity.Critical);
+                builder.AddError(project, "Error importing project", ex);
             }
 
             return project;

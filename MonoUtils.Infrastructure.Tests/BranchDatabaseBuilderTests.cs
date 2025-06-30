@@ -174,7 +174,7 @@ public class BranchDatabaseBuilderTests
         _fileStorage.Setup(s => s.FileExists(SOLUTION_PATH)).Returns(true);
         var builder = CreateBuilder();
         var solution = builder.GetOrAddSolution(SOLUTION_PATH);
-        solution.Builds.Add(BUILD_NAME);
+        builder.AddBuildSolution(solution, BUILD_NAME);
 
         // act
         var db = builder.CreateDatabase();
@@ -192,11 +192,11 @@ public class BranchDatabaseBuilderTests
         _fileStorage.Setup(s => s.FileExists(PROJECT_PATH)).Returns(true);
         var builder = CreateBuilder();
         var solution = builder.GetOrAddSolution(SOLUTION_PATH);
-        solution.Builds.Add(BUILD_NAME);
+        builder.AddBuildSolution(solution, BUILD_NAME);
 
         // assign the project to the solution
         var project = builder.GetOrAddProject(PROJECT_PATH);
-        solution.Projects.Add(new SolutionProjectReference(project.Name, ProjectType.Unknown));
+        builder.AddProjectToSolution(solution, project);
 
         // act
         var db = builder.CreateDatabase();
@@ -214,11 +214,11 @@ public class BranchDatabaseBuilderTests
         _fileStorage.Setup(s => s.FileExists(WIX_PROJECT_PATH)).Returns(true);
         var builder = CreateBuilder();
         var solution = builder.GetOrAddSolution(SOLUTION_PATH);
-        solution.Builds.Add(BUILD_NAME);
+        builder.AddBuildSolution(solution, BUILD_NAME);
 
         // assign the wix project to the solution
         var wixProject = builder.GetOrAddWixProject(WIX_PROJECT_PATH);
-        solution.WixProjects.Add(wixProject.Name);
+        builder.AddWixProjectToSolution(solution, wixProject);
 
         // act
         var db = builder.CreateDatabase();

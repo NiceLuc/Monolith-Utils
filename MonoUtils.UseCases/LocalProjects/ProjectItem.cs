@@ -46,10 +46,10 @@ public static class ProjectItem
             var result = new ProjectDTO(project.Name, project.Path, project.DoesExist)
             {
                 ProjectStatus = GetProjectStatusTerm(project),
-                ReferencedByCount = project.ReferencedBy.Count,
-                ReferencesCount = project.References.Count,
-                WixProjectsCount = project.WixProjects.Count,
-                SolutionsCount = project.Solutions.Count,
+                ReferencedByCount = project.ReferencedBy.Count(),
+                ReferencesCount = project.References.Count(),
+                WixProjectsCount = project.WixProjects.Count(),
+                SolutionsCount = project.Solutions.Count(),
                 BuildDefinitionCount = buildDefinitions?.Length ?? 0,
                 Todos = GetTodos(project)
             };

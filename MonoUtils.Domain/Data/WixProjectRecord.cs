@@ -7,9 +7,9 @@ public record WixProjectRecord(string Name, string Path, bool DoesExist)
     public bool IsPackageRef { get; set; }
     public bool IsRequired { get; set; }
 
-    public List<string> References { get; set; } = new();
-    public List<string> ReferencedBy { get; set; } = new();
+    public string[] References { get; set; } = [];
+    public string[] ReferencedBy { get; set; } = [];
 
-    public List<string> Solutions { get; set; } = new();
-    public List<WixProjectReference> ProjectReferences { get; set; } = new();
+    public string[] Solutions { get; set; } = [];
+    public WixProjectReference[] ProjectReferences { get; set; } = [];
 }

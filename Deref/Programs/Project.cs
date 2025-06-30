@@ -94,7 +94,7 @@ public class Project
 
                 if (request.IsListSolutions)
                 {
-                    logger.LogInformation($"Found in {project.Solutions.Count} solution(s):");
+                    logger.LogInformation($"Found in {project.Solutions.Length} solution(s):");
                     ShowSolutionsList(project, solutions);
                 }
 
@@ -158,9 +158,9 @@ public class Project
             {
                 LogInformation("Exists", project.DoesExist);
             }
-            LogInformation("References", $"{project.References.Count} project(s)");
-            LogInformation("Referenced by", $"{project.ReferencedBy.Count} project(s)");
-            LogInformation("Solutions", project.Solutions.Count);
+            LogInformation("References", $"{project.References.Length} project(s)");
+            LogInformation("Referenced by", $"{project.ReferencedBy.Length} project(s)");
+            LogInformation("Solutions", project.Solutions.Length);
 
             logger.LogInformation(_separator);
             return;
@@ -182,9 +182,9 @@ public class Project
             logger.LogInformation(_separator);
         }
 
-        private void ShowWixProjectList(List<WixProjectReference> wixProjects, Dictionary<string, WixProjectRecord> lookup)
+        private void ShowWixProjectList(WixProjectReference[] wixProjects, Dictionary<string, WixProjectRecord> lookup)
         {
-            if (wixProjects.Count == 0)
+            if (wixProjects.Length == 0)
             {
                 logger.LogInformation($"Not referenced in any wix projects");
             }
@@ -208,7 +208,7 @@ public class Project
                     }
                 }
 
-                logger.LogInformation($"Found in {wixProjects.Count} wix projects: (note: * = IsHarvested)");
+                logger.LogInformation($"Found in {wixProjects.Length} wix projects: (note: * = IsHarvested)");
 
                 var maxWidth = names.Values.Max(n => n.Length) + 2;
                 foreach (var reference in wixProjects.DistinctBy(w => w.ProjectName).OrderBy(w => w.ProjectName))
@@ -270,7 +270,7 @@ public class Project
             }
 
             if (request.ShowListCounts)
-                stringBuilder.Append($" ({project.References.Count} / {project.ReferencedBy.Count})");
+                stringBuilder.Append($" ({project.References.Length} / {project.ReferencedBy.Length})");
 
             logger.LogInformation(stringBuilder.ToString());
 

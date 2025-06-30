@@ -10,7 +10,7 @@ public class ImportSolution
 {
     public class Command : IRequest<SolutionRecord>
     {
-        public BranchDatabaseBuilder Builder { get; set; }
+        public IBranchDatabaseBuilder Builder { get; set; }
         public string Path { get; set; }
         public string[] BuildNames { get; set; }
     }
@@ -35,7 +35,8 @@ public class ImportSolution
                 var results = await scanner.ScanAsync(solution.Path, cancellationToken);
                 scannedFiles.Add(solution.Path);
 
-                solution.Builds.AddRange(command.BuildNames);
+                foreach(var buildName in command.BuildNames)
+                    builder.AddBuildSolution(solution, buildName);
 
                 // step 2: add all project and wix project references
                 foreach (var item in results.Projects)
@@ -47,8 +48,7 @@ public class ImportSolution
                     };
 
                     var project = await sender.Send(request, cancellationToken);
-                    project.Solutions.Add(solution.Name);
-                    solution.Projects.Add(new SolutionProjectReference(project.Name, item.Type));
+                    builder.AddProjectToSolution(solution, project);
                 }
 
                 // step 3: scan each wix project (recursively through each wxs file)
@@ -63,15 +63,14 @@ public class ImportSolution
                     };
 
                     var wixProject = await sender.Send(request, cancellationToken);
-                    wixProject.Solutions.Add(solution.Name);
-                    solution.WixProjects.Add(wixProject.Name);
+                    builder.AddWixProjectToSolution(solution, wixProject);
                 }
             }
             catch (Exception e)
             {
                 var errorMessage = string.Format($" - Error scanning solution: {command.Path} ({e.Message})");
                 logger.LogWarning(errorMessage);
-                builder.AddError(solution, errorMessage, ErrorSeverity.Critical);
+                builder.AddError(solution, "Error importing solution", e);
             }
 
             return solution;

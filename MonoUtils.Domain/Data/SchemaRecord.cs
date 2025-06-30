@@ -2,5 +2,5 @@
 
 public abstract record SchemaRecord(string Name, string Path, bool DoesExist)
 {
-    public List<string> Errors { get; set; } = new();
+    public string[] Errors { get; set; } = [];
 }

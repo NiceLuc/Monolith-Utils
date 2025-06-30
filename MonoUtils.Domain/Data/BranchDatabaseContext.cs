@@ -96,7 +96,7 @@ public class BranchDatabaseContext
 
     public WixProjectRecord[] GetWixProjects(ProjectRecord project)
     {
-        if (project.WixProjects.Count == 0)
+        if (project.WixProjects.Length == 0)
             return [];
 
         return project.WixProjects.Select(w => _wixProjects[w.ProjectName]).ToArray();
