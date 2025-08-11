@@ -13,7 +13,7 @@ public interface IBranchDatabaseBuilder
     ProjectRecord GetOrAddProject(string projectPath);
     WixProjectRecord GetOrAddWixProject(string projectPath);
 
-    void AddProjectToSolution(SolutionRecord solution, ProjectRecord project);
+    void AddProjectToSolution(SolutionRecord solution, ProjectRecord project, ProjectType itemType);
     void AddWixProjectToSolution(SolutionRecord solution, WixProjectRecord wixProject);
     void AddProjectReference(ProjectRecord project, ProjectRecord reference);
     void AddWixProjectReference(WixProjectRecord wixProject, ProjectRecord reference, bool isManuallyHarvested);

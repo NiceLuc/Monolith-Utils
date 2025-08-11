@@ -1,5 +1,4 @@
 ﻿using MediatR;
-using Microsoft.Extensions.Logging;
 using MonoUtils.Domain.Data;
 using MonoUtils.Infrastructure;
 using MonoUtils.Infrastructure.FileScanners;
@@ -10,19 +9,16 @@ public class ImportProject
 {
     public class Command : IRequest<ProjectRecord>
     {
-        public IBranchDatabaseBuilder Builder { get; set; }
         public string Path { get; set; }
     }
 
     public class Handler(
-        ISender sender,
-        ILogger<Handler> logger,
+        IBranchDatabaseBuilder builder,
         ScannedFiles scannedFiles,
         StandardProjectFileScanner scanner) : IRequestHandler<Command, ProjectRecord>
     {
         public async Task<ProjectRecord> Handle(Command command, CancellationToken cancellationToken)
         {
-            var builder = command.Builder;
             var project = builder.GetOrAddProject(command.Path);
 
             if (!project.DoesExist || scannedFiles.Contains(project.Path))
@@ -51,21 +47,15 @@ public class ImportProject
                 foreach (var referencePath in results.References)
                 {
                     // NOTE: RECURSION!
-                    var request = new Command
-                    {
-                        Builder = builder,
-                        Path = referencePath
-                    };
-
-                    var reference = await sender.Send(request, cancellationToken);
+                    var request = new Command { Path = referencePath };
+                    var reference = await Handle(request, cancellationToken);
                     builder.AddProjectReference(project, reference);
                 }
             }
             catch (Exception ex)
             {
-                var errorMessage = string.Format($" - Error importing project: {command.Path} ({ex.Message})");
-                logger.LogWarning(errorMessage);
-                builder.AddError(project, "Error importing project", ex);
+                var errorMessage = string.Format($"Error importing project: {command.Path} ({ex.Message})");
+                builder.AddError(project, errorMessage, ex);
             }
 
             return project;

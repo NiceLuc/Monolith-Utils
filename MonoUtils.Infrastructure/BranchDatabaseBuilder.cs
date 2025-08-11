@@ -9,11 +9,11 @@ public class BranchDatabaseBuilder(
 {
     // required solutions (i.e. build definitions have a reference to a solution path)
     private readonly List<ErrorRecord> _errors = new();
-    private readonly List<BuildDefinitionSolutionReference> _buildSolutions = new();
-    private readonly List<SolutionProjectReference> _solutionProjects = new();
-    private readonly List<SolutionWixProjectReference> _solutionWixProjects = new();
-    private readonly List<ProjectReference> _projectReferences = new();
-    private readonly List<WixProjectReference> _projectWixReferences = new();
+    private readonly List<BuildDefinitionSolutionRef> _buildSolutions = new();
+    private readonly List<SolutionProjectRef> _solutionProjects = new();
+    private readonly List<SolutionWixProjectRef> _solutionWixProjects = new();
+    private readonly List<ProjectRef> _projectReferences = new();
+    private readonly List<WixProjectRef> _projectWixReferences = new();
 
     public void AddError<T>(T record, string message, Exception? error = null) where T: SchemaRecord
     {
@@ -49,7 +49,7 @@ public class BranchDatabaseBuilder(
     public void AddBuildSolution(SolutionRecord solution, string buildName)
     {
         // add a build definition to all solutions
-        _buildSolutions.Add(new BuildDefinitionSolutionReference(buildName, solution.Name));
+        _buildSolutions.Add(new BuildDefinitionSolutionRef(buildName, solution.Name));
     }
 
     public SolutionRecord GetOrAddSolution(string solutionPath) 
@@ -64,24 +64,24 @@ public class BranchDatabaseBuilder(
         => wixProjectProvider.GetOrAdd(projectPath, (name, exists)
             => new WixProjectRecord(name, projectPath, exists));
 
-    public void AddProjectToSolution(SolutionRecord solution, ProjectRecord project)
+    public void AddProjectToSolution(SolutionRecord solution, ProjectRecord project, ProjectType itemType)
     {
-        _solutionProjects.Add(new SolutionProjectReference(solution.Name, project.Name));
+        _solutionProjects.Add(new SolutionProjectRef(solution.Name, project.Name, itemType));
     }
 
     public void AddWixProjectToSolution(SolutionRecord solution, WixProjectRecord wixProject)
     {
-        _solutionWixProjects.Add(new SolutionWixProjectReference(solution.Name, wixProject.Name));
+        _solutionWixProjects.Add(new SolutionWixProjectRef(solution.Name, wixProject.Name));
     }
 
     public void AddProjectReference(ProjectRecord project, ProjectRecord reference)
     {
-        _projectReferences.Add(new ProjectReference(project.Name, reference.Name));
+        _projectReferences.Add(new ProjectRef(project.Name, reference.Name));
     }
 
     public void AddWixProjectReference(WixProjectRecord wixProject, ProjectRecord reference, bool isManuallyHarvested)
     {
-        _projectWixReferences.Add(new WixProjectReference(wixProject.Name, reference.Name, isManuallyHarvested));
+        _projectWixReferences.Add(new WixProjectRef(wixProject.Name, reference.Name, isManuallyHarvested));
     }
 
 
@@ -103,16 +103,17 @@ public class BranchDatabaseBuilder(
 
     public BranchDatabase CreateDatabase()
     {
+        AttachBuildNamesToSolutions();
+        AttachProjectsToSolutions();
+        AttachWixProjectsToSolutions();
+        AttachProjectReferences();
+        AttachProjectsToWixProjects();
+
         /*
-            project.Solutions.Add(solution.Name);
-            solution.Projects.Add(new SolutionProjectReference(project.Name, item.Type));
-
-            wixProject.Solutions.Add(solution.Name);
-            solution.WixProjects.Add(wixProject.Name);
-
-            project.References.Add(reference.Name);
-            reference.ReferencedBy.Add(project.Name);
-         */
+        AttachErrorsToSolutions();
+        AttachErrorsToProjects();
+        AttachErrorsToWixProjects();
+        */
 
         // any solution that has a build definition
         // is considered REQUIRED!
@@ -131,6 +132,157 @@ public class BranchDatabaseBuilder(
             Projects = projectProvider.GetRecords(),
             WixProjects = wixProjectProvider.GetRecords()
         };
+    }
+
+    private void AttachProjectsToWixProjects()
+    {
+        // now attach all wix projects to the projects
+        var wixProjectReferences = from w in _projectWixReferences
+            group w by w.ProjectName into g
+            select new
+            {
+                ProjectName = g.Key,
+                WixProjects = g.Select(w => new WixProjectReference(w.WixProjectName, w.IsManuallyHarvested)).ToArray()
+            };
+
+        foreach (var item in wixProjectReferences)
+        {
+            var project = projectProvider.GetRecordByName(item.ProjectName);
+            project.WixProjects = item.WixProjects;
+        }
+
+        // now attach all projects to the wix projects
+        var projectWixReferences = from w in _projectWixReferences
+            group w by w.WixProjectName into g
+            select new
+            {
+                WixProjectName = g.Key,
+                Projects = g.Select(p => new WixProjectReference(p.ProjectName, p.IsManuallyHarvested)).ToArray()
+            };
+
+        foreach (var item in projectWixReferences)
+        {
+            var wix = wixProjectProvider.GetRecordByName(item.WixProjectName);
+            wix.ProjectReferences = item.Projects;
+        }
+    }
+
+    private void AttachProjectReferences()
+    {
+        // add all project references to the projects
+        var sourceProjects = from p in _projectReferences
+            group p by p.ProjectName into g
+            select new
+            {
+                ProjectName = g.Key,
+                References = g.Select(r => r.ReferenceName).ToArray()
+            };
+
+        foreach (var item in sourceProjects)
+        {
+            var project = projectProvider.GetRecordByName(item.ProjectName);
+            project.References = item.References;
+        }
+
+        // add all back referencing projects to the references
+        var referencedProjects = from p in _projectReferences
+            group p by p.ReferenceName into g
+            select new
+            {
+                ReferenceName = g.Key,
+                ReferencedBy = g.Select(r => r.ProjectName).ToArray()
+            };
+
+        foreach (var item in referencedProjects)
+        {
+            var project = projectProvider.GetRecordByName(item.ReferenceName);
+            project.ReferencedBy = item.ReferencedBy;
+        }
+    }
+
+    private void AttachWixProjectsToSolutions()
+    {
+        // add all wix projects to the solutions
+        var solutionProjects = from w in _solutionWixProjects
+            group w by w.SolutionName into g
+            select new
+            {
+                SolutionName = g.Key,
+                WixProjects = g.Select(w => w.WixProjectName).ToArray()
+            };
+
+        foreach (var pairs in solutionProjects)
+        {
+            var solution = solutionProvider.GetRecordByName(pairs.SolutionName);
+            solution.WixProjects = pairs.WixProjects;
+        }
+
+        // now attach all solutions to all wix projects
+        var projectSolutions = from w in _solutionWixProjects
+            group w by w.WixProjectName into g
+            select new
+            {
+                WixProjectName = g.Key,
+                SolutionNames = g.Select(s => s.SolutionName).ToArray()
+            };
+
+        foreach (var pairs in projectSolutions)
+        {
+            var wix = wixProjectProvider.GetRecordByName(pairs.WixProjectName);
+            wix.Solutions = pairs.SolutionNames;
+        }
+    }
+
+    private void AttachProjectsToSolutions()
+    {
+        // attach all projects to all solutions
+        var solutionProjects = (from p in _solutionProjects
+            group p by p.SolutionName into g
+            select new
+            {
+                SolutionName = g.Key,
+                Projects = g.Select(i => new {i.ProjectName, i.Type}).ToArray()
+            }).ToArray();
+
+        foreach (var item in solutionProjects)
+        {
+            var solution = solutionProvider.GetRecordByName(item.SolutionName);
+            solution.Projects = (from i in item.Projects
+                select new SolutionProjectReference(i.ProjectName, i.Type)).ToArray();
+        }
+
+        // now attach all solutions to all projects
+        var projectSolutions = (from p in _solutionProjects
+            group p by p.ProjectName into g
+            select new
+            {
+                ProjectName = g.Key,
+                SolutionNames = g.Select(s => s.SolutionName).ToArray()
+            }).ToArray();
+
+        foreach (var item in projectSolutions)
+        {
+            var project = projectProvider.GetRecordByName(item.ProjectName);
+            project.Solutions = item.SolutionNames;
+        }
+    }
+
+    private void AttachBuildNamesToSolutions()
+    {
+        // add all build definitions to the solutions
+        var solutionsAndBuilds = from b in _buildSolutions
+            group b by b.SolutionName into g
+            select new
+            {
+                SolutionName = g.Key,
+                Builds = g.Select(b => b.BuildName).ToArray()
+            };
+
+        foreach (var pairs in solutionsAndBuilds)
+        {
+            var solution = solutionProvider.GetRecordByName(pairs.SolutionName);
+            solution.Builds = pairs.Builds;
+        }
     }
 
 
@@ -230,9 +382,9 @@ public class BranchDatabaseBuilder(
         return [];
     }
 
-    private record struct BuildDefinitionSolutionReference(string BuildName, string SolutionName);
-    private record struct SolutionProjectReference(string SolutionName, string ProjectName);
-    private record struct SolutionWixProjectReference(string SolutionName, string WixProjectName);
-    private record struct ProjectReference(string ProjectName, string ReferenceName);
-    private record struct WixProjectReference(string WixProjectName, string ProjectName, bool IsManuallyHarvested);
+    private record struct BuildDefinitionSolutionRef(string BuildName, string SolutionName);
+    private record struct SolutionProjectRef(string SolutionName, string ProjectName, ProjectType Type);
+    private record struct SolutionWixProjectRef(string SolutionName, string WixProjectName);
+    private record struct ProjectRef(string ProjectName, string ReferenceName);
+    private record struct WixProjectRef(string WixProjectName, string ProjectName, bool IsManuallyHarvested);
 }

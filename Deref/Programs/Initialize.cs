@@ -16,6 +16,7 @@ public class Initialize
     }
 
     public class Handler(
+        IBranchDatabaseBuilder builder,
         ISender sender,
         ILogger<Handler> logger,
         IProgramSettingsBuilder settingsBuilder,
@@ -27,9 +28,6 @@ public class Initialize
         {
             var settings = await settingsBuilder.BuildAsync(cancellationToken);
             ValidateRequest(settings, request);
-
-            // assign all builds to their respective solutions
-            var builder = builderFactory.Create();
 
             // now scan each solution
             var items = GetSolutionItemsInOrder(settings);
@@ -44,7 +42,6 @@ public class Initialize
 
                 var command = new ImportSolution.Command
                 {
-                    Builder = builder,
                     Path = item.Path, 
                     BuildNames = item.BuildNames
                 };

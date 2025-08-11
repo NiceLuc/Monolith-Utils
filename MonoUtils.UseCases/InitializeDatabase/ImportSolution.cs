@@ -10,12 +10,12 @@ public class ImportSolution
 {
     public class Command : IRequest<SolutionRecord>
     {
-        public IBranchDatabaseBuilder Builder { get; set; }
         public string Path { get; set; }
         public string[] BuildNames { get; set; }
     }
 
     public class Handler(
+        IBranchDatabaseBuilder builder,
         ISender sender,
         ILogger<Handler> logger,
         ScannedFiles scannedFiles,
@@ -23,7 +23,6 @@ public class ImportSolution
     {
         public async Task<SolutionRecord> Handle(Command command, CancellationToken cancellationToken)
         {
-            var builder = command.Builder;
             var solution = builder.GetOrAddSolution(command.Path);
 
             if (!solution.DoesExist || scannedFiles.Contains(command.Path))
@@ -43,12 +42,11 @@ public class ImportSolution
                 {
                     var request = new ImportProject.Command
                     {
-                        Builder = builder,
                         Path = item.Path
                     };
 
                     var project = await sender.Send(request, cancellationToken);
-                    builder.AddProjectToSolution(solution, project);
+                    builder.AddProjectToSolution(solution, project, item.Type);
                 }
 
                 // step 3: scan each wix project (recursively through each wxs file)

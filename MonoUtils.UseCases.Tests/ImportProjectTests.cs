@@ -2,7 +2,6 @@ using MediatR;
 using Microsoft.Extensions.Logging;
 using MonoUtils.Domain;
 using MonoUtils.Domain.Data;
-using MonoUtils.Infrastructure;
 using MonoUtils.Infrastructure.FileScanners;
 using MonoUtils.UseCases.InitializeDatabase;
 using Moq;
@@ -35,12 +34,7 @@ public class ImportProjectTests
     {
         // Arrange
         _fileStorage.Setup(s => s.FileExists(PROJECT_PATH)).Returns(false);
-        var builder = TestUtils.CreateBuilder(_fileStorage);
-        var command = new ImportProject.Command
-        {
-            Path = PROJECT_PATH,
-            Builder = builder
-        };
+        var command = new ImportProject.Command { Path = PROJECT_PATH, };
         var handler = CreateHandler();
 
         // Act
@@ -59,11 +53,7 @@ public class ImportProjectTests
         var builder = TestUtils.CreateBuilder(_fileStorage);
         var expected = builder.GetOrAddProject(PROJECT_PATH);
         var scannedFiles = new ScannedFiles { expected.Path };
-        var command = new ImportProject.Command
-        {
-            Path = PROJECT_PATH,
-            Builder = builder
-        };
+        var command = new ImportProject.Command { Path = PROJECT_PATH };
         var handler = CreateHandler(scannedFiles);
 
         // Act
@@ -103,7 +93,6 @@ public class ImportProjectTests
         var command = new ImportProject.Command
         {
             Path = PROJECT_PATH,
-            Builder = builder
         };
 
         // Act
@@ -148,11 +137,7 @@ public class ImportProjectTests
                 => c.Path.Contains("another_project")), It.IsAny<CancellationToken>()))
             .ReturnsAsync(anotherProject);
 
-        var command = new ImportProject.Command
-        {
-            Path = PROJECT_PATH,
-            Builder = builder
-        };
+        var command = new ImportProject.Command { Path = PROJECT_PATH, };
 
         // Act
         var actual = await handler.Handle(command, CancellationToken.None);
@@ -209,7 +194,8 @@ public class ImportProjectTests
     {
         // assemble
         scannedFiles ??= [];
+        var builder = TestUtils.CreateBuilder(_fileStorage);
         var scanner = new StandardProjectFileScanner(_fileStorage.Object);
-        return new ImportProject.Handler(_sender.Object, _logger.Object, scannedFiles, scanner);
+        return new ImportProject.Handler(builder, scannedFiles, scanner);
     }
 }

@@ -196,7 +196,7 @@ public class BranchDatabaseBuilderTests
 
         // assign the project to the solution
         var project = builder.GetOrAddProject(PROJECT_PATH);
-        builder.AddProjectToSolution(solution, project);
+        builder.AddProjectToSolution(solution, project, ProjectType.Unknown);
 
         // act
         var db = builder.CreateDatabase();
