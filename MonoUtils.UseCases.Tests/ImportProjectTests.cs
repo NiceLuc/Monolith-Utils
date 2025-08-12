@@ -2,6 +2,7 @@ using MediatR;
 using Microsoft.Extensions.Logging;
 using MonoUtils.Domain;
 using MonoUtils.Domain.Data;
+using MonoUtils.Infrastructure;
 using MonoUtils.Infrastructure.FileScanners;
 using MonoUtils.UseCases.InitializeDatabase;
 using Moq;
@@ -17,6 +18,7 @@ public class ImportProjectTests
     private Mock<ISender> _sender = null!;
     private Mock<IFileStorage> _fileStorage = null!;
     private Mock<ILogger<ImportProject.Handler>> _logger = null!;
+    private IBranchDatabaseBuilder _builder = null;
 
     [TestInitialize]
     public void BeforeEachTest()
@@ -26,6 +28,8 @@ public class ImportProjectTests
 
         _sender = _mockRepository.Create<ISender>();
         _logger = _mockRepository.Create<ILogger<ImportProject.Handler>>();
+
+        _builder = TestUtils.CreateBuilder(_fileStorage);
     }
 
 
@@ -50,8 +54,7 @@ public class ImportProjectTests
     {
         // Arrange
         _fileStorage.Setup(s => s.FileExists(PROJECT_PATH)).Returns(false);
-        var builder = TestUtils.CreateBuilder(_fileStorage);
-        var expected = builder.GetOrAddProject(PROJECT_PATH);
+        var expected = _builder.GetOrAddProject(PROJECT_PATH);
         var scannedFiles = new ScannedFiles { expected.Path };
         var command = new ImportProject.Command { Path = PROJECT_PATH };
         var handler = CreateHandler(scannedFiles);
@@ -89,7 +92,6 @@ public class ImportProjectTests
 
         var scanner = new ScannedFiles();
         var handler = CreateHandler(scanner);
-        var builder = TestUtils.CreateBuilder(_fileStorage);
         var command = new ImportProject.Command
         {
             Path = PROJECT_PATH,
@@ -100,7 +102,7 @@ public class ImportProjectTests
 
         // Assert
         Assert.AreEqual(1, scanner.Count);
-        Assert.AreSame(builder.GetOrAddProject(PROJECT_PATH), actual);
+        Assert.AreSame(_builder.GetOrAddProject(PROJECT_PATH), actual);
         Assert.AreEqual(expected.Name, actual.Name);
         Assert.AreEqual(expected.Path, actual.Path);
         Assert.AreEqual(expected.DoesExist, actual.DoesExist);
@@ -122,13 +124,20 @@ public class ImportProjectTests
                 <ProjectReference Include="another_project.csproj" />
             </Project>
             """;
+        const string another_xml = """
+            <Project Sdk="Microsoft.NET.Sdk">
+                <TargetFramework>net48</TargetFramework>
+            </Project>
+            """;
 
         _fileStorage.Setup(s => s.ReadAllTextAsync(PROJECT_PATH, It.IsAny<CancellationToken>()))
             .ReturnsAsync(xml);
 
+        _fileStorage.Setup(s => s.ReadAllTextAsync(It.Is<string>(x => x.EndsWith("another_project.csproj")), It.IsAny<CancellationToken>()))
+            .ReturnsAsync(another_xml);
+
         var scanner = new ScannedFiles();
         var handler = CreateHandler(scanner);
-        var builder = TestUtils.CreateBuilder(_fileStorage);
 
         // set up the project reference record
         var anotherProject = new ProjectRecord("test", "test", true);
@@ -141,6 +150,7 @@ public class ImportProjectTests
 
         // Act
         var actual = await handler.Handle(command, CancellationToken.None);
+        var db = _builder.CreateDatabase();
 
         // Assert
         Assert.IsNotNull(actual);
@@ -165,7 +175,6 @@ public class ImportProjectTests
 
         var scanner = new ScannedFiles();
         var handler = CreateHandler(scanner);
-        var builder = TestUtils.CreateBuilder(_fileStorage);
 
         // set up the project reference record
         var anotherProject = new ProjectRecord("test", "test", true);
@@ -177,7 +186,6 @@ public class ImportProjectTests
         var command = new ImportProject.Command
         {
             Path = PROJECT_PATH,
-            Builder = builder
         };
 
         // Act
@@ -194,8 +202,7 @@ public class ImportProjectTests
     {
         // assemble
         scannedFiles ??= [];
-        var builder = TestUtils.CreateBuilder(_fileStorage);
         var scanner = new StandardProjectFileScanner(_fileStorage.Object);
-        return new ImportProject.Handler(builder, scannedFiles, scanner);
+        return new ImportProject.Handler(_builder, scannedFiles, scanner);
     }
 }

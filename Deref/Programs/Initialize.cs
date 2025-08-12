@@ -20,7 +20,6 @@ public class Initialize
         ISender sender,
         ILogger<Handler> logger,
         IProgramSettingsBuilder settingsBuilder,
-        BranchDatabaseBuilderFactory builderFactory,
         IDefinitionSerializer<BranchDatabase> serializer,
         IFileStorage fileStorage) : IRequestHandler<Request, Result>
     {
