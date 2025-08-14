@@ -51,7 +51,7 @@ public static class DependencyInjection
         services.AddSingleton<RecordProvider<ProjectRecord>>();
         services.AddSingleton<RecordProvider<WixProjectRecord>>();
 
-        services.AddSingleton<BranchDatabaseBuilder>();
+        services.AddSingleton<IBranchDatabaseBuilder, BranchDatabaseBuilder>();
 
         return services;
     }

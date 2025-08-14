@@ -46,13 +46,14 @@ public class Initialize
                 };
 
                 var solution = await sender.Send(command, cancellationToken);
-                logger.LogInformation($"Scanned {solution.Path} ({solution.Projects.Length} projects, {solution.WixProjects} wix projects)");
+                logger.LogInformation($"Scanned {solution.Path} ({solution.Projects.Length} projects, {solution.WixProjects.Length} wix projects)");
             }
 
             // persist the results to a json file
             var data = builder.CreateDatabase();
             var filePath = Path.Combine(settings.TempRootDirectory, "db.json");
             await serializer.SerializeAsync(filePath, data, cancellationToken);
+            logger.LogInformation($"Created database: {filePath}");
             return Result.Success();
         }
 

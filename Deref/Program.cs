@@ -43,7 +43,6 @@ var result = parser.ParseArguments<InitializeOptions, BranchOptions, ProjectOpti
     .WithParsed<ProjectOptions>(RunProjectProgram)
     .WithParsed<WixOptions>(RunWixProgram);
 
-await mediator.Send(result.Value);
 return;
 
 // helper methods
@@ -127,10 +126,8 @@ FilterType ConvertToResultFilter(IListOptions options)
 
 void SendRequest<TRequest>(TRequest request) where TRequest : IRequest<Result>
 {
-    var result = mediator.Send(request)
+    mediator.Send(request)
         .ConfigureAwait(false)
         .GetAwaiter()
         .GetResult();
-
-    Console.WriteLine(result);
 }
