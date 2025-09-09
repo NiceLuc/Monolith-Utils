@@ -40,6 +40,7 @@ public static class DependencyInjection
         services.AddSingleton<IDefinitionSerializer<ProgramConfig>, DefinitionSerializer<ProgramConfig>>();
 
         services.AddSingleton<IBranchDatabaseProvider, BranchDatabaseProvider>();
+        services.AddSingleton<IBranchDatabaseContextFactory, BranchDatabaseContextFactory>();
 
         // used for building the database
         services.AddSingleton<SolutionFileScanner>();

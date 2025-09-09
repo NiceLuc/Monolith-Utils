@@ -5,11 +5,8 @@ namespace MonoUtils.Domain.Data;
 public class BranchDatabaseContext
 {
     private readonly Dictionary<string, ProjectRecord> _projects;
-
     private readonly Dictionary<string, SolutionRecord> _solutions;
-
     private readonly Dictionary<string, WixProjectRecord> _wixProjects;
-
     private readonly Dictionary<string, string[]> _buildDefinitions;
 
     public BranchDatabaseContext(BranchDatabase database)
@@ -20,11 +17,11 @@ public class BranchDatabaseContext
         _buildDefinitions = database.Solutions.ToDictionary(s => s.Name, s => s.Builds.ToArray(), StringComparer.InvariantCultureIgnoreCase);
     }
 
-    public ProjectRecord[] GetProjectsReferencing(ProjectRecord project, ItemQuery<ProjectRecord> query, bool isRecursive = false)
+    public ProjectRecord[] GetProjectsReferencing(ProjectRecord project, ItemQuery<ProjectRecord> query)
     {
         ProjectRecord[] results;
 
-        if (!isRecursive)
+        if (!query.IsRecursive)
         {
             results = project.References.Select(p => _projects[p])
                 .Where(query.IsActive).ToArray();
@@ -88,37 +85,21 @@ public class BranchDatabaseContext
         }
     }
 
-    public string[] GetBuildDefinitionNames(ProjectRecord project)
-    {
-        var buildNames = project.Solutions.SelectMany(s => _buildDefinitions[s]);
-        return buildNames.Distinct().OrderBy(b => b).ToArray();
-    }
+    public string[] GetBuildDefinitionNames(ProjectRecord project) => 
+        project.Solutions.SelectMany(s => _buildDefinitions[s]).Distinct().OrderBy(b => b).ToArray();
 
-    public WixProjectRecord[] GetWixProjects(ProjectRecord project)
-    {
-        if (project.WixProjects.Length == 0)
-            return [];
+    public SolutionRecord[] GetSolutions(ProjectRecord project) => 
+        project.Solutions.Select(s => _solutions[s]).OrderBy(s => s.Name).ToArray();
 
-        return project.WixProjects.Select(w => _wixProjects[w.ProjectName]).ToArray();
-    }
+    public WixProjectRecord[] GetWixProjects(ProjectRecord project) => 
+        project.WixProjects.Select(w => _wixProjects[w.ProjectName]).ToArray();
 
-    public ProjectRecord? GetProject(string projectName)
-    {
-        return _projects.GetValueOrDefault(projectName);
-    }
+    public ProjectRecord? GetProject(string projectName) => 
+        _projects.GetValueOrDefault(projectName);
 
-    public SolutionRecord? GetSolution(string solutionName)
-    {
-        return _solutions.GetValueOrDefault(solutionName);
-    }
+    public SolutionRecord? GetSolution(string solutionName) => 
+        _solutions.GetValueOrDefault(solutionName);
 
-    private ProjectRecord[] SortedResults(ProjectRecord[] results, ItemQuery<ProjectRecord> query)
-    {
-        // todo: support different sort options
-        var sortedResults = query.IsDescending
-            ? results.OrderByDescending(p => p.Name)
-            : results.OrderBy(p => p.Name);
-
-        return sortedResults.ToArray();
-    }
+    private static ProjectRecord[] SortedResults(ProjectRecord[] results, ItemQuery<ProjectRecord> query) => 
+        results.OrderBy(p => p.Name).ToArray();
 }

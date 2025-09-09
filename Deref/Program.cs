@@ -70,21 +70,21 @@ void RunBranchProgram(BranchOptions options)
 
 void RunProjectItemProgram(ProjectItemOptions options)
 {
-    var request = new Project.Request
+    var request = new ProjectItem.Query
     {
-        BranchFilter = ConvertToResultFilter(options),
-        ProjectName = options.ProjectName,
+        BranchFilter = options.FilterBy,
+        ItemKey = options.ProjectName ?? string.Empty,
+        ListSearchTerm = options.SearchTerm, // optional: fuzzy find references by name
         IsListReferences = options.IsListReferences,
         IsListReferencedBy = options.IsListReferencedBy,
         IsListWixProjects = options.IsListWixProjects,
         IsListSolutions = options.IsListSolutions,
         IsListBuildDefinitions = options.IsListBuildDefinitions,
-        IsList = options.IsList,
-        SearchTerm = options.SearchTerm,
         ShowListCounts = options.ShowListCounts,
         ShowListTodos = options.ShowListTodos,
         IsRecursive = options.IsRecursive,
         IsExcludeTests = options.IsExcludeTests,
+        TodoFilter = options.TodoFilter,
     };
 
     SendRequest(request);

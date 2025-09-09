@@ -4,7 +4,7 @@ namespace MonoUtils.UseCases.LocalProjects;
 
 public static class ProjectErrors
 {
-    public static readonly Error ProjectNotFound = new("Project.NotFound", "ProjectNotFound");
+    public static Error ProjectNotFound(string projectName) => new("Project.NotFound", projectName);
     public static Error InvalidRequest(string message) => new("Project.InvalidRequest", message);
     // etc...
 }
