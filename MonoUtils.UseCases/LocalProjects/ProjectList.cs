@@ -35,21 +35,41 @@ public static class ProjectList
             // list by a string filter
             var prefix = "Listing";
             var projects = database.Projects.AsQueryable();
+
             if (!string.IsNullOrEmpty(query.SearchTerm))
             {
                 prefix = "Search found";
-                projects = projects.Where(p 
-                    => p.Name.Contains(query.SearchTerm, StringComparison.InvariantCultureIgnoreCase));
+                projects = projects.Where(p => FilterByName(query.SearchTerm, p));
             }
 
-            var all = projects.Where(p => MatchesFilter(query.TodoFilter, p)).ToArray();
-            ShowProjectsList(prefix, all, query);
+            var results = projects
+                .Where(p => FilterByTests(query.IsExcludeTests, p))
+                .Where(p => FilterByTodos(query.TodoFilter, p))
+                .Where(p => FilterByRequired(query.BranchFilter, p))
+                .ToArray();
+
+            ShowProjectsList(prefix, results, query);
             return Result.Success();
         }
 
-        private static bool MatchesFilter(TodoFilterType todo, ProjectRecord project)
-        {
-            return todo switch
+
+        private static bool FilterByName(string searchTerm, ProjectRecord project) => 
+            project.Name.Contains(searchTerm, StringComparison.InvariantCultureIgnoreCase);
+
+        private static bool FilterByTests(bool isExcludeTests, ProjectRecord project) => 
+            !isExcludeTests || !project.IsTestProject;
+
+        private static bool FilterByRequired(FilterType filter, ProjectRecord project) =>
+            filter switch
+            {
+                FilterType.All => true,
+                FilterType.OnlyRequired => project.IsRequired,
+                FilterType.OnlyNonRequired => !project.IsRequired,
+                _ => throw new InvalidOperationException("Invalid filter: " + filter)
+            };
+
+        private static bool FilterByTodos(TodoFilterType todo, ProjectRecord project) =>
+            todo switch
             {
                 TodoFilterType.NoFilter => true,
                 TodoFilterType.SdkProjects => !project.IsSdk,
@@ -57,7 +77,6 @@ public static class ProjectList
                 TodoFilterType.NetStandard2 => !project.IsNetStandard2,
                 _ => !GetProjectStatus(project) // only show those that need ALL updates!
             };
-        }
 
         private static bool ValidateRequest(Query request, out string message)
         {
