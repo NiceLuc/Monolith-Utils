@@ -1,8 +1,3 @@
 ﻿namespace MonoUtils.Domain.Data;
 
-public enum RecordType
-{
-    Solution,
-    Project,
-    WixProject
-}
+public enum RecordType { Unknown, Solution, Project, WixProject }
