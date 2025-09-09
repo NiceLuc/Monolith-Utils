@@ -44,13 +44,22 @@ public class ImportProject
                 builder.UpdateProject(project);
 
                 // step 3: add all project references
+                var references = new List<string>(results.References.Count);
                 foreach (var referencePath in results.References)
                 {
                     // NOTE: RECURSION!
                     var request = new Command { Path = referencePath };
                     var reference = await Handle(request, cancellationToken);
+                    reference.ReferencedBy = reference.ReferencedBy.Concat([project.Name]).ToArray();
+
                     builder.AddProjectReference(project, reference);
+
+                    // keep track of all references to create back-mapping later
+                    references.Add(reference.Name);
                 }
+
+                // step 4: update references now that we have all of their names
+                project.References = project.References.Concat(references).ToArray();
             }
             catch (Exception ex)
             {

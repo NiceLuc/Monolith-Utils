@@ -140,22 +140,22 @@ public class ImportProjectTests
         var handler = CreateHandler(scanner);
 
         // set up the project reference record
-        var anotherProject = new ProjectRecord("test", "test", true);
+        var anotherProjectPath = PROJECT_PATH.Replace("project_path", "another_project");
+        var anotherProject = new ProjectRecord("another_project", anotherProjectPath, true);
         _sender.Setup(s
-            => s.Send(It.Is<ImportProject.Command>(c
-                => c.Path.Contains("another_project")), It.IsAny<CancellationToken>()))
+            => s.Send(It.Is<ImportProject.Command>(c => c.Path == anotherProjectPath), It.IsAny<CancellationToken>()))
             .ReturnsAsync(anotherProject);
 
         var command = new ImportProject.Command { Path = PROJECT_PATH, };
 
         // Act
         var actual = await handler.Handle(command, CancellationToken.None);
-        var db = _builder.CreateDatabase();
 
         // Assert
         Assert.IsNotNull(actual);
-        Assert.AreEqual(actual.References[0], anotherProject.Name);
-        Assert.AreEqual(anotherProject.ReferencedBy[0], actual.Name);
+        var reference = _builder.GetOrAddProject(anotherProjectPath);
+        Assert.AreEqual(actual.References[0], reference.Name);
+        Assert.AreEqual(reference.ReferencedBy[0], actual.Name);
     }
 
     /*
