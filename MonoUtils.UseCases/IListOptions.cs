@@ -4,8 +4,7 @@ namespace MonoUtils.UseCases;
 
 public interface IListOptions
 {
-    bool IsExcludeTests { get; set; }
     string? SearchTerm { get; set; }
+    bool IsExcludeTests { get; set; }
     FilterType FilterBy { get; set; }
-    bool IsRecursive { get; set; }
 }

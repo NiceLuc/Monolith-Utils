@@ -5,6 +5,7 @@ using Deref.Programs;
 using MediatR;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.FileSystemGlobbing.Internal.PatternContexts;
 using Microsoft.Extensions.Hosting;
 using MonoUtils.Domain.Data;
 using MonoUtils.Infrastructure;
@@ -37,10 +38,11 @@ var parser = host.Services.GetRequiredService<Parser>();
 var mediator = host.Services.GetRequiredService<IMediator>();
 
 // parse the command line arguments and call appropriate handler
-var result = parser.ParseArguments<InitializeOptions, BranchOptions, ProjectOptions, WixOptions>(args)
+var result = parser.ParseArguments<InitializeOptions, BranchOptions, ProjectItemOptions, ProjectListOptions, WixOptions>(args)
     .WithParsed<InitializeOptions>(RunInitProgram)
     .WithParsed<BranchOptions>(RunBranchProgram)
-    .WithParsed<ProjectOptions>(RunProjectProgram)
+    .WithParsed<ProjectItemOptions>(RunProjectItemProgram)
+    .WithParsed<ProjectListOptions>(RunProjectListProgram)
     .WithParsed<WixOptions>(RunWixProgram);
 
 return;
@@ -66,24 +68,8 @@ void RunBranchProgram(BranchOptions options)
     SendRequest(request);
 }
 
-void RunProjectProgram(ProjectOptions options)
+void RunProjectItemProgram(ProjectItemOptions options)
 {
-    if (options.IsList)
-    {
-        var listCommand = new ProjectList.Query
-        {
-            SearchTerm = options.ProjectName,
-            BranchFilter = options.FilterBy,
-            IsExcludeTests = options.IsExcludeTests,
-            ShowListCounts = options.ShowListCounts,
-            ShowListTodos = options.ShowListTodos,
-            TodoFilter = options.TodoFilter,
-        };
-
-        SendRequest(listCommand);
-        return;
-    }
-
     var request = new Project.Request
     {
         BranchFilter = ConvertToResultFilter(options),
@@ -102,6 +88,21 @@ void RunProjectProgram(ProjectOptions options)
     };
 
     SendRequest(request);
+}
+
+void RunProjectListProgram(ProjectListOptions options)
+{
+    var listCommand = new ProjectList.Query
+    {
+        SearchTerm = options.SearchTerm,
+        BranchFilter = options.FilterBy,
+        IsExcludeTests = options.IsExcludeTests,
+        ShowListCounts = options.ShowListCounts,
+        ShowListTodos = options.ShowListTodos,
+        TodoFilter = options.TodoFilter,
+    };
+
+    SendRequest(listCommand);
 }
 
 void RunWixProgram(WixOptions options)

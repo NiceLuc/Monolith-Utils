@@ -5,7 +5,7 @@ using MonoUtils.Domain.Data;
 namespace Deref.Options;
 
 [Verb("project", HelpText = "Analyze details about projects in the monolith")]
-internal class ProjectOptions : IListDisplayOptions, IListOptions
+internal class ProjectItemOptions : IListDisplayOptions, IListOptions
 {
     [Value(0, Required = false, HelpText = "The name of the project that you want to analyze. (Note: Used as a 'contains' when using --list options)")]
     public string? ProjectName { get; set; }
@@ -39,7 +39,7 @@ internal class ProjectOptions : IListDisplayOptions, IListOptions
     [Option("missing", Default = TodoFilterType.NoFilter, HelpText = "Filter results by missing features.")]
     public TodoFilterType TodoFilter { get; set; }
 
-    [Option("no-tests", Default = true, HelpText = "Exclude test items from the list.")]
+    [Option("no-tests", Default = false, HelpText = "Exclude test items from the list.")]
     public bool IsExcludeTests { get; set; }
 
     [Option("recursive", HelpText = "List all nested references required for the item.")]
