@@ -2,7 +2,7 @@
 using System.Text.Json;
 using MonoUtils.Domain;
 
-namespace Delinq;
+namespace MonoUtils.Delinq;
 
 internal class ContextConfigProvider(IEmbeddedResourceProvider resourceProvider, IDictionary<string, ContextConfig>? cache = null) : IContextConfigProvider
 {

@@ -1,11 +1,11 @@
 ﻿using CommandLine;
-using Delinq.Parsers;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
+using MonoUtils.Delinq.Parsers;
 using MonoUtils.Domain;
 using MonoUtils.Infrastructure;
 
-namespace Delinq;
+namespace MonoUtils.Delinq;
 
 internal static class DependencyInjection
 {

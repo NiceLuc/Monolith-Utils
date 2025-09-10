@@ -3,7 +3,7 @@ Microsoft Visual Studio Solution File, Format Version 12.00
 # Visual Studio Version 17
 VisualStudioVersion = 17.9.34728.123
 MinimumVisualStudioVersion = 10.0.40219.1
-Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Delinq", "Delinq\Delinq.csproj", "{201EFF66-37C1-4F20-A02E-4A339CD7401F}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "MonoUtils.Delinq", "Delinq\MonoUtils.Delinq.csproj", "{201EFF66-37C1-4F20-A02E-4A339CD7401F}"
 	ProjectSection(ProjectDependencies) = postProject
 		{4BB49663-D87B-4438-BCB3-5517BE710E26} = {4BB49663-D87B-4438-BCB3-5517BE710E26}
 	EndProjectSection

@@ -1,8 +1,8 @@
-﻿using Delinq.Parsers;
-using MediatR;
+﻿using MediatR;
+using MonoUtils.Delinq.Parsers;
 using MonoUtils.Domain;
 
-namespace Delinq.Programs;
+namespace MonoUtils.Delinq.Programs;
 
 public sealed class Initialize
 {

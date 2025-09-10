@@ -1,6 +1,6 @@
 ﻿using Microsoft.Extensions.Options;
 
-namespace Delinq;
+namespace MonoUtils.Delinq;
 
 internal class ConfigSettingsBuilder(IOptions<AppSettings> appSettings, IContextConfigProvider provider) : IConfigSettingsBuilder
 {

@@ -1,6 +1,6 @@
 ﻿using CommandLine;
 
-namespace Delinq.Options;
+namespace MonoUtils.Delinq.Options;
 
 [Verb("report", HelpText = "Generate a csv report of the repository validation scan.")]
 internal class VerifyReportOptions

@@ -1,4 +1,4 @@
-﻿namespace Delinq.CodeGeneration.ViewModels;
+﻿namespace MonoUtils.Delinq.CodeGeneration.ViewModels;
 
 public class RepositoryViewModel(ContextDefinition definition)
 {

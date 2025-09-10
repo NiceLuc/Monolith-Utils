@@ -7,7 +7,7 @@ using Microsoft.CodeAnalysis.CSharp.Syntax;
 using Microsoft.Extensions.Options;
 using MonoUtils.Domain;
 
-namespace Delinq.Programs;
+namespace MonoUtils.Delinq.Programs;
 
 public sealed class VerifyRepositoryMethods
 {

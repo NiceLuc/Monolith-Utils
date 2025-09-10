@@ -1,4 +1,4 @@
-﻿namespace Delinq;
+﻿namespace MonoUtils.Delinq;
 
 public enum SprocQueryType
 {

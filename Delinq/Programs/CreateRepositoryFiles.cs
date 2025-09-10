@@ -1,8 +1,8 @@
-﻿using Delinq.CodeGeneration.ViewModels;
-using MediatR;
+﻿using MediatR;
+using MonoUtils.Delinq.CodeGeneration.ViewModels;
 using MonoUtils.Domain;
 
-namespace Delinq.Programs;
+namespace MonoUtils.Delinq.Programs;
 
 public sealed class CreateRepositoryFiles
 {

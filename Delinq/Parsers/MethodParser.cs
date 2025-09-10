@@ -1,6 +1,6 @@
 ﻿using System.Text.RegularExpressions;
 
-namespace Delinq.Parsers;
+namespace MonoUtils.Delinq.Parsers;
 
 internal class MethodParser(IParser<MethodDefinition> parameterParser) : SettingsParser<ContextDefinition>
 {

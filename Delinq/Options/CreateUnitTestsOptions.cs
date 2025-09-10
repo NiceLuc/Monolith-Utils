@@ -1,6 +1,6 @@
 ﻿using CommandLine;
 
-namespace Delinq.Options;
+namespace MonoUtils.Delinq.Options;
 
 [Verb("tests", HelpText = "Create unit tests")]
 internal class CreateUnitTestsOptions

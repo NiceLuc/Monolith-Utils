@@ -3,7 +3,7 @@ using System.Text.Json.Serialization;
 using MonoUtils.Domain;
 using MonoUtils.Infrastructure;
 
-namespace Delinq;
+namespace MonoUtils.Delinq;
 
 public class RepositoryDefinitionSerializer(IFileStorage fileStorage) : DefinitionSerializer<RepositoryDefinition>(fileStorage)
 {

@@ -1,4 +1,4 @@
-﻿namespace Delinq.Parsers;
+﻿namespace MonoUtils.Delinq.Parsers;
 
 public interface IParser<in T> where T : class
 {

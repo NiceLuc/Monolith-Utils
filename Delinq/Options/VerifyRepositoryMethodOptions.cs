@@ -1,6 +1,6 @@
 ﻿using CommandLine;
 
-namespace Delinq.Options;
+namespace MonoUtils.Delinq.Options;
 
 [Verb("verify", HelpText = "Verify sproc calls for a given repository file.")]
 internal class VerifyRepositoryMethodOptions

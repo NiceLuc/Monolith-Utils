@@ -3,7 +3,7 @@ using ClosedXML.Excel;
 using MediatR;
 using MonoUtils.Domain;
 
-namespace Delinq.Programs;
+namespace MonoUtils.Delinq.Programs;
 
 public sealed class VerificationReport
 {

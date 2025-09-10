@@ -1,13 +1,13 @@
 ﻿using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 using CommandLine;
-using Delinq.Options;
-using Delinq.Programs;
 using Microsoft.Extensions.Configuration;
 using MonoUtils.Infrastructure;
 using MonoUtils.UseCases;
-using Delinq;
 using MediatR;
+using MonoUtils.Delinq;
+using MonoUtils.Delinq.Options;
+using MonoUtils.Delinq.Programs;
 
 // TODO: Figure out why the console app is not respecting the launchSettings.json environment variable
 //Environment.SetEnvironmentVariable("ASPNETCORE_ENVIRONMENT", "Development");

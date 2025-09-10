@@ -1,7 +1,7 @@
 ﻿using System.Text.RegularExpressions;
 using SharedKernel;
 
-namespace Delinq.Parsers;
+namespace MonoUtils.Delinq.Parsers;
 
 internal class DTOClassParser(IParser<DTOClassDefinition> propertyParser, ScopeTracker scopeTracker)
     : SettingsParser<ContextDefinition>
