@@ -9,7 +9,7 @@ Monolith-Utils is a collection of command line tools to help migrate monolithic 
 * Github Desktop download: [Download GitHub Desktop](https://desktop.github.com/download/)
 * Capture HTTPS link and download the repository using Github Desktop
 * Compile the project and make sure it builds (✅).
-* Ensure the **muthu/appsettings.json** file points to correct paths!
+* Ensure the **MonoUtils.CLI/appsettings.json** file points to correct paths!
 	* After changes, be sure to compile again!
 
 ## Setup Command Line Environment:
@@ -21,7 +21,8 @@ If you don't already have one, consider using **Visual Studio Code**
 * Download latest [Visual Studio Code](https://code.visualstudio.com/download)
 	
 ## Open Command Line
-Open up a linux-based command line tool (Github has one or you can use WSL).
+
+Open up a **_Linux_**-based command line tool (Github has one or you can use WSL).
  
 ```shell
 touch ~/.bashrc && code ~/.bashrc
@@ -50,11 +51,32 @@ Should see output.
 
 # Using Monolith Utils
 
+There are 2 main libraries that are versioned in this repository:
+* `muthu` - Used to understand all solutions and projects in a monolith directory structure.
+* `delinq` - Used to convert LINQ queries to Repository pattern.
+
 -----
 
-There are 2 main libraries that are versioned in this repository:
-* `delinq` - Used to convert LINQ queries to Repository pattern.
-* `muthu` - Used to understand all solutions and projects in a monolith directory structure.
+# Muthu CLI - Monolith Utilities To Help Unravel
+
+At this time, there is not a lot of information, as it's evolving very fast. 
+
+> **IMPORTANT** - You must first ensure that the `appsettings.json` file in the `MonoUtils.CLI` directory points to the correct paths for your environment.
+
+For now, simply use the following:
+
+```shell
+muthu --help            # use this to see all commands
+muthu branch --help     # manage which TFS branch you are working on
+muthu init --help		# REQUIRED! initialize the database for analysis
+muthu projects --help	# find information about all projects in the monolith
+muthu project --help	# get detailed information about a project in the monolith
+muthu solutions --help	# find informationa bout all solutions in the monolith
+muthu solution --help	# get detailed information about a solution in the monolith
+muthu wix --help		# analyze a specific WiX project file
+```
+
+-----
 
 # Delinq CLI - Linq Conversion Tool
 
@@ -151,23 +173,5 @@ Reads the json file generated from the `verify` results and generates a report o
 
 ```powershell
 $> delinq report "c:\temp\Verification.json"
-```
-
------
-
-# Muthu CLI - Monolith Utilities To Help Unravel
-
-At this time, there is not a lot of information, as it's evolving very fast. 
-
-For now, simply use the following:
-
-```shell
-muthu --help            # use this to see all commands
-muthu branch --help     # manage which TFS branch you are working on
-muthu init --help		# initialize a directory structure for analysis
-muthu projects --help	# find information about all projects in a directory structure
-muthu project --help	# analyze a specific project file
-muthu solution --help	# analyze a specific solution file
-muthu wix --help		# analyze a specific WiX project file
 ```
 
