@@ -1,0 +1,8 @@
+{
+  "profiles": {
+    "Deref": {
+      "commandName": "Project",
+      "commandLineArgs": "project vcsvc -rbsd"
+    }
+  }
+}

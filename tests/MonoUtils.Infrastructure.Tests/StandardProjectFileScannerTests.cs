@@ -1,0 +1,207 @@
+using MonoUtils.Domain;
+using MonoUtils.Infrastructure.FileScanners;
+using Moq;
+
+namespace MonoUtils.Infrastructure.Tests;
+
+[TestClass]
+public class StandardProjectFileScannerTests
+{
+    private const string PROJECT_PATH = @"c:\dummy\project_path.csproj";
+
+    private readonly MockRepository _mockRepository = new(MockBehavior.Strict);
+    private Mock<IFileStorage> _fileStorage = null!;
+
+    [TestInitialize]
+    public void BeforeEachTest()
+    {
+        _fileStorage = _mockRepository.Create<IFileStorage>();
+        _fileStorage.Setup(s => s.FileExists(PROJECT_PATH)).Returns(true);
+        _fileStorage.Setup(s => s.FileExists(It.Is<string>(x => x.Contains("packages.config")))).Returns(false);
+    }
+
+    [TestMethod]
+    public async Task ScanAsync_ThrowsExceptionWhenFileNotFound()
+    {
+        // Arrange
+        _fileStorage.Setup(s => s.FileExists(PROJECT_PATH)).Returns(false);
+        var scanner = CreateScanner();
+
+        // Act
+        var error = await Assert.ThrowsExceptionAsync<FileNotFoundException>(() 
+            => scanner.ScanAsync(PROJECT_PATH, CancellationToken.None));
+
+        // Assert
+        Assert.IsTrue(error.Message.Contains("Project file not found"));
+    }
+
+    [TestMethod]
+    public async Task ScanAsync_AddsProject_WhenFileIsEmpty()
+    {
+        // Arrange
+        _fileStorage.Setup(s => s.ReadAllTextAsync(PROJECT_PATH, It.IsAny<CancellationToken>())).ReturnsAsync(string.Empty);
+        var scanner = CreateScanner();
+
+        // Act
+        var results = await scanner.ScanAsync(PROJECT_PATH, CancellationToken.None);
+
+        // Assert
+        Assert.AreEqual("project_path.dll", results.AssemblyName);
+        Assert.AreEqual("project_path.pdb", results.PdbFileName);
+        Assert.AreEqual(false, results.IsSdk);
+        Assert.AreEqual(false, results.IsNetStandard2);
+        Assert.AreEqual(true, results.IsPackageRef);
+    }
+
+    [TestMethod]
+    [DataRow("", "Exe", "project_path.exe", "project_path.pdb")]
+    [DataRow("MissingOutputType", "", "MissingOutputType.dll", "MissingOutputType.pdb")]
+    [DataRow("SampleLib", "Library", "SampleLib.dll", "SampleLib.pdb")]
+    [DataRow("SampleApp", "Exe", "SampleApp.exe", "SampleApp.pdb")]
+    public async Task ScanAsync_CapturesAssemblyNameAndPdbName_FromXml(string assemblyName, string outputType, string expectedAssemblyName, string expectedPdbFilePath)
+    {
+        // Arrange
+        const string xml =
+            """
+            <AssemblyName>{{ASSEMBLY_NAME}}</AssemblyName>
+            <OutputType>{{OUTPUT_TYPE}}</OutputType>
+            """;
+        _fileStorage.Setup(s => s.ReadAllTextAsync(PROJECT_PATH, It.IsAny<CancellationToken>()))
+            .ReturnsAsync(xml.Replace("{{ASSEMBLY_NAME}}", assemblyName).Replace("{{OUTPUT_TYPE}}", outputType));
+
+        var scanner = CreateScanner();
+
+        // Act
+        var results = await scanner.ScanAsync(PROJECT_PATH, CancellationToken.None);
+
+        // Assert
+        Assert.AreEqual(expectedAssemblyName, results.AssemblyName);
+        Assert.AreEqual(expectedPdbFilePath, results.PdbFileName);
+    }
+
+    [TestMethod]
+    public async Task ScanAsync_CapturesSdkSettings_FromXml()
+    {
+        // Arrange
+        const string xml = """
+                           <Project Sdk="Microsoft.NET.Sdk">
+                              <!-- insignificant -->
+                           </Project>
+                           """;
+        _fileStorage.Setup(s => s.ReadAllTextAsync(PROJECT_PATH, It.IsAny<CancellationToken>()))
+            .ReturnsAsync(xml);
+
+        var scanner = CreateScanner();
+
+        // Act
+        var results = await scanner.ScanAsync(PROJECT_PATH, CancellationToken.None);
+
+        // Assert
+        Assert.IsTrue(results.IsSdk);
+    }
+
+    [TestMethod]
+    [DataRow("NETSTANDARD2.0", true)]
+    [DataRow("NET48;NETSTANDARD2.0", true)]
+    [DataRow("NETSTANDARD2.0;NET48", true)]
+    [DataRow("NET48", false)]
+    [DataRow("netstandard2", false)]
+    [DataRow("net48;netstandard2", false)]
+    [DataRow("netstandard2;net48", false)]
+    [DataRow("netstandard2.0", true)]
+    [DataRow("net48;netstandard2.0", true)]
+    [DataRow("netstandard2.0;net48", true)]
+    [DataRow("net48", false)]
+    public async Task ScanAsync_CapturesNetStandard2_FromXml(string targetFrameworks, bool expectedResult)
+    {
+        // Arrange
+        var hasMultiple = targetFrameworks.Contains(';');
+        var xml = hasMultiple 
+            ? $"<TargetFrameworks>{targetFrameworks}</TargetFrameworks>" 
+            : $"<TargetFramework>{targetFrameworks}</TargetFramework>";
+
+        _fileStorage.Setup(s => s.ReadAllTextAsync(PROJECT_PATH, It.IsAny<CancellationToken>()))
+            .ReturnsAsync(xml);
+
+        var scanner = CreateScanner();
+
+        // Act
+        var results = await scanner.ScanAsync(PROJECT_PATH, CancellationToken.None);
+
+        // Assert
+        Assert.AreEqual(expectedResult, results.IsNetStandard2);
+    }
+
+    [TestMethod]
+    [DataRow(true, false)]
+    [DataRow(false, true)]
+    public async Task ScanAsync_CapturesPackageRef(bool containsPackagesConfig, bool expectedResult)
+    {
+        // Arrange
+        _fileStorage.Setup(s => s.ReadAllTextAsync(PROJECT_PATH, It.IsAny<CancellationToken>())).ReturnsAsync(string.Empty);
+        _fileStorage.Setup(s => s.FileExists(It.Is<string>(x => x.Contains("packages.config")))).Returns(containsPackagesConfig);
+        var scanner = CreateScanner();
+
+        // Act
+        var results = await scanner.ScanAsync(PROJECT_PATH, CancellationToken.None);
+
+        // Assert
+        Assert.AreEqual(expectedResult, results.IsPackageRef);
+    }
+
+    [TestMethod]
+    [DataRow(@"c:\dummy\project.Tests.csproj", true)]
+    [DataRow(@"c:\dummy\project.Test.csproj", true)]
+    [DataRow(@"c:\dummy\projectTests.csproj", true)]
+    [DataRow(@"c:\dummy\projectTest.csproj", true)]
+    [DataRow(@"c:\dummy\projectUnitTests.csproj", true)]
+    [DataRow(@"c:\dummy\project_tests.csproj", true)]
+    [DataRow(@"c:\dummy\project_test.csproj", true)]
+    [DataRow(@"c:\dummy\project.tests.unit.csproj", true)]
+    [DataRow(@"c:\dummy\test_project.csproj", false)]
+    [DataRow(@"c:\tests\project.csproj", false)]
+    public async Task ScanAsync_CapturesIsTestProject(string filePath, bool expectedResult)
+    {
+        // Arrange
+        _fileStorage.Setup(s => s.FileExists(filePath)).Returns(true);
+        _fileStorage.Setup(s => s.ReadAllTextAsync(filePath, It.IsAny<CancellationToken>())).ReturnsAsync(string.Empty);
+        var scanner = CreateScanner();
+
+        // Act
+        var results = await scanner.ScanAsync(filePath, CancellationToken.None);
+
+        // Assert
+        Assert.AreEqual(expectedResult, results.IsTestProject);
+    }
+
+    [TestMethod]
+    public async Task ScanAsync_CapturesProjectReferences_FromXml()
+    {
+        // Arrange
+        const string project1Xml =
+            """
+            <ProjectReference Include="project_path_2.csproj" />
+            """;
+        const string project2FileName = "project_path_2.csproj";
+        const string project2Path = @"c:\dummy\" + project2FileName;
+        _fileStorage.Setup(s => s.FileExists(It.Is<string>(x => x.EndsWith("csproj")))).Returns(true);
+        _fileStorage.Setup(s => s.ReadAllTextAsync(PROJECT_PATH, It.IsAny<CancellationToken>()))
+            .ReturnsAsync(project1Xml);
+        _fileStorage.Setup(s => s.ReadAllTextAsync(project2Path, It.IsAny<CancellationToken>()))
+            .ReturnsAsync(string.Empty);
+
+        var scanner = CreateScanner();
+
+        // Act
+        var a = await scanner.ScanAsync(PROJECT_PATH, CancellationToken.None);
+        var b = await scanner.ScanAsync(project2Path, CancellationToken.None);
+
+        // Assert
+        Assert.AreEqual(1, a.References.Count);
+        Assert.AreEqual(project2Path, a.References[0]);
+        Assert.AreEqual(0, b.References.Count);
+    }
+
+
+    private StandardProjectFileScanner CreateScanner() => new(_fileStorage.Object);
+}
