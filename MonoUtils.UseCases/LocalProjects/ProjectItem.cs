@@ -109,12 +109,15 @@ public static class ProjectItem
         {
             logger.LogInformation($"Found in {project.Solutions.Length} solution(s):");
 
-            var maxNameWidth = project.Solutions.Max(s => s.Length) + 2;
-            foreach(var solutionName in project.Solutions)
+            if (project.Solutions.Length > 0)
             {
-                var solution = solutions[solutionName];
-                var spaces = new string(' ', maxNameWidth - solutionName.Length);
-                logger.LogInformation($"{spaces}{solutionName}: {solution.Path}");
+                var maxNameWidth = project.Solutions.Max(s => s.Length) + 2;
+                foreach(var solutionName in project.Solutions)
+                {
+                    var solution = solutions[solutionName];
+                    var spaces = new string(' ', maxNameWidth - solutionName.Length);
+                    logger.LogInformation($"{spaces}{solutionName}: {solution.Path}");
+                }
             }
 
             logger.LogInformation(_separator);
