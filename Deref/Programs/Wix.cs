@@ -3,7 +3,7 @@ using Microsoft.Extensions.Logging;
 using MonoUtils.Domain;
 using SharedKernel;
 
-namespace Deref.Programs;
+namespace MonoUtils.App.Programs;
 
 public class Wix
 {

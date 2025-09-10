@@ -1,6 +1,6 @@
 ﻿using CommandLine;
 
-namespace Deref.Options;
+namespace MonoUtils.App.Options;
 
 [Verb("branch", HelpText = "Manage which TFS branch root to analyze dynamically.")]
 internal class BranchOptions

@@ -1,4 +1,4 @@
-﻿namespace Deref;
+﻿namespace MonoUtils.App;
 
 public class AppSettings
 {

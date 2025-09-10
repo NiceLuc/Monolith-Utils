@@ -6,7 +6,7 @@ using MonoUtils.Infrastructure;
 using MonoUtils.UseCases.InitializeDatabase;
 using SharedKernel;
 
-namespace Deref.Programs;
+namespace MonoUtils.App.Programs;
 
 public class Initialize
 {

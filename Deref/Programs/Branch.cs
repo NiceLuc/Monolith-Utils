@@ -5,7 +5,7 @@ using MonoUtils.Domain;
 using MonoUtils.UseCases.LocalBranches;
 using SharedKernel;
 
-namespace Deref.Programs;
+namespace MonoUtils.App.Programs;
 
 public class Branch
 {

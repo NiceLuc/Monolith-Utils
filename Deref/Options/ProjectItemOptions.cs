@@ -1,8 +1,8 @@
 ﻿using CommandLine;
-using MonoUtils.UseCases;
 using MonoUtils.Domain.Data;
+using MonoUtils.UseCases;
 
-namespace Deref.Options;
+namespace MonoUtils.App.Options;
 
 [Verb("project", HelpText = "Discover details about a project in the monolith")]
 internal sealed class ProjectItemOptions : IListDisplayOptions, IListOptions

@@ -2,7 +2,7 @@
 using MonoUtils.Domain;
 using MonoUtils.Domain.Data;
 
-namespace Deref;
+namespace MonoUtils.App;
 
 internal class ProgramSettingsBuilder(
     IFileStorage fileStorage,

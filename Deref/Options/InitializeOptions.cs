@@ -1,6 +1,6 @@
 ﻿using CommandLine;
 
-namespace Deref.Options;
+namespace MonoUtils.App.Options;
 
 [Verb("init", HelpText = "Setup the solution and project database file.")]
 internal class InitializeOptions

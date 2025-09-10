@@ -3,7 +3,7 @@ using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 using MonoUtils.Domain;
 
-namespace Deref;
+namespace MonoUtils.App;
 
 internal static class DependencyInjection
 {

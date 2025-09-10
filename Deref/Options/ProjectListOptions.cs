@@ -2,7 +2,7 @@
 using MonoUtils.Domain.Data;
 using MonoUtils.UseCases;
 
-namespace Deref.Options;
+namespace MonoUtils.App.Options;
 
 [Verb("projects", HelpText = "Find projects in the monolith")]
 internal sealed class ProjectListOptions : IListDisplayOptions, IListOptions
