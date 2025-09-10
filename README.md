@@ -1,11 +1,15 @@
-﻿# Monolith Utils Setup
+﻿# What is Monolith-Utils?
+
+Monolith-Utils is a collection of command line tools to help migrate monolithic applications to a more modern architecture.
+
+# Monolith Utils Setup
 
 ## Download latest Monolith-Utils github repository.
 
 * Github Desktop download: [Download GitHub Desktop](https://desktop.github.com/download/)
 * Capture HTTPS link and download the repository using Github Desktop
 * Compile the project and make sure it builds (✅).
-* Ensure the **deref/appsettings.json** file points to correct paths!
+* Ensure the **muthu/appsettings.json** file points to correct paths!
 	* After changes, be sure to compile again!
 
 ## Setup Command Line Environment:
@@ -27,7 +31,8 @@ In your `.bashrc` file, add the following lines to the bottom of your file:
 * If you are using WSL, be sure to put `/mnt` before all file paths.
 
 ```shell
-alias deref="/c/…/Monolith-Utils/Deref/bin/debug/net8.0/deref.exe"
+alias muthu="/c/…/MonoUtils.App/bin/debug/net8.0/muthu.exe"
+alias delinq="/c/…/MonoUtils.Delinq/bin/debug/net8.0/delinq.exe"
 ```
 
 **Save and close.**
@@ -37,7 +42,8 @@ Back at your command line, type the following:
 ```shell	
 source ~/.bashrc
 
-deref --help
+muthu --help
+delinq --help
 ```
 
 Should see output.
@@ -48,7 +54,7 @@ Should see output.
 
 There are 2 main libraries that are versioned in this repository:
 * `delinq` - Used to convert LINQ queries to Repository pattern.
-* `deref` - Used to understand all solutions and projects in a monolith directory structure.
+* `muthu` - Used to understand all solutions and projects in a monolith directory structure.
 
 # Delinq CLI - Linq Conversion Tool
 
@@ -148,21 +154,20 @@ $> delinq report "c:\temp\Verification.json"
 ```
 
 -----
-# Deref CLI - Monolith Solution and Project Analyzer
 
-For now, we don't have a lot of information, as it's evolving very fast. 
+# Muthu CLI - Monolith Utilities To Help Unravel
+
+At this time, there is not a lot of information, as it's evolving very fast. 
 
 For now, simply use the following:
 
 ```shell
-deref --help
-deref branch --help
-deref init --help
-deref project --help
-deref solution --help
-deref wix --help
+muthu --help            # use this to see all commands
+muthu branch --help     # manage which TFS branch you are working on
+muthu init --help		# initialize a directory structure for analysis
+muthu projects --help	# find information about all projects in a directory structure
+muthu project --help	# analyze a specific project file
+muthu solution --help	# analyze a specific solution file
+muthu wix --help		# analyze a specific WiX project file
 ```
 
-## For More Information
-
-Feel free to use the custom calls defined in the `Delinq/Properties/launchSettings.json` file to get started.
