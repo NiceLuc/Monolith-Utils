@@ -53,9 +53,8 @@ public class ImportSolution
                 var projects = builder.GetProjectsAvailableForInstallers(solution);
                 foreach (var path in results.WixProjects)
                 {
-                    var request = new ImportWixProject.Request
+                    var request = new ImportWixProject.Command
                     {
-                        Builder = builder,
                         Path = path,
                         AvailableProjects = projects
                     };

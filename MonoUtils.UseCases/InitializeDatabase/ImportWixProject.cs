@@ -8,24 +8,23 @@ namespace MonoUtils.UseCases.InitializeDatabase;
 
 public class ImportWixProject
 {
-    public class Request : IRequest<WixProjectRecord>
+    public class Command : IRequest<WixProjectRecord>
     {
-        public IBranchDatabaseBuilder Builder { get; set; }
         public string Path { get; set; }
         public ProjectRecord[] AvailableProjects { get; set; } = [];
     }
 
     public class Handler(
+        IBranchDatabaseBuilder builder,
         ILogger<Handler> logger,
         ScannedFiles scannedFiles,
         WixProjectFileScanner wixScanner,
-        WixComponentFileScanner wxsScanner) : IRequestHandler<Request, WixProjectRecord>
+        WixComponentFileScanner wxsScanner) : IRequestHandler<Command, WixProjectRecord>
     {
-        public async Task<WixProjectRecord> Handle(Request request, CancellationToken cancellationToken)
+        public async Task<WixProjectRecord> Handle(Command command, CancellationToken cancellationToken)
         {
-            var builder = request.Builder;
-            var wix = builder.GetOrAddWixProject(request.Path);
-            if (!wix.DoesExist || scannedFiles.Contains(request.Path))
+            var wix = builder.GetOrAddWixProject(command.Path);
+            if (!wix.DoesExist || scannedFiles.Contains(command.Path))
                 return wix;
 
             try
@@ -42,7 +41,7 @@ public class ImportWixProject
                 builder.UpdateWixProject(wix);
 
                 // capture project harvested project references
-                var projectPaths = request.AvailableProjects.ToDictionary(p => p.Path, StringComparer.OrdinalIgnoreCase);
+                var projectPaths = command.AvailableProjects.ToDictionary(p => p.Path, StringComparer.OrdinalIgnoreCase);
                 foreach (var path in results.ProjectReferences)
                 {
                     if (!projectPaths.TryGetValue(path, out var project))
@@ -63,7 +62,7 @@ public class ImportWixProject
                     return wix;
 
                 // capture manually harvested project assemblies
-                var assemblyNames = request.AvailableProjects.ToDictionary(p => p.AssemblyName, StringComparer.OrdinalIgnoreCase);
+                var assemblyNames = command.AvailableProjects.ToDictionary(p => p.AssemblyName, StringComparer.OrdinalIgnoreCase);
                 var harvested = new HashSet<string>();
                 foreach (var path in results.ComponentFilePaths)
                 {
@@ -90,7 +89,7 @@ public class ImportWixProject
             }
             catch (Exception e)
             {
-                var errorMessage = string.Format($" - Error scanning Wix project: {request.Path} ({e.Message})");
+                var errorMessage = string.Format($" - Error scanning Wix project: {command.Path} ({e.Message})");
                 logger.LogWarning(errorMessage);
                 builder.AddError(wix, "Error importing wix project", e);
             }
