@@ -18,8 +18,8 @@
   </ItemGroup>
 
   <ItemGroup>
-    <ProjectReference Include="..\MonoUtils.Domain\MonoUtils.Domain.csproj" />
-    <ProjectReference Include="..\MonoUtils.Infrastructure\MonoUtils.Infrastructure.csproj" />
+    <ProjectReference Include="..\..\src\MonoUtils.Domain\MonoUtils.Domain.csproj" />
+    <ProjectReference Include="..\..\src\MonoUtils.Infrastructure\MonoUtils.Infrastructure.csproj" />
   </ItemGroup>
 
   <ItemGroup>

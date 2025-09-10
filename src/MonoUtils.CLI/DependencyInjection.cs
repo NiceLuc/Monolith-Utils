@@ -7,7 +7,7 @@ namespace MonoUtils.App;
 
 internal static class DependencyInjection
 {
-    public static IServiceCollection AddDerefServices(this IServiceCollection services, HostBuilderContext context)
+    public static IServiceCollection AddApplicationServices(this IServiceCollection services, HostBuilderContext context)
     {
         services.AddSingleton<IProgramSettingsBuilder, ProgramSettingsBuilder>();
 

@@ -29,7 +29,7 @@ var builder = Host.CreateDefaultBuilder(args)
         services
             .AddInfrastructure(assembly)
             .AddUseCases(assembly) 
-            .AddDerefServices(context);
+            .AddApplicationServices(context);
     });
 
 using var host = builder.Build();
